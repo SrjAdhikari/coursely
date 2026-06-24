@@ -11,7 +11,9 @@
 	"scripts": {
 		"dev": "tsx watch server.ts",
 		"start": "tsx server.ts",
+		"build": "tsup",
 		"typecheck": "tsc --noEmit",
+		"lint": "eslint .",
 		"test": "vitest run",
 		"test:watch": "vitest"
 	},
@@ -36,15 +38,20 @@
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
+		"@eslint/js": "^10.0.1",
 		"@types/cookie-parser": "^1.4.9",
 		"@types/cors": "^2.8.19",
 		"@types/express": "^5.0.0",
 		"@types/node": "^24.0.0",
 		"@types/supertest": "^6.0.3",
+		"eslint": "^10.5.0",
+		"globals": "^17.7.0",
 		"mongodb-memory-server": "^11.1.0",
 		"supertest": "^7.1.4",
+		"tsup": "^8.5.1",
 		"tsx": "^4.20.0",
 		"typescript": "~5.9.3",
+		"typescript-eslint": "^8.62.0",
 		"vitest": "^4.1.6"
 	}
 }
