@@ -1,4 +1,4 @@
-//* tests/helpers/globalSetup.ts
+//* test/helpers/globalSetup.ts
 
 import { MongoMemoryServer } from "mongodb-memory-server";
 import type { Vitest } from "vitest/node";

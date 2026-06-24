@@ -1,4 +1,4 @@
-//* tests/models/user.model.test.ts
+//* test/models/user.model.test.ts
 
 import { describe, it, expect } from "vitest";
 import User, { toPublicUser } from "../../src/models/user.model";

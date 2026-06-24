@@ -15,8 +15,8 @@ export default defineConfig({
 			COOKIE_SECRET: "test-cookie-secret-0123456789",
 			APP_ORIGIN: "http://localhost:5173",
 		},
-		include: ["tests/**/*.test.ts"],
-		globalSetup: ["./tests/helpers/globalSetup.ts"],
-		setupFiles: ["./tests/helpers/setup.ts"],
+		include: ["test/**/*.test.ts"],
+		globalSetup: ["./test/helpers/globalSetup.ts"],
+		setupFiles: ["./test/helpers/setup.ts"],
 	},
 });

@@ -1,4 +1,4 @@
-//* tests/helpers/setup.ts
+//* test/helpers/setup.ts
 
 import { beforeAll, beforeEach, afterAll, inject } from "vitest";
 import mongoose from "mongoose";

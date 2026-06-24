@@ -1,4 +1,4 @@
-//* tests/helpers/harness.test.ts
+//* test/helpers/harness.test.ts
 
 import { describe, it, expect } from "vitest";
 import mongoose, { type Model } from "mongoose";
