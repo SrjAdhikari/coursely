@@ -16,5 +16,7 @@ export default defineConfig({
 			APP_ORIGIN: "http://localhost:5173",
 		},
 		include: ["tests/**/*.test.ts"],
+		globalSetup: ["./tests/helpers/globalSetup.ts"],
+		setupFiles: ["./tests/helpers/setup.ts"],
 	},
 });
