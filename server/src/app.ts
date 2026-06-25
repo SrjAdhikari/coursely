@@ -13,6 +13,8 @@ import AppError from "./errors/AppError";
 import globalErrorHandler from "./middlewares/error.middleware";
 import { globalLimiter } from "./middlewares/rateLimit.middleware";
 
+import routes from "./routes/index";
+
 const { APP_ORIGIN, COOKIE_SECRET } = envConfig;
 const { OK, NOT_FOUND } = httpStatus;
 const { ROUTE_NOT_FOUND } = appErrorCode;
@@ -57,6 +59,12 @@ app.use(globalLimiter);
 app.get("/health", (_req, res) => {
 	res.status(OK).json({ success: true, message: "Healthy 👍" });
 });
+
+/**
+ * API Routes
+ * - All routes are prefixed with /api
+ */
+app.use("/api", routes);
 
 /**
  * 404 + Global Error Handler
