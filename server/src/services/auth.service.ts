@@ -1,6 +1,6 @@
 //* src/services/auth.service.ts
 
-import User, { toPublicUser, type PublicUser } from "../models/user.model";
+import User from "../models/user.model";
 import Session from "../models/session.model";
 
 import AppError from "../errors/AppError";
@@ -8,23 +8,19 @@ import AppError from "../errors/AppError";
 import httpStatus from "../constants/httpStatus";
 import appErrorCode from "../constants/appErrorCode";
 
-import type { RegisterInput, LoginInput } from "../validators/auth.validator";
-
 const { CONFLICT, UNAUTHORIZED, FORBIDDEN } = httpStatus;
 const { USER_ALREADY_EXISTS, INVALID_CREDENTIALS, ACCOUNT_DEACTIVATED } =
 	appErrorCode;
 
-interface AuthResult {
-	user: PublicUser;
-	sessionId: string;
-}
-
-/** Create a student account + a fresh session. */
-const registerUser = async ({
-	name,
-	email,
-	password,
-}: RegisterInput): Promise<AuthResult> => {
+/**
+ * Create a student account + a fresh session.
+ * Returns the new session id (the value carried in the auth cookie).
+ */
+const registerUser = async (
+	name: string,
+	email: string,
+	password: string,
+): Promise<string> => {
 	const existing = await User.findOne({ email });
 	if (existing) {
 		throw new AppError(
@@ -38,14 +34,14 @@ const registerUser = async ({
 	const user = await User.create({ name, email, password });
 	const session = await Session.create({ userId: user._id });
 
-	return { user: toPublicUser(user), sessionId: session._id.toString() };
+	return session._id.toString();
 };
 
-/** Verify credentials and mint a NEW session. */
-const loginUser = async ({
-	email,
-	password,
-}: LoginInput): Promise<AuthResult> => {
+/**
+ * Verify credentials and mint a NEW session (id regenerated → fixation defense).
+ * Returns the new session id.
+ */
+const loginUser = async (email: string, password: string): Promise<string> => {
 	const user = await User.findOne({ email }).select("+password");
 
 	// Same generic error for unknown-email and wrong-password (no enumeration).
@@ -66,10 +62,10 @@ const loginUser = async ({
 	}
 
 	const session = await Session.create({ userId: user._id });
-	return { user: toPublicUser(user), sessionId: session._id.toString() };
+	return session._id.toString();
 };
 
-/** Destroy a session server-side (logout). */
+/** Destroy a session server-side (logout). No-op if it is already gone. */
 const logoutUser = async (sessionId: string): Promise<void> => {
 	if (sessionId) {
 		await Session.findByIdAndDelete(sessionId);
