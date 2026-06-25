@@ -62,7 +62,9 @@ userSchema.methods.comparePassword = function (
 	return compare(userPassword, this.password);
 };
 
-export const toPublicUser = (user: UserDocument): PublicUser => ({
+export const toPublicUser = (
+	user: Pick<UserDocument, "_id" | "name" | "email" | "role">,
+): PublicUser => ({
 	id: user._id.toString(),
 	name: user.name,
 	email: user.email,
