@@ -6,9 +6,12 @@
  * request (required for the cookie-based auth).
  */
 
-import axios from "axios";
+import axios, { type AxiosError } from "axios";
 import { API_BASE_URL } from "@/lib/constants";
 import normalizeError from "@/lib/normalizeError";
+import { CURRENT_USER_KEY } from "@/lib/queryKeys";
+import queryClient from "@/config/queryClient";
+import ROUTES from "@/routes/paths";
 
 if (!API_BASE_URL) {
 	throw new Error("VITE_API_URL is not defined in the environment variables");
@@ -23,12 +26,47 @@ const axiosClient = axios.create({
 });
 
 /**
+ * Server error codes meaning "this session can no longer act". When one of
+ * these arrives mid-session, drop the cached user and bounce to login.
+ */
+const EVICTION_CODES = new Set(["UNAUTHORIZED_ACCESS", "ACCOUNT_DEACTIVATED"]);
+
+/**
+ * Pages that render fine while logged out — a 401 here must NOT hard-redirect;
+ * the route guards own the logged-out case with a soft <Navigate>.
+ */
+const PUBLIC_PATHS = new Set<string>([
+	ROUTES.ROOT,
+	ROUTES.LOGIN,
+	ROUTES.REGISTER,
+	ROUTES.CATALOG,
+]);
+
+/**
  * Response interceptor — funnels every error through normalizeError so each
- * catch block receives the same predictable { code, message } shape.
+ * catch block receives the same predictable { code, message } shape, and on a
+ * session-eviction code (outside the /auth/me probe and public pages) clears
+ * the cached user and redirects to login so an expired/deactivated session
+ * cannot linger on a protected page.
  */
 axiosClient.interceptors.response.use(
 	(response) => response,
-	(error) => Promise.reject(normalizeError(error)),
+	(error: AxiosError) => {
+		const normalized = normalizeError(error);
+		const requestUrl = error.config?.url ?? "";
+		const isAuthProbe = requestUrl.endsWith("/auth/me");
+
+		if (
+			!isAuthProbe &&
+			EVICTION_CODES.has(normalized.code) &&
+			!PUBLIC_PATHS.has(window.location.pathname)
+		) {
+			queryClient.removeQueries({ queryKey: CURRENT_USER_KEY });
+			window.location.href = ROUTES.LOGIN;
+		}
+
+		return Promise.reject(normalized);
+	},
 );
 
 export default axiosClient;

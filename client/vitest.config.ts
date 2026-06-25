@@ -14,5 +14,8 @@ export default defineConfig({
 		globals: true,
 		setupFiles: ["./test/setup.ts"],
 		include: ["test/**/*.test.{ts,tsx}"],
+		// Hermetic API base URL so tests that import axiosClient don't depend on
+		// the gitignored .env.local (keeps CI green without secrets).
+		env: { VITE_API_URL: "http://localhost:8080/api" },
 	},
 });

@@ -1,13 +1,15 @@
 import { defineConfig } from "vitest/config";
 
-// Inject safe test env so importing `app` never needs a real DB or a `.env`
-// file. The app module loads `config/env` (zod-validated) at import time; these
-// values satisfy that schema without touching Atlas. The richer in-memory
-// replica-set harness (globalSetup/setup) arrives with the first models.
+/**
+ * Inject a safe test env so importing `app` never needs a real DB or a `.env`
+ * file — env vars are read at import time. The in-memory MongoDB harness
+ * (globalSetup/setup) provides the actual test database.
+ */
 export default defineConfig({
 	test: {
 		environment: "node",
 		globals: true,
+		fileParallelism: false,
 		env: {
 			NODE_ENV: "test",
 			PORT: "8080",
@@ -15,6 +17,8 @@ export default defineConfig({
 			COOKIE_SECRET: "test-cookie-secret-0123456789",
 			APP_ORIGIN: "http://localhost:5173",
 		},
-		include: ["tests/**/*.test.ts"],
+		include: ["test/**/*.test.ts"],
+		globalSetup: ["./test/helpers/globalSetup.ts"],
+		setupFiles: ["./test/helpers/setup.ts"],
 	},
 });

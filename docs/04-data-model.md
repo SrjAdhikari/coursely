@@ -28,7 +28,7 @@ would force array-digging inside a course doc on every playback. The curriculum 
 | `_id` | ObjectId | |
 | `name` | string | |
 | `email` | string | **unique**, lowercased |
-| `passwordHash` | string | bcrypt; plaintext never stored (FR-6) |
+| `password` | string | bcrypt-hashed in a pre-save hook; `select:false`; plaintext never stored (FR-6) |
 | `role` | enum `student\|admin` | default `student`; authorization source (FR-9) |
 | `isActive` | boolean | default `true`; `false` blocks login (FR-22) |
 | `createdAt` / `updatedAt` | Date | |

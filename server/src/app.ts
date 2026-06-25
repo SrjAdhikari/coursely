@@ -4,7 +4,6 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import rateLimit from "express-rate-limit";
 
 import envConfig from "./constants/env";
 import httpStatus from "./constants/httpStatus";
@@ -12,6 +11,9 @@ import appErrorCode from "./constants/appErrorCode";
 
 import AppError from "./errors/AppError";
 import globalErrorHandler from "./middlewares/error.middleware";
+import { globalLimiter } from "./middlewares/rateLimit.middleware";
+
+import routes from "./routes/index";
 
 const { APP_ORIGIN, COOKIE_SECRET } = envConfig;
 const { OK, NOT_FOUND } = httpStatus;
@@ -48,19 +50,7 @@ app.use(
 
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser(COOKIE_SECRET));
-
-// TODO: Replace this inline limiter with a dedicated tiered rate-limit
-// middleware (clientKey by user id → CF-IP → req.ip, AppError-routing 429
-// handler, per-route tiers exported as globalLimiter) once auth and the
-// Cloudflare context exist.
-app.use(
-	rateLimit({
-		windowMs: 15 * 60 * 1000,
-		limit: 300,
-		standardHeaders: true,
-		legacyHeaders: false,
-	}),
-);
+app.use(globalLimiter);
 
 /**
  * Health Check Endpoint
@@ -69,6 +59,12 @@ app.use(
 app.get("/health", (_req, res) => {
 	res.status(OK).json({ success: true, message: "Healthy 👍" });
 });
+
+/**
+ * API Routes
+ * - All routes are prefixed with /api
+ */
+app.use("/api", routes);
 
 /**
  * 404 + Global Error Handler
