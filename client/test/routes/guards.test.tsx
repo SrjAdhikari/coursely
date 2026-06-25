@@ -23,6 +23,7 @@ const renderGuard = (Guard: ComponentType) =>
 				</Route>
 				<Route path="/login" element={<div>login page</div>} />
 				<Route path="/dashboard" element={<div>dashboard</div>} />
+				<Route path="/admin" element={<div>admin area</div>} />
 			</Routes>
 		</MemoryRouter>,
 	);
@@ -65,10 +66,16 @@ describe("route guards", () => {
 			expect(screen.getByText("secret content")).toBeInTheDocument();
 		});
 
-		it("redirects to /dashboard when authenticated", () => {
+		it("redirects an authenticated student to /dashboard", () => {
 			mockUseCurrentUser.mockReturnValue(authed("student"));
 			renderGuard(GuestRoute);
 			expect(screen.getByText("dashboard")).toBeInTheDocument();
+		});
+
+		it("redirects an authenticated admin to /admin", () => {
+			mockUseCurrentUser.mockReturnValue(authed("admin"));
+			renderGuard(GuestRoute);
+			expect(screen.getByText("admin area")).toBeInTheDocument();
 		});
 	});
 
