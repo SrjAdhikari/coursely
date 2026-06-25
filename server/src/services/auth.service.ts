@@ -1,5 +1,7 @@
 //* src/services/auth.service.ts
 
+import mongoose from "mongoose";
+
 import User from "../models/user.model";
 import Session from "../models/session.model";
 
@@ -13,7 +15,8 @@ const { USER_ALREADY_EXISTS, INVALID_CREDENTIALS, ACCOUNT_DEACTIVATED } =
 	appErrorCode;
 
 /**
- * Create a student account + a fresh session.
+ * Create a student account + a fresh session atomically (one transaction —
+ * either both commit or neither, so a failure can't orphan an account).
  * Returns the new session id (the value carried in the auth cookie).
  */
 const registerUser = async (
@@ -30,11 +33,22 @@ const registerUser = async (
 		);
 	}
 
-	// The User model's pre-save hook hashes the raw password.
-	const user = await User.create({ name, email, password });
-	const session = await Session.create({ userId: user._id });
+	const dbSession = await mongoose.startSession();
+	try {
+		let sessionId = "";
+		await dbSession.withTransaction(async () => {
+			const user = new User({ name, email, password });
+			await user.save({ session: dbSession });
 
-	return session._id.toString();
+			const authSession = new Session({ userId: user._id });
+			await authSession.save({ session: dbSession });
+
+			sessionId = authSession._id.toString();
+		});
+		return sessionId;
+	} finally {
+		await dbSession.endSession();
+	}
 };
 
 /**

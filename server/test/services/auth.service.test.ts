@@ -1,6 +1,6 @@
 //* test/services/auth.service.test.ts
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import {
 	registerUser,
@@ -37,6 +37,19 @@ describe("auth.service", () => {
 				statusCode: 409,
 				errorCode: "USER_ALREADY_EXISTS",
 			});
+		});
+
+		it("rolls back the created user if session creation fails (atomic)", async () => {
+			const spy = vi
+				.spyOn(Session.prototype, "save")
+				.mockRejectedValueOnce(new Error("session save failed"));
+
+			await expect(
+				registerUser("Rollback", "rollback@example.com", "Password123"),
+			).rejects.toThrow();
+			expect(await User.findOne({ email: "rollback@example.com" })).toBeNull();
+
+			spy.mockRestore();
 		});
 	});
 

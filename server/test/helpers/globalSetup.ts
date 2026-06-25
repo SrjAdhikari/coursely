@@ -1,14 +1,15 @@
 //* test/helpers/globalSetup.ts
 
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 import type { Vitest } from "vitest/node";
 
-let mongo!: MongoMemoryServer;
+let mongo!: MongoMemoryReplSet;
 
-// Starts one in-memory MongoDB for the whole test run and hands its URI to the
-// per-file setup via Vitest's provide/inject channel.
+// A single-node in-memory replica set (not a standalone server) so multi-document
+// transactions work in tests — e.g. atomic user + session creation on register.
+// Its URI is handed to the per-file setup via Vitest's provide/inject channel.
 export default async function setup({ provide }: Vitest) {
-	mongo = await MongoMemoryServer.create();
+	mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
 	provide("mongoUri", mongo.getUri());
 
 	return async () => {
