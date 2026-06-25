@@ -1,32 +1,54 @@
 //* src/middlewares/error.middleware.ts
 
 import type { ErrorRequestHandler } from "express";
+import mongoose from "mongoose";
+
 import AppError from "../errors/AppError";
+
 import httpStatus from "../constants/httpStatus";
 import appErrorCode from "../constants/appErrorCode";
 import envConfig from "../constants/env";
 
 const { NODE_ENV } = envConfig;
-const { INTERNAL_SERVER_ERROR } = httpStatus;
-const { INTERNAL_ERROR } = appErrorCode;
+const { BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR } = httpStatus;
+const { INTERNAL_ERROR, VALIDATION_ERROR, USER_ALREADY_EXISTS } = appErrorCode;
 
 /**
  * Global error handling middleware for Express 5. MUST keep all four params so
  * Express recognizes it as an error handler, and MUST be registered last.
  *
- * Mongoose/MongoDB error mapping (CastError, ValidationError, duplicate-key)
- * arrives with the first models in a later phase.
+ * Maps known error shapes onto the API envelope: AppError (operational),
+ * Mongoose ValidationError → 400, and MongoDB duplicate-key (11000) → 409.
  */
 const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-	const isAppError = err instanceof AppError;
+	let statusCode: number = INTERNAL_SERVER_ERROR;
+	let errorCode: string = INTERNAL_ERROR;
+	let message = "Something went wrong";
 
-	const statusCode = isAppError ? err.statusCode : INTERNAL_SERVER_ERROR;
+	if (err instanceof AppError) {
+		statusCode = err.statusCode;
+		errorCode = err.errorCode;
+		message = err.message;
+	} else if (err instanceof mongoose.Error.ValidationError) {
+		statusCode = BAD_REQUEST;
+		errorCode = VALIDATION_ERROR;
+		message = Object.values(err.errors)
+			.map((e) => e.message)
+			.join("; ");
+	} else if (
+		err instanceof mongoose.mongo.MongoServerError &&
+		err.code === 11000
+	) {
+		statusCode = CONFLICT;
+		errorCode = USER_ALREADY_EXISTS;
+		message = "A record with that value already exists";
+	}
 
-	const errorCode = isAppError ? err.errorCode : INTERNAL_ERROR;
-	const message = isAppError ? err.message : "Something went wrong";
 	const status = statusCode >= 500 ? "error" : "fail";
 
-	if (!isAppError) console.error("[GLOBAL ERROR HANDLER]", err);
+	// Log only genuinely unexpected (unhandled, 5xx) errors.
+	const isHandled = err instanceof AppError || statusCode < 500;
+	if (!isHandled) console.error("[GLOBAL ERROR HANDLER]", err);
 
 	const response: {
 		status: string;
