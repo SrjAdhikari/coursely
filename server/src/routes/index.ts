@@ -7,6 +7,7 @@
 
 import { Router } from "express";
 import authRouter from "./auth.routes";
+import courseRouter from "./course.routes";
 
 const router = Router();
 
@@ -15,5 +16,11 @@ const router = Router();
  * @route /api/auth
  */
 router.use("/auth", authRouter);
+
+/**
+ * Public catalog routes
+ * @route /api/courses
+ */
+router.use("/courses", courseRouter);
 
 export default router;
