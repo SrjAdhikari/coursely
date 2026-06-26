@@ -1,7 +1,7 @@
 //* src/routes/course.routes.ts
 
 /**
- * Public Catalog Routes
+ * Course Routes — public catalog and admin course management.
  * @module routes/course
  */
 
@@ -10,8 +10,19 @@ import { Router } from "express";
 import {
 	listCoursesHandler,
 	getCourseBySlugHandler,
+	createCourseHandler,
+	updateCourseHandler,
+	deleteCourseHandler,
 } from "../controllers/course.controller";
 
+import validateBody from "../middlewares/validate.middleware";
+
+import {
+	createCourseSchema,
+	updateCourseSchema,
+} from "../validators/course.validator";
+
+/** Public catalog router — mounted at /api/courses */
 const courseRouter = Router();
 
 /**
@@ -26,4 +37,34 @@ courseRouter.get("/", listCoursesHandler);
  */
 courseRouter.get("/:slug", getCourseBySlugHandler);
 
+/** Admin course router — mounted inside adminRouter at /api/admin */
+const adminCourseRouter = Router();
+
+/**
+ * Create a new course
+ * @route POST /api/admin/courses
+ */
+adminCourseRouter.post(
+	"/courses",
+	validateBody(createCourseSchema),
+	createCourseHandler,
+);
+
+/**
+ * Update an existing course
+ * @route PATCH /api/admin/courses/:id
+ */
+adminCourseRouter.patch(
+	"/courses/:id",
+	validateBody(updateCourseSchema),
+	updateCourseHandler,
+);
+
+/**
+ * Delete a course
+ * @route DELETE /api/admin/courses/:id
+ */
+adminCourseRouter.delete("/courses/:id", deleteCourseHandler);
+
 export default courseRouter;
+export { adminCourseRouter };
