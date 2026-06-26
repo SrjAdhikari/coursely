@@ -21,6 +21,7 @@ const sectionSchema = new Schema<SectionDocument>(
 			type: String,
 			required: true,
 			trim: true,
+			maxlength: 200,
 		},
 		order: {
 			type: Number,
