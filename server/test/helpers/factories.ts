@@ -1,6 +1,10 @@
 //* test/helpers/factories.ts
 
 import User, { type UserRole } from "../../src/models/user.model";
+import Course from "../../src/models/course.model";
+import Section from "../../src/models/section.model";
+import Lesson from "../../src/models/lesson.model";
+import type { Types } from "mongoose";
 
 interface UserOverrides {
 	name?: string;
@@ -11,6 +15,7 @@ interface UserOverrides {
 }
 
 let counter = 0;
+let courseCounter = 0;
 
 /**
  * Insert a user with a real (model-hashed) password so login flows work in
@@ -27,4 +32,36 @@ const createTestUser = async (overrides: UserOverrides = {}) => {
 	});
 };
 
-export { createTestUser };
+const createTestCourse = (overrides: Record<string, unknown> = {}) => {
+	courseCounter += 1;
+	return Course.create({
+		title: `Test Course ${courseCounter}`,
+		slug: `test-course-${courseCounter}`,
+		description: "A test course",
+		instructorName: "Test Instructor",
+		thumbnailUrl: "https://example.com/thumb.jpg",
+		price: 49900,
+		isPublished: true,
+		...overrides,
+	});
+};
+
+const createTestSection = (
+	courseId: Types.ObjectId,
+	overrides: Record<string, unknown> = {},
+) => Section.create({ courseId, title: "Test Section", order: 0, ...overrides });
+
+const createTestLesson = (
+	sectionId: Types.ObjectId,
+	courseId: Types.ObjectId,
+	overrides: Record<string, unknown> = {},
+) =>
+	Lesson.create({
+		sectionId,
+		courseId,
+		title: "Test Lesson",
+		order: 0,
+		...overrides,
+	});
+
+export { createTestUser, createTestCourse, createTestSection, createTestLesson };
