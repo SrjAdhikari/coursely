@@ -11,7 +11,7 @@ import envConfig from "../constants/env";
 
 const { NODE_ENV } = envConfig;
 const { BAD_REQUEST, NOT_FOUND, CONFLICT, INTERNAL_SERVER_ERROR } = httpStatus;
-const { INTERNAL_ERROR, VALIDATION_ERROR, USER_ALREADY_EXISTS, RESOURCE_NOT_FOUND } =
+const { INTERNAL_ERROR, VALIDATION_ERROR, DUPLICATE_KEY, RESOURCE_NOT_FOUND } =
 	appErrorCode;
 
 /** The envelope fields every resolver produces and the handler renders. */
@@ -46,13 +46,23 @@ const fromValidationError: ErrorResolver = (err) => {
 	};
 };
 
-/** A malformed id (bad ObjectId) → 404 instead of a generic 500. */
+/**
+ * A malformed ObjectId (a bad route `:id`) → 404 not-found. Any other cast
+ * failure is bad client input, so → 400 instead of masquerading as not-found.
+ */
 const fromCastError: ErrorResolver = (err) => {
 	if (!(err instanceof mongoose.Error.CastError)) return null;
+	if (err.kind === "ObjectId") {
+		return {
+			statusCode: NOT_FOUND,
+			errorCode: RESOURCE_NOT_FOUND,
+			message: "The requested resource was not found",
+		};
+	}
 	return {
-		statusCode: NOT_FOUND,
-		errorCode: RESOURCE_NOT_FOUND,
-		message: "The requested resource was not found",
+		statusCode: BAD_REQUEST,
+		errorCode: VALIDATION_ERROR,
+		message: `Invalid value for ${err.path}`,
 	};
 };
 
@@ -63,7 +73,7 @@ const fromDuplicateKey: ErrorResolver = (err) => {
 	}
 	return {
 		statusCode: CONFLICT,
-		errorCode: USER_ALREADY_EXISTS,
+		errorCode: DUPLICATE_KEY,
 		message: "A record with that value already exists",
 	};
 };
@@ -98,7 +108,7 @@ const resolveError = (err: unknown): ErrorResolution => {
 
 /**
  * Global error handling middleware for Express 5.
- * Maps known error shapes onto the API envelope via `errorResolvers`; 
+ * Maps known error shapes onto the API envelope via `errorResolvers`;
  * anything unmatched becomes a logged 500.
  */
 const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

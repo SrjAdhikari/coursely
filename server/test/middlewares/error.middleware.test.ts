@@ -59,6 +59,14 @@ describe("global error handler", () => {
 		expect(res.body.error.code).toBe("RESOURCE_NOT_FOUND");
 	});
 
+	it("maps a non-id CastError to 400 VALIDATION_ERROR", async () => {
+		const res = await request(
+			appThatThrows(new mongoose.Error.CastError("Number", "abc", "duration")),
+		).get("/boom");
+		expect(res.status).toBe(400);
+		expect(res.body.error.code).toBe("VALIDATION_ERROR");
+	});
+
 	it("maps a duplicate-key (11000) error to 409", async () => {
 		const duplicate = new mongoose.mongo.MongoServerError({
 			message: "E11000 duplicate key error",
@@ -66,7 +74,7 @@ describe("global error handler", () => {
 		duplicate.code = 11000;
 		const res = await request(appThatThrows(duplicate)).get("/boom");
 		expect(res.status).toBe(409);
-		expect(res.body.error.code).toBe("USER_ALREADY_EXISTS");
+		expect(res.body.error.code).toBe("DUPLICATE_KEY");
 	});
 
 	it("falls back to 500 INTERNAL_ERROR for an unrecognized error", async () => {
