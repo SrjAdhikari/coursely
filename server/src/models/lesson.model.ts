@@ -5,7 +5,10 @@ import { Schema, model, type Types } from "mongoose";
 export interface LessonDocument {
 	_id: Types.ObjectId;
 	sectionId: Types.ObjectId;
-	courseId: Types.ObjectId; // denormalized — avoids lesson→section→course lookups
+	// Denormalized from the parent section to avoid lesson→section→course
+	// lookups. Set once by the service (createLesson) from section.courseId;
+	// never client-supplied and not updatable, so it cannot drift from sectionId.
+	courseId: Types.ObjectId;
 	title: string;
 	order: number;
 	isPreview: boolean;
@@ -36,6 +39,7 @@ const lessonSchema = new Schema<LessonDocument>(
 		order: {
 			type: Number,
 			default: 0,
+			min: 0,
 		},
 		isPreview: {
 			type: Boolean,

@@ -19,4 +19,15 @@ describe("Lesson model", () => {
 	it("requires sectionId and courseId", async () => {
 		await expect(Lesson.create({ title: "Orphan" })).rejects.toThrow();
 	});
+
+	it("rejects a negative order", async () => {
+		await expect(
+			Lesson.create({
+				sectionId: new Types.ObjectId(),
+				courseId: new Types.ObjectId(),
+				title: "Lesson 1",
+				order: -1,
+			}),
+		).rejects.toThrow();
+	});
 });

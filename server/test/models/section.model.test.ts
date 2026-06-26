@@ -15,4 +15,14 @@ describe("Section model", () => {
 	it("rejects a missing courseId", async () => {
 		await expect(Section.create({ title: "Orphan" })).rejects.toThrow();
 	});
+
+	it("rejects a negative order", async () => {
+		await expect(
+			Section.create({
+				courseId: new Types.ObjectId(),
+				title: "Intro",
+				order: -1,
+			}),
+		).rejects.toThrow();
+	});
 });
