@@ -48,4 +48,18 @@ describe("student.service", () => {
 			updateStudent(new mongoose.Types.ObjectId().toString(), { isActive: false }),
 		).rejects.toMatchObject({ statusCode: 404, errorCode: "STUDENT_NOT_FOUND" });
 	});
+
+	it("404s getting a non-student (admin) by id", async () => {
+		const admin = await createTestUser({ email: "a@example.com", role: "admin" });
+		await expect(
+			getStudentById(admin._id.toString()),
+		).rejects.toMatchObject({ statusCode: 404, errorCode: "STUDENT_NOT_FOUND" });
+	});
+
+	it("404s updating a non-student (admin) by id", async () => {
+		const admin = await createTestUser({ email: "a2@example.com", role: "admin" });
+		await expect(
+			updateStudent(admin._id.toString(), { isActive: false }),
+		).rejects.toMatchObject({ statusCode: 404, errorCode: "STUDENT_NOT_FOUND" });
+	});
 });

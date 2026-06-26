@@ -20,13 +20,14 @@ const listStudents = () =>
 	User.find({ role: "student" }, STUDENT_FIELDS).sort({ createdAt: -1 }).lean();
 
 /**
- * Get a student by its ID.
- *
- * @param id - The student's ObjectId as a string.
- * @returns The student document, with only the admin-table fields.
+ * Get a student by its ID. Scoped to students so the endpoint never resolves admins.
+ * @throws {AppError} 404 STUDENT_NOT_FOUND if no student matches the id.
  */
 const getStudentById = async (id: string) => {
-	const student = await User.findById(id, STUDENT_FIELDS).lean();
+	const student = await User.findOne(
+		{ _id: id, role: "student" },
+		STUDENT_FIELDS,
+	).lean();
 	if (!student) {
 		throw new AppError("Student not found", NOT_FOUND, STUDENT_NOT_FOUND);
 	}
@@ -35,17 +36,15 @@ const getStudentById = async (id: string) => {
 };
 
 /**
- * Update a student by its ID.
- *
- * @param id - The student's ObjectId as a string.
- * @param input - The update data.
- * @returns The updated student document, with only the admin-table fields.
+ * Update a student by its ID. Scoped to students so admins can't be modified here.
+ * @throws {AppError} 404 STUDENT_NOT_FOUND if no student matches the id.
  */
 const updateStudent = async (id: string, input: UpdateStudentInput) => {
-	const student = await User.findByIdAndUpdate(id, input, {
-		returnDocument: "after",
-		runValidators: true,
-	})
+	const student = await User.findOneAndUpdate(
+		{ _id: id, role: "student" },
+		input,
+		{ returnDocument: "after", runValidators: true },
+	)
 		.select(STUDENT_FIELDS)
 		.lean();
 
