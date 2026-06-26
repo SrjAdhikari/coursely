@@ -1,11 +1,15 @@
 //* test/services/course.service.test.ts
 
 import { describe, it, expect, beforeAll } from "vitest";
+import mongoose from "mongoose";
 
 import Course from "../../src/models/course.model";
 import {
 	listPublishedCourses,
 	getCourseBySlug,
+	createCourse,
+	updateCourse,
+	deleteCourse,
 } from "../../src/services/course.service";
 import {
 	createTestCourse,
@@ -100,5 +104,70 @@ describe("course.service — public reads", () => {
 				errorCode: "COURSE_NOT_FOUND",
 			});
 		});
+	});
+});
+
+const NEW_COURSE = {
+	title: "Intro to TypeScript",
+	description: "Types everywhere",
+	instructorName: "Asha Rai",
+	thumbnailUrl: "https://example.com/ts.jpg",
+	price: 49900,
+	currency: "INR" as const,
+	isPublished: false,
+};
+
+describe("course.service — admin course CRUD", () => {
+	it("creates a course with a generated unique slug", async () => {
+		const a = await createCourse(NEW_COURSE);
+		const b = await createCourse(NEW_COURSE); // same title → collision
+		expect(a.slug).toBe("intro-to-typescript");
+		expect(b.slug).toBe("intro-to-typescript-2");
+	});
+
+	it("updates a course but never mutates its slug", async () => {
+		const course = await createTestCourse({ slug: "stable" });
+		const updated = await updateCourse(course._id.toString(), {
+			title: "Renamed",
+		});
+		expect(updated.title).toBe("Renamed");
+		expect(updated.slug).toBe("stable");
+	});
+
+	it("404s updating a missing course", async () => {
+		await expect(
+			updateCourse(new mongoose.Types.ObjectId().toString(), { title: "X" }),
+		).rejects.toMatchObject({ statusCode: 404, errorCode: "COURSE_NOT_FOUND" });
+	});
+
+	it("hard-deletes a course with no enrollments, cascading sections + lessons", async () => {
+		const course = await createTestCourse();
+		const section = await createTestSection(course._id);
+		await createTestLesson(section._id, course._id);
+
+		await deleteCourse(course._id.toString());
+
+		expect(await Course.findById(course._id)).toBeNull();
+		const sectionCount = await mongoose.connection
+			.collection("sections")
+			.countDocuments({ courseId: course._id });
+		const lessonCount = await mongoose.connection
+			.collection("lessons")
+			.countDocuments({ courseId: course._id });
+		expect(sectionCount).toBe(0);
+		expect(lessonCount).toBe(0);
+	});
+
+	it("409s deleting a course that has enrollments (unpublish instead)", async () => {
+		const course = await createTestCourse();
+		await mongoose.connection
+			.collection("enrollments")
+			.insertOne({ courseId: course._id, userId: new mongoose.Types.ObjectId() });
+
+		await expect(deleteCourse(course._id.toString())).rejects.toMatchObject({
+			statusCode: 409,
+			errorCode: "COURSE_HAS_ENROLLMENTS",
+		});
+		expect(await Course.findById(course._id)).not.toBeNull();
 	});
 });

@@ -1,5 +1,7 @@
 //* src/services/course.service.ts
 
+import mongoose from "mongoose";
+
 import Course, { type CourseDocument } from "../models/course.model";
 import Section, { type SectionDocument } from "../models/section.model";
 import Lesson, { type LessonDocument } from "../models/lesson.model";
@@ -8,9 +10,14 @@ import AppError from "../errors/AppError";
 
 import httpStatus from "../constants/httpStatus";
 import appErrorCode from "../constants/appErrorCode";
+import { slugify } from "../utils/slug";
+import type {
+	CreateCourseInput,
+	UpdateCourseInput,
+} from "../validators/course.validator";
 
-const { NOT_FOUND } = httpStatus;
-const { COURSE_NOT_FOUND } = appErrorCode;
+const { NOT_FOUND, CONFLICT } = httpStatus;
+const { COURSE_NOT_FOUND, COURSE_HAS_ENROLLMENTS } = appErrorCode;
 
 // Public list cards never expose trailerKey/videoKey.
 const LIST_FIELDS = {
@@ -31,7 +38,12 @@ export interface CourseDetail extends Omit<CourseDocument, "trailerKey"> {
 	})[];
 }
 
-/** Published courses, newest first; with `q`, full-text search ranked by relevance. */
+/**
+ * List all published courses, optionally filtered by a search query.
+ * 
+ * @param q - Optional search query.
+ * @returns An array of published courses matching the query.
+ */
 const listPublishedCourses = async (q?: string) => {
 	if (q) {
 		return Course.find(
@@ -47,7 +59,10 @@ const listPublishedCourses = async (q?: string) => {
 		.lean();
 };
 
-/** A published course + its ordered sections/lessons; never returns video keys. */
+/**
+ * Get a published course by slug, with its sections and lessons (no videoKey).
+ * @throws {AppError} 404 COURSE_NOT_FOUND if the course does not exist.
+ */
 const getCourseBySlug = async (slug: string): Promise<CourseDetail> => {
 	const course = await Course.findOne(
 		{ slug, isPublished: true },
@@ -85,4 +100,94 @@ const getCourseBySlug = async (slug: string): Promise<CourseDetail> => {
 	} as CourseDetail;
 };
 
-export { listPublishedCourses, getCourseBySlug };
+/**
+ * Generates a unique slug from a title, appending -2, -3, … until it is unique.
+ *
+ * @param title - The title to generate a slug from.
+ * @returns A unique slug.
+ */
+const generateUniqueSlug = async (title: string): Promise<string> => {
+	const base = slugify(title);
+	let slug = base;
+	let suffix = 2;
+	while (await Course.exists({ slug })) {
+		slug = `${base}-${suffix}`;
+		suffix += 1;
+	}
+	return slug;
+};
+
+/**
+ * Create a course with a unique slug generated from the title.
+ * @returns The created course document.
+ */
+const createCourse = async (input: CreateCourseInput) => {
+	const slug = await generateUniqueSlug(input.title);
+	return Course.create({ ...input, slug });
+};
+
+/**
+ * Update a course by id. Never writes `slug` (the update input has no slug field).
+ * @throws {AppError} 404 COURSE_NOT_FOUND if the course does not exist.
+ */
+const updateCourse = async (id: string, input: UpdateCourseInput) => {
+	const course = await Course.findByIdAndUpdate(id, input, {
+		returnDocument: "after",
+		runValidators: true,
+	});
+	if (!course) {
+		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
+	}
+	return course;
+};
+
+/**
+ * Hard-delete a course and cascade its sections + lessons. Blocked (409) while
+ * any enrollment references the course (unpublish instead) so the payment audit
+ * trail is never destroyed.
+ *
+ * @throws {AppError} 404 COURSE_NOT_FOUND if the course does not exist.
+ * @throws {AppError} 409 COURSE_HAS_ENROLLMENTS if any enrollment references it.
+ */
+const deleteCourse = async (id: string): Promise<void> => {
+	const course = await Course.findById(id);
+	if (!course) {
+		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
+	}
+
+	// Enrollment model lands in Phase 4/5 — query the raw collection so the
+	// payment audit trail can never be destroyed by a delete (04 §6).
+	const enrollments = await mongoose.connection
+		.collection("enrollments")
+		.countDocuments({ courseId: course._id });
+	if (enrollments > 0) {
+		throw new AppError(
+			"Cannot delete a course with enrollments; unpublish it instead",
+			CONFLICT,
+			COURSE_HAS_ENROLLMENTS,
+		);
+	}
+
+	// Cascade atomically — no FK in Mongo, so delete the children then the parent
+	// inside one transaction; a mid-cascade failure rolls back and can never
+	// orphan sections/lessons. (R2 objects + orphan progress are cleaned up in
+	// Phase 4+ once those exist.)
+	const session = await mongoose.startSession();
+	try {
+		await session.withTransaction(async () => {
+			await Lesson.deleteMany({ courseId: course._id }, { session });
+			await Section.deleteMany({ courseId: course._id }, { session });
+			await Course.deleteOne({ _id: course._id }, { session });
+		});
+	} finally {
+		await session.endSession();
+	}
+};
+
+export {
+	listPublishedCourses,
+	getCourseBySlug,
+	createCourse,
+	updateCourse,
+	deleteCourse,
+};
