@@ -1,0 +1,188 @@
+//* test/services/course.service.test.ts
+
+import { describe, it, expect, beforeAll } from "vitest";
+import mongoose from "mongoose";
+
+import Course from "../../src/models/course.model";
+import {
+	listPublishedCourses,
+	getCourseBySlug,
+	createCourse,
+	updateCourse,
+	deleteCourse,
+} from "../../src/services/course.service";
+import {
+	createTestCourse,
+	createTestSection,
+	createTestLesson,
+} from "../helpers/factories";
+
+beforeAll(async () => {
+	await Course.init(); // ensure the $text index exists before the ?q= search
+});
+
+describe("course.service — public reads", () => {
+	describe("listPublishedCourses", () => {
+		it("returns only published courses and never the trailerKey", async () => {
+			await createTestCourse({
+				title: "Published",
+				slug: "published",
+				trailerKey: "courses/published/trailer.mp4",
+			});
+			await createTestCourse({
+				title: "Draft",
+				slug: "draft",
+				isPublished: false,
+				trailerKey: "courses/x/trailer.mp4",
+			});
+
+			const courses = await listPublishedCourses();
+			expect(courses).toHaveLength(1);
+			expect(courses[0]!.title).toBe("Published");
+			expect(
+				(courses[0] as unknown as Record<string, unknown>).trailerKey,
+			).toBeUndefined();
+		});
+
+		it("filters by ?q= text search", async () => {
+			await createTestCourse({ title: "Mastering React", slug: "react" });
+			await createTestCourse({ title: "Vue for Beginners", slug: "vue" });
+
+			const hits = await listPublishedCourses("react");
+			expect(hits).toHaveLength(1);
+			expect(hits[0]!.title).toBe("Mastering React");
+		});
+
+		it("treats a whitespace-only q as no search", async () => {
+			await createTestCourse({ title: "Alpha", slug: "alpha" });
+			await createTestCourse({ title: "Beta", slug: "beta" });
+
+			const courses = await listPublishedCourses("   ");
+			expect(courses).toHaveLength(2);
+		});
+	});
+
+	describe("getCourseBySlug", () => {
+		it("returns the course with ordered curriculum and isPreview, never video keys", async () => {
+			const course = await createTestCourse({
+				slug: "node-course",
+				trailerKey: "courses/node-course/trailer.mp4",
+			});
+
+			// Insert sections out of order (order:1 first) so the test fails if
+			// the service stops sorting by `order`.
+			await createTestSection(course._id, {
+				order: 1,
+				title: "Second Section",
+			});
+			const firstSection = await createTestSection(course._id, {
+				order: 0,
+				title: "First Section",
+			});
+
+			// Likewise insert the first section's lessons out of order.
+			await createTestLesson(firstSection._id, course._id, {
+				title: "Second lesson",
+				order: 1,
+			});
+			await createTestLesson(firstSection._id, course._id, {
+				title: "Preview lesson",
+				order: 0,
+				isPreview: true,
+				videoKey: "lessons/a/source.mp4",
+			});
+
+			const detail = await getCourseBySlug("node-course");
+			expect(detail.slug).toBe("node-course");
+			expect((detail as unknown as Record<string, unknown>).trailerKey).toBeUndefined();
+
+			// Sections come back ascending by `order`.
+			expect(detail.sections).toHaveLength(2);
+			expect(detail.sections[0]!.order).toBe(0);
+			expect(detail.sections[1]!.order).toBe(1);
+
+			// The first section's lessons come back ascending by `order`.
+			const lessons = detail.sections[0]!.lessons;
+			expect(lessons).toHaveLength(2);
+			expect(lessons[0]!.order).toBe(0);
+			expect(lessons[1]!.order).toBe(1);
+
+			const lesson = lessons[0]!;
+			expect(lesson.isPreview).toBe(true);
+			expect((lesson as unknown as Record<string, unknown>).videoKey).toBeUndefined();
+		});
+
+		it("404s for an unknown or unpublished slug", async () => {
+			await createTestCourse({ slug: "hidden", isPublished: false });
+			await expect(getCourseBySlug("hidden")).rejects.toMatchObject({
+				statusCode: 404,
+				errorCode: "COURSE_NOT_FOUND",
+			});
+		});
+	});
+});
+
+const NEW_COURSE = {
+	title: "Intro to TypeScript",
+	description: "Types everywhere",
+	instructorName: "Asha Rai",
+	thumbnailUrl: "https://example.com/ts.jpg",
+	price: 49900,
+	currency: "INR" as const,
+	isPublished: false,
+};
+
+describe("course.service — admin course CRUD", () => {
+	it("creates a course with a generated unique slug", async () => {
+		const a = await createCourse(NEW_COURSE);
+		const b = await createCourse(NEW_COURSE); // same title → collision
+		expect(a.slug).toBe("intro-to-typescript");
+		expect(b.slug).toBe("intro-to-typescript-2");
+	});
+
+	it("updates a course but never mutates its slug", async () => {
+		const course = await createTestCourse({ slug: "stable" });
+		const updated = await updateCourse(course._id.toString(), {
+			title: "Renamed",
+		});
+		expect(updated.title).toBe("Renamed");
+		expect(updated.slug).toBe("stable");
+	});
+
+	it("404s updating a missing course", async () => {
+		await expect(
+			updateCourse(new mongoose.Types.ObjectId().toString(), { title: "X" }),
+		).rejects.toMatchObject({ statusCode: 404, errorCode: "COURSE_NOT_FOUND" });
+	});
+
+	it("hard-deletes a course with no enrollments, cascading sections + lessons", async () => {
+		const course = await createTestCourse();
+		const section = await createTestSection(course._id);
+		await createTestLesson(section._id, course._id);
+
+		await deleteCourse(course._id.toString());
+
+		expect(await Course.findById(course._id)).toBeNull();
+		const sectionCount = await mongoose.connection
+			.collection("sections")
+			.countDocuments({ courseId: course._id });
+		const lessonCount = await mongoose.connection
+			.collection("lessons")
+			.countDocuments({ courseId: course._id });
+		expect(sectionCount).toBe(0);
+		expect(lessonCount).toBe(0);
+	});
+
+	it("409s deleting a course that has enrollments (unpublish instead)", async () => {
+		const course = await createTestCourse();
+		await mongoose.connection
+			.collection("enrollments")
+			.insertOne({ courseId: course._id, userId: new mongoose.Types.ObjectId() });
+
+		await expect(deleteCourse(course._id.toString())).rejects.toMatchObject({
+			statusCode: 409,
+			errorCode: "COURSE_HAS_ENROLLMENTS",
+		});
+		expect(await Course.findById(course._id)).not.toBeNull();
+	});
+});
