@@ -24,7 +24,11 @@ beforeAll(async () => {
 describe("course.service — public reads", () => {
 	describe("listPublishedCourses", () => {
 		it("returns only published courses and never the trailerKey", async () => {
-			await createTestCourse({ title: "Published", slug: "published" });
+			await createTestCourse({
+				title: "Published",
+				slug: "published",
+				trailerKey: "courses/published/trailer.mp4",
+			});
 			await createTestCourse({
 				title: "Draft",
 				slug: "draft",
@@ -48,11 +52,22 @@ describe("course.service — public reads", () => {
 			expect(hits).toHaveLength(1);
 			expect(hits[0]!.title).toBe("Mastering React");
 		});
+
+		it("treats a whitespace-only q as no search", async () => {
+			await createTestCourse({ title: "Alpha", slug: "alpha" });
+			await createTestCourse({ title: "Beta", slug: "beta" });
+
+			const courses = await listPublishedCourses("   ");
+			expect(courses).toHaveLength(2);
+		});
 	});
 
 	describe("getCourseBySlug", () => {
 		it("returns the course with ordered curriculum and isPreview, never video keys", async () => {
-			const course = await createTestCourse({ slug: "node-course" });
+			const course = await createTestCourse({
+				slug: "node-course",
+				trailerKey: "courses/node-course/trailer.mp4",
+			});
 
 			// Insert sections out of order (order:1 first) so the test fails if
 			// the service stops sorting by `order`.

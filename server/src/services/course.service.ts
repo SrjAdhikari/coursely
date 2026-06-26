@@ -19,7 +19,7 @@ import type {
 const { NOT_FOUND, CONFLICT } = httpStatus;
 const { COURSE_NOT_FOUND, COURSE_HAS_ENROLLMENTS } = appErrorCode;
 
-// Public list cards never expose trailerKey/videoKey.
+/** Public list cards never expose trailerKey/videoKey. */
 const LIST_FIELDS = {
 	title: 1,
 	slug: 1,
@@ -40,14 +40,16 @@ export interface CourseDetail extends Omit<CourseDocument, "trailerKey"> {
 
 /**
  * List all published courses, optionally filtered by a search query.
- * 
+ *
  * @param q - Optional search query.
  * @returns An array of published courses matching the query.
  */
 const listPublishedCourses = async (q?: string) => {
-	if (q) {
+	// Whitespace-only query = no search: an empty $text match returns nothing, so trim first.
+	const search = q?.trim();
+	if (search) {
 		return Course.find(
-			{ isPublished: true, $text: { $search: q } },
+			{ isPublished: true, $text: { $search: search } },
 			LIST_FIELDS,
 		)
 			.sort({ score: { $meta: "textScore" } })
@@ -155,8 +157,8 @@ const deleteCourse = async (id: string): Promise<void> => {
 		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
 	}
 
-	// Enrollment model lands in Phase 4/5 — query the raw collection so the
-	// payment audit trail can never be destroyed by a delete (04 §6).
+	// Raw-collection count (Enrollment model lands Phase 4/5). Not race-proof — the
+	// Phase-5 enrollment writer must coordinate; unreachable today (no writer yet).
 	const enrollments = await mongoose.connection
 		.collection("enrollments")
 		.countDocuments({ courseId: course._id });
@@ -168,10 +170,8 @@ const deleteCourse = async (id: string): Promise<void> => {
 		);
 	}
 
-	// Cascade atomically — no FK in Mongo, so delete the children then the parent
-	// inside one transaction; a mid-cascade failure rolls back and can never
-	// orphan sections/lessons. (R2 objects + orphan progress are cleaned up in
-	// Phase 4+ once those exist.)
+	// Cascade in one transaction — children then parent, so a mid-cascade failure
+	// can't orphan rows. (R2 objects + progress cleaned up in Phase 4+.)
 	const session = await mongoose.startSession();
 	try {
 		await session.withTransaction(async () => {
