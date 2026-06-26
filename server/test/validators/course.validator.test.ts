@@ -11,7 +11,7 @@ import {
 import { updateStudentSchema } from "../../src/validators/student.validator";
 
 describe("course validators", () => {
-	it("accepts a valid course and defaults currency + isPublished", () => {
+	it("accepts a valid course (currency/isPublished default at the model layer)", () => {
 		const parsed = createCourseSchema.parse({
 			title: "Intro",
 			description: "desc",
@@ -19,8 +19,9 @@ describe("course validators", () => {
 			thumbnailUrl: "https://example.com/a.jpg",
 			price: 49900,
 		});
-		expect(parsed.currency).toBe("INR");
-		expect(parsed.isPublished).toBe(false);
+		// Defaults live on the model, not the schema, so they're absent here.
+		expect(parsed.currency).toBeUndefined();
+		expect(parsed.isPublished).toBeUndefined();
 	});
 
 	it("rejects a negative or non-integer price", () => {
@@ -38,10 +39,29 @@ describe("course validators", () => {
 		);
 	});
 
-	it("defaults lesson isPreview=false and duration=0", () => {
-		const parsed = createLessonSchema.parse({ title: "L1" });
-		expect(parsed.isPreview).toBe(false);
-		expect(parsed.duration).toBe(0);
+	it("rejects a thumbnailUrl with a non-http(s) scheme", () => {
+		const base = {
+			title: "Intro",
+			description: "desc",
+			instructorName: "Asha",
+			price: 49900,
+		};
+		expect(
+			createCourseSchema.safeParse({
+				...base,
+				thumbnailUrl: "javascript:alert(1)",
+			}).success,
+		).toBe(false);
+		expect(
+			createCourseSchema.safeParse({
+				...base,
+				thumbnailUrl: "https://example.com/a.jpg",
+			}).success,
+		).toBe(true);
+	});
+
+	it("accepts a minimal lesson (order/isPreview/duration default at the model layer)", () => {
+		expect(createLessonSchema.safeParse({ title: "L1" }).success).toBe(true);
 	});
 });
 
@@ -52,9 +72,7 @@ describe("course/section/lesson update schemas", () => {
 		expect(updateLessonSchema.safeParse({}).success).toBe(false);
 	});
 
-	it("never inject defaults on a partial update (no clobbering)", () => {
-		// A title-only patch must NOT carry currency/isPublished/order/etc., or it
-		// would silently reset those fields on the document (e.g. unpublish it).
+	it("a partial patch carries only the sent fields (no clobbering)", () => {
 		expect(updateCourseSchema.parse({ title: "Renamed Course" })).toEqual({
 			title: "Renamed Course",
 		});

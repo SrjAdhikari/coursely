@@ -2,11 +2,10 @@
 
 import { z } from "zod";
 
-/**
- * No-default field rules. Create layers defaults on top; update = pure `.partial()`
- * of these, so an empty patch is rejectable and a patch never clobbers unsent fields.
- */
-const courseShape = {
+// currency/isPublished/order/isPreview/duration default at the model layer, so
+// they stay optional here and update = a plain `.partial()` that can't clobber.
+
+const createCourseSchema = z.object({
 	title: z
 		.string()
 		.trim()
@@ -14,16 +13,25 @@ const courseShape = {
 		.max(200, "Title must be at most 200 characters"),
 	description: z.string().trim().min(1, "Description is required"),
 	instructorName: z.string().trim().min(1, "Instructor name is required"),
-	thumbnailUrl: z.url("Thumbnail must be a valid URL"),
+	thumbnailUrl: z.url({
+		protocol: /^https?$/,
+		error: "Thumbnail must be a valid http(s) URL",
+	}),
 	price: z
 		.number()
 		.int("Price must be an integer (paise)")
 		.min(0, "Price cannot be negative"),
-	currency: z.enum(["INR"]),
-	isPublished: z.boolean(),
-};
+	currency: z.enum(["INR"]).optional(),
+	isPublished: z.boolean().optional(),
+});
 
-const sectionShape = {
+const updateCourseSchema = createCourseSchema
+	.partial()
+	.refine((data) => Object.keys(data).length > 0, {
+		message: "Provide at least one field to update",
+	});
+
+const createSectionSchema = z.object({
 	title: z
 		.string()
 		.trim()
@@ -32,10 +40,17 @@ const sectionShape = {
 	order: z
 		.number()
 		.int("Order must be an integer")
-		.min(0, "Order cannot be negative"),
-};
+		.min(0, "Order cannot be negative")
+		.optional(),
+});
 
-const lessonShape = {
+const updateSectionSchema = createSectionSchema
+	.partial()
+	.refine((data) => Object.keys(data).length > 0, {
+		message: "Provide at least one field to update",
+	});
+
+const createLessonSchema = z.object({
 	title: z
 		.string()
 		.trim()
@@ -44,48 +59,21 @@ const lessonShape = {
 	order: z
 		.number()
 		.int("Order must be an integer")
-		.min(0, "Order cannot be negative"),
-	isPreview: z.boolean(),
+		.min(0, "Order cannot be negative")
+		.optional(),
+	isPreview: z.boolean().optional(),
 	duration: z
 		.number()
 		.int("Duration must be an integer (seconds)")
-		.min(0, "Duration cannot be negative"),
-};
-
-const UPDATE_REFINE = { message: "Provide at least one field to update" };
-
-const createCourseSchema = z.object({
-	...courseShape,
-	currency: courseShape.currency.default("INR"),
-	isPublished: courseShape.isPublished.default(false),
+		.min(0, "Duration cannot be negative")
+		.optional(),
 });
 
-const updateCourseSchema = z
-	.object(courseShape)
+const updateLessonSchema = createLessonSchema
 	.partial()
-	.refine((data) => Object.keys(data).length > 0, UPDATE_REFINE);
-
-const createSectionSchema = z.object({
-	...sectionShape,
-	order: sectionShape.order.default(0),
-});
-
-const updateSectionSchema = z
-	.object(sectionShape)
-	.partial()
-	.refine((data) => Object.keys(data).length > 0, UPDATE_REFINE);
-
-const createLessonSchema = z.object({
-	...lessonShape,
-	order: lessonShape.order.default(0),
-	isPreview: lessonShape.isPreview.default(false),
-	duration: lessonShape.duration.default(0),
-});
-
-const updateLessonSchema = z
-	.object(lessonShape)
-	.partial()
-	.refine((data) => Object.keys(data).length > 0, UPDATE_REFINE);
+	.refine((data) => Object.keys(data).length > 0, {
+		message: "Provide at least one field to update",
+	});
 
 type CreateCourseInput = z.infer<typeof createCourseSchema>;
 type UpdateCourseInput = z.infer<typeof updateCourseSchema>;
