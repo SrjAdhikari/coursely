@@ -34,4 +34,9 @@ describe("Course model", () => {
 			Course.create({ ...BASE, slug: "x", bogus: true }),
 		).rejects.toThrow();
 	});
+
+	it("normalizes the slug through slugify on write", async () => {
+		const course = await Course.create({ ...BASE, slug: "Not A Slug!!!" });
+		expect(course.slug).toBe("not-a-slug");
+	});
 });

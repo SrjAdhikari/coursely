@@ -23,4 +23,8 @@ describe("slugify", () => {
 	it("falls back to 'course' when nothing slug-able remains", () => {
 		expect(slugify("!!!")).toBe("course");
 	});
+
+	it("folds accented Latin characters to ASCII", () => {
+		expect(slugify("Crème brûlée")).toBe("creme-brulee");
+	});
 });

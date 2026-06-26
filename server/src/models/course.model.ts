@@ -1,6 +1,7 @@
 //* src/models/course.model.ts
 
 import { Schema, model, type Types } from "mongoose";
+import { slugify } from "../utils/slug";
 
 export interface CourseDocument {
 	_id: Types.ObjectId;
@@ -29,8 +30,10 @@ const courseSchema = new Schema<CourseDocument>(
 			type: String,
 			required: true,
 			unique: true,
-			lowercase: true,
-			trim: true,
+			// Normalize every write through slugify so a non-URL-safe slug can
+			// never be persisted, whatever the write path (slugify lowercases
+			// and trims, so those casters are redundant here).
+			set: slugify,
 		},
 		description: {
 			type: String,
