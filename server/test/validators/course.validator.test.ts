@@ -3,7 +3,10 @@
 import { describe, it, expect } from "vitest";
 import {
 	createCourseSchema,
+	updateCourseSchema,
 	createLessonSchema,
+	updateSectionSchema,
+	updateLessonSchema,
 } from "../../src/validators/course.validator";
 import { updateStudentSchema } from "../../src/validators/student.validator";
 
@@ -39,6 +42,25 @@ describe("course validators", () => {
 		const parsed = createLessonSchema.parse({ title: "L1" });
 		expect(parsed.isPreview).toBe(false);
 		expect(parsed.duration).toBe(0);
+	});
+});
+
+describe("course/section/lesson update schemas", () => {
+	it("reject an empty patch ({})", () => {
+		expect(updateCourseSchema.safeParse({}).success).toBe(false);
+		expect(updateSectionSchema.safeParse({}).success).toBe(false);
+		expect(updateLessonSchema.safeParse({}).success).toBe(false);
+	});
+
+	it("never inject defaults on a partial update (no clobbering)", () => {
+		// A title-only patch must NOT carry currency/isPublished/order/etc., or it
+		// would silently reset those fields on the document (e.g. unpublish it).
+		expect(updateCourseSchema.parse({ title: "Renamed Course" })).toEqual({
+			title: "Renamed Course",
+		});
+		expect(updateLessonSchema.parse({ title: "Renamed Lesson" })).toEqual({
+			title: "Renamed Lesson",
+		});
 	});
 });
 

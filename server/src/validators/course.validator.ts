@@ -2,7 +2,11 @@
 
 import { z } from "zod";
 
-const createCourseSchema = z.object({
+/**
+ * No-default field rules. Create layers defaults on top; update = pure `.partial()`
+ * of these, so an empty patch is rejectable and a patch never clobbers unsent fields.
+ */
+const courseShape = {
 	title: z
 		.string()
 		.trim()
@@ -15,13 +19,11 @@ const createCourseSchema = z.object({
 		.number()
 		.int("Price must be an integer (paise)")
 		.min(0, "Price cannot be negative"),
-	currency: z.enum(["INR"]).default("INR"),
-	isPublished: z.boolean().default(false),
-});
+	currency: z.enum(["INR"]),
+	isPublished: z.boolean(),
+};
 
-const updateCourseSchema = createCourseSchema.partial();
-
-const createSectionSchema = z.object({
+const sectionShape = {
 	title: z
 		.string()
 		.trim()
@@ -30,13 +32,10 @@ const createSectionSchema = z.object({
 	order: z
 		.number()
 		.int("Order must be an integer")
-		.min(0, "Order cannot be negative")
-		.default(0),
-});
+		.min(0, "Order cannot be negative"),
+};
 
-const updateSectionSchema = createSectionSchema.partial();
-
-const createLessonSchema = z.object({
+const lessonShape = {
 	title: z
 		.string()
 		.trim()
@@ -45,17 +44,48 @@ const createLessonSchema = z.object({
 	order: z
 		.number()
 		.int("Order must be an integer")
-		.min(0, "Order cannot be negative")
-		.default(0),
-	isPreview: z.boolean().default(false),
+		.min(0, "Order cannot be negative"),
+	isPreview: z.boolean(),
 	duration: z
 		.number()
 		.int("Duration must be an integer (seconds)")
-		.min(0, "Duration cannot be negative")
-		.default(0),
+		.min(0, "Duration cannot be negative"),
+};
+
+const UPDATE_REFINE = { message: "Provide at least one field to update" };
+
+const createCourseSchema = z.object({
+	...courseShape,
+	currency: courseShape.currency.default("INR"),
+	isPublished: courseShape.isPublished.default(false),
 });
 
-const updateLessonSchema = createLessonSchema.partial();
+const updateCourseSchema = z
+	.object(courseShape)
+	.partial()
+	.refine((data) => Object.keys(data).length > 0, UPDATE_REFINE);
+
+const createSectionSchema = z.object({
+	...sectionShape,
+	order: sectionShape.order.default(0),
+});
+
+const updateSectionSchema = z
+	.object(sectionShape)
+	.partial()
+	.refine((data) => Object.keys(data).length > 0, UPDATE_REFINE);
+
+const createLessonSchema = z.object({
+	...lessonShape,
+	order: lessonShape.order.default(0),
+	isPreview: lessonShape.isPreview.default(false),
+	duration: lessonShape.duration.default(0),
+});
+
+const updateLessonSchema = z
+	.object(lessonShape)
+	.partial()
+	.refine((data) => Object.keys(data).length > 0, UPDATE_REFINE);
 
 type CreateCourseInput = z.infer<typeof createCourseSchema>;
 type UpdateCourseInput = z.infer<typeof updateCourseSchema>;
