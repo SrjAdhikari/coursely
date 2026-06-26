@@ -27,7 +27,7 @@ const createLesson = async (sectionId: string, input: CreateLessonInput) => {
 	}
 
 	// Denormalize courseId from the parent section — set once, never updated.
-	return Lesson.create({ sectionId, courseId: section.courseId, ...input });
+	return Lesson.create({ ...input, sectionId, courseId: section.courseId });
 };
 
 /**

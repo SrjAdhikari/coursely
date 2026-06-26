@@ -27,7 +27,8 @@ const createSection = async (courseId: string, input: CreateSectionInput) => {
 	if (!exists) {
 		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
 	}
-	return Section.create({ courseId, ...input });
+
+	return Section.create({ ...input, courseId });
 };
 
 /**
