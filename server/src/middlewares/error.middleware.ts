@@ -10,39 +10,109 @@ import appErrorCode from "../constants/appErrorCode";
 import envConfig from "../constants/env";
 
 const { NODE_ENV } = envConfig;
-const { BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR } = httpStatus;
-const { INTERNAL_ERROR, VALIDATION_ERROR, USER_ALREADY_EXISTS } = appErrorCode;
+const { BAD_REQUEST, NOT_FOUND, CONFLICT, INTERNAL_SERVER_ERROR } = httpStatus;
+const { INTERNAL_ERROR, VALIDATION_ERROR, DUPLICATE_KEY, RESOURCE_NOT_FOUND } =
+	appErrorCode;
+
+/** The envelope fields every resolver produces and the handler renders. */
+interface ErrorResolution {
+	statusCode: number;
+	errorCode: string;
+	message: string;
+}
+
+/** Inspect an error; return a resolution if this rule applies, else null. */
+type ErrorResolver = (err: unknown) => ErrorResolution | null;
+
+/** Operational errors we threw on purpose carry their own envelope. */
+const fromAppError: ErrorResolver = (err) => {
+	if (!(err instanceof AppError)) return null;
+	return {
+		statusCode: err.statusCode,
+		errorCode: err.errorCode,
+		message: err.message,
+	};
+};
+
+/** Schema validation failed → 400 with the joined field messages. */
+const fromValidationError: ErrorResolver = (err) => {
+	if (!(err instanceof mongoose.Error.ValidationError)) return null;
+	return {
+		statusCode: BAD_REQUEST,
+		errorCode: VALIDATION_ERROR,
+		message: Object.values(err.errors)
+			.map((e) => e.message)
+			.join("; "),
+	};
+};
 
 /**
- * Global error handling middleware for Express 5. MUST keep all four params so
- * Express recognizes it as an error handler, and MUST be registered last.
- *
- * Maps known error shapes onto the API envelope: AppError (operational),
- * Mongoose ValidationError → 400, and MongoDB duplicate-key (11000) → 409.
+ * A malformed ObjectId (a bad route `:id`) → 404 not-found. Any other cast
+ * failure is bad client input, so → 400 instead of masquerading as not-found.
+ */
+const fromCastError: ErrorResolver = (err) => {
+	if (!(err instanceof mongoose.Error.CastError)) return null;
+	if (err.kind === "ObjectId") {
+		return {
+			statusCode: NOT_FOUND,
+			errorCode: RESOURCE_NOT_FOUND,
+			message: "The requested resource was not found",
+		};
+	}
+	return {
+		statusCode: BAD_REQUEST,
+		errorCode: VALIDATION_ERROR,
+		message: `Invalid value for ${err.path}`,
+	};
+};
+
+/** A duplicate unique key (e.g. email/slug already taken) → 409. */
+const fromDuplicateKey: ErrorResolver = (err) => {
+	if (!(err instanceof mongoose.mongo.MongoServerError) || err.code !== 11000) {
+		return null;
+	}
+	return {
+		statusCode: CONFLICT,
+		errorCode: DUPLICATE_KEY,
+		message: "A record with that value already exists",
+	};
+};
+
+/**
+ * Ordered error-mapping rules — the first that matches wins. To handle a new
+ * error shape, write a `fromX` resolver above and add it to this list; the
+ * handler itself never changes.
+ */
+const errorResolvers: ErrorResolver[] = [
+	fromAppError,
+	fromValidationError,
+	fromCastError,
+	fromDuplicateKey,
+];
+
+/** Fallback for anything no resolver claims — an unexpected 5xx. */
+const UNHANDLED_ERROR: ErrorResolution = {
+	statusCode: INTERNAL_SERVER_ERROR,
+	errorCode: INTERNAL_ERROR,
+	message: "Something went wrong",
+};
+
+/** Walk the rules in order and return the first match, or the 5xx fallback. */
+const resolveError = (err: unknown): ErrorResolution => {
+	for (const resolve of errorResolvers) {
+		const resolution = resolve(err);
+		if (resolution) return resolution;
+	}
+	return UNHANDLED_ERROR;
+};
+
+/**
+ * Global error handling middleware for Express 5.
+ * Maps known error shapes onto the API envelope via `errorResolvers`;
+ * anything unmatched becomes a logged 500.
  */
 const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-	let statusCode: number = INTERNAL_SERVER_ERROR;
-	let errorCode: string = INTERNAL_ERROR;
-	let message = "Something went wrong";
-
-	if (err instanceof AppError) {
-		statusCode = err.statusCode;
-		errorCode = err.errorCode;
-		message = err.message;
-	} else if (err instanceof mongoose.Error.ValidationError) {
-		statusCode = BAD_REQUEST;
-		errorCode = VALIDATION_ERROR;
-		message = Object.values(err.errors)
-			.map((e) => e.message)
-			.join("; ");
-	} else if (
-		err instanceof mongoose.mongo.MongoServerError &&
-		err.code === 11000
-	) {
-		statusCode = CONFLICT;
-		errorCode = USER_ALREADY_EXISTS;
-		message = "A record with that value already exists";
-	}
+	const { statusCode, errorCode, message } = resolveError(err);
 
 	const status = statusCode >= 500 ? "error" : "fail";
 
