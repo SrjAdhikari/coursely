@@ -4,7 +4,12 @@ import { describe, it, expect } from "vitest";
 import request from "supertest";
 
 import app from "../../src/app";
-import { createTestUser, createTestCourse } from "../helpers/factories";
+import {
+	createTestUser,
+	createTestCourse,
+	createTestSection,
+	createTestLesson,
+} from "../helpers/factories";
 
 // Log a user in via the real auth flow and return an authenticated agent.
 const adminAgent = async () => {
@@ -131,6 +136,39 @@ describe("admin course → section → lesson flow", () => {
 			.send({ title: "Nope" });
 		expect(res.status).toBe(404);
 		expect(res.body.error.code).toBe("COURSE_NOT_FOUND");
+	});
+});
+
+describe("admin course reads", () => {
+	// All assertions share one login to stay within the authLimiter budget (10 per window).
+	it("lists all courses (drafts + published), fetches one by id, and 404s an unknown id", async () => {
+		const agent = await adminAgent();
+		const mongoose = (await import("mongoose")).default;
+
+		const published = await createTestCourse({ isPublished: true });
+		const draft = await createTestCourse({ isPublished: false });
+
+		// GET /courses — draft must appear alongside published.
+		const listRes = await agent.get("/api/admin/courses");
+		expect(listRes.status).toBe(200);
+		const slugs = listRes.body.data.map((c: { slug: string }) => c.slug);
+		expect(slugs).toContain(published.slug);
+		expect(slugs).toContain(draft.slug);
+
+		// GET /courses/:id — returns nested curriculum.
+		const section = await createTestSection(published._id);
+		await createTestLesson(section._id, published._id);
+		const getRes = await agent.get(`/api/admin/courses/${published._id.toString()}`);
+		expect(getRes.status).toBe(200);
+		expect(getRes.body.data.sections).toHaveLength(1);
+		expect(getRes.body.data.sections[0].lessons).toHaveLength(1);
+
+		// GET /courses/:unknownId — 404 COURSE_NOT_FOUND.
+		const missRes = await agent.get(
+			`/api/admin/courses/${new mongoose.Types.ObjectId().toString()}`,
+		);
+		expect(missRes.status).toBe(404);
+		expect(missRes.body.error.code).toBe("COURSE_NOT_FOUND");
 	});
 });
 

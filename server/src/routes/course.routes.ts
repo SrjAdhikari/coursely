@@ -10,6 +10,8 @@ import { Router } from "express";
 import {
 	listCoursesHandler,
 	getCourseBySlugHandler,
+	listAllCoursesHandler,
+	getCourseByIdHandler,
 	createCourseHandler,
 	updateCourseHandler,
 	deleteCourseHandler,
@@ -39,6 +41,18 @@ courseRouter.get("/:slug", getCourseBySlugHandler);
 
 /** Admin course router — mounted inside adminRouter at /api/admin */
 const adminCourseRouter = Router();
+
+/**
+ * List all courses (drafts + published)
+ * @route GET /api/admin/courses
+ */
+adminCourseRouter.get("/courses", listAllCoursesHandler);
+
+/**
+ * Get a course + full curriculum by id
+ * @route GET /api/admin/courses/:id
+ */
+adminCourseRouter.get("/courses/:id", getCourseByIdHandler);
 
 /**
  * Create a new course

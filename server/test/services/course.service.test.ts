@@ -10,6 +10,8 @@ import {
 	createCourse,
 	updateCourse,
 	deleteCourse,
+	listAllCourses,
+	getCourseById,
 } from "../../src/services/course.service";
 import {
 	createTestCourse,
@@ -184,5 +186,57 @@ describe("course.service — admin course CRUD", () => {
 			errorCode: "COURSE_HAS_ENROLLMENTS",
 		});
 		expect(await Course.findById(course._id)).not.toBeNull();
+	});
+});
+
+describe("course.service — admin reads", () => {
+	describe("listAllCourses", () => {
+		it("returns both published and draft courses, newest first", async () => {
+			const published = await createTestCourse({ isPublished: true });
+			// Draft created after published → should be result[0] (newest first).
+			const draft = await createTestCourse({ isPublished: false });
+
+			const result = await listAllCourses();
+			// At minimum 2 courses in this describe block's scope.
+			expect(result.length).toBeGreaterThanOrEqual(2);
+
+			// Verify draft is present.
+			const slugs = result.map((c) => c.slug);
+			expect(slugs).toContain(published.slug);
+			expect(slugs).toContain(draft.slug);
+
+			// Newest first: draft was inserted last so it comes before published.
+			const draftIdx = result.findIndex((c) => c.slug === draft.slug);
+			const publishedIdx = result.findIndex((c) => c.slug === published.slug);
+			expect(draftIdx).toBeLessThan(publishedIdx);
+		});
+	});
+
+	describe("getCourseById", () => {
+		it("returns a draft course with full curriculum and exposes videoKey", async () => {
+			const course = await createTestCourse({ isPublished: false });
+			const section = await createTestSection(course._id);
+			await createTestLesson(section._id, course._id, {
+				videoKey: "lessons/x/source.mp4",
+			});
+
+			const detail = await getCourseById(course._id.toString());
+
+			expect(detail.isPublished).toBe(false);
+			expect(detail.sections).toHaveLength(1);
+			expect(detail.sections[0]!.lessons).toHaveLength(1);
+			// Admin sees videoKey — must be present.
+			expect(detail.sections[0]!.lessons[0]!.videoKey).toBe("lessons/x/source.mp4");
+			// Lesson is linked to the course.
+			expect(detail.sections[0]!.lessons[0]!.courseId.toString()).toBe(
+				course._id.toString(),
+			);
+		});
+
+		it("404s for an unknown id", async () => {
+			await expect(
+				getCourseById(new mongoose.Types.ObjectId().toString()),
+			).rejects.toMatchObject({ statusCode: 404, errorCode: "COURSE_NOT_FOUND" });
+		});
 	});
 });

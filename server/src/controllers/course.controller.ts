@@ -5,6 +5,8 @@ import type { RequestHandler } from "express";
 import {
 	listPublishedCourses,
 	getCourseBySlug,
+	listAllCourses,
+	getCourseById,
 	createCourse,
 	updateCourse,
 	deleteCourse,
@@ -41,6 +43,26 @@ const getCourseBySlugHandler: RequestHandler<{ slug: string }> = async (
 };
 
 /** --- Admin handlers --- */
+const listAllCoursesHandler: RequestHandler = async (_req, res) => {
+	const courses = await listAllCourses();
+	res.status(OK).json({
+		success: true,
+		message: "Courses fetched successfully",
+		data: courses,
+	});
+};
+
+const getCourseByIdHandler: RequestHandler<{ id: string }> = async (req, res) => {
+	const id = req.params.id;
+	const course = await getCourseById(id);
+
+	res.status(OK).json({
+		success: true,
+		message: "Course fetched successfully",
+		data: course,
+	});
+};
+
 const createCourseHandler: RequestHandler = async (req, res) => {
 	const {
 		title,
@@ -116,6 +138,8 @@ const deleteCourseHandler: RequestHandler<{ id: string }> = async (
 export {
 	listCoursesHandler,
 	getCourseBySlugHandler,
+	listAllCoursesHandler,
+	getCourseByIdHandler,
 	createCourseHandler,
 	updateCourseHandler,
 	deleteCourseHandler,
