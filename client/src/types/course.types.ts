@@ -28,18 +28,22 @@ export interface LessonPayload {
 	duration: number;
 }
 
-/** A section with its nested lessons. */
+/** A section's own fields (what the section create/update endpoints return). */
 export interface SectionPayload {
 	_id: string;
 	courseId: string;
 	title: string;
 	order: number;
+}
+
+/** A section with its nested lessons, as embedded in the curriculum detail. */
+export interface SectionWithLessons extends SectionPayload {
 	lessons: LessonPayload[];
 }
 
 /** A course with its full nested curriculum (sections and their lessons). */
 export interface CourseWithCurriculum extends CoursePayload {
-	sections: SectionPayload[];
+	sections: SectionWithLessons[];
 }
 
 /** Fields for creating a course. */
