@@ -38,6 +38,10 @@ export interface CourseDetail extends Omit<CourseDocument, "trailerKey"> {
 	})[];
 }
 
+interface CourseDetailFull extends CourseDocument {
+	sections: (SectionDocument & { lessons: LessonDocument[] })[];
+}
+
 /**
  * List all published courses, optionally filtered by a search query.
  *
@@ -184,10 +188,50 @@ const deleteCourse = async (id: string): Promise<void> => {
 	}
 };
 
+/** Admin: all courses (published + drafts), newest first. */
+const listAllCourses = () => Course.find().sort({ createdAt: -1 }).lean();
+
+/**
+ * Get a course by id, with its sections and lessons (videoKey included).
+ *
+ * @param id - The ID of the course to fetch.
+ * @throws {AppError} 404 COURSE_NOT_FOUND if the course does not exist.
+ * @returns A promise resolving to the course with its sections and lessons.
+ */
+const getCourseById = async (id: string): Promise<CourseDetailFull> => {
+	const course = await Course.findById(id).lean();
+	if (!course) {
+		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
+	}
+
+	const [sections, lessons] = await Promise.all([
+		Section.find({ courseId: course._id }).sort({ order: 1 }).lean(),
+		Lesson.find({ courseId: course._id }).sort({ order: 1 }).lean(),
+	]);
+
+	const lessonsBySection = new Map<string, LessonDocument[]>();
+	for (const lesson of lessons) {
+		const key = lesson.sectionId.toString();
+		const bucket = lessonsBySection.get(key) ?? [];
+		bucket.push(lesson);
+		lessonsBySection.set(key, bucket);
+	}
+
+	return {
+		...course,
+		sections: sections.map((section) => ({
+			...section,
+			lessons: lessonsBySection.get(section._id.toString()) ?? [],
+		})),
+	} as CourseDetailFull;
+};
+
 export {
 	listPublishedCourses,
 	getCourseBySlug,
 	createCourse,
 	updateCourse,
 	deleteCourse,
+	listAllCourses,
+	getCourseById,
 };
