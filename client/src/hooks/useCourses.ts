@@ -1,6 +1,6 @@
 //* src/hooks/useCourses.ts
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
 	listCourses,
 	getCourse,
@@ -22,35 +22,14 @@ const useGetCourse = (id: string) =>
 		enabled: !!id,
 	});
 
-/** Create a course, then refresh the list. */
-const useCreateCourse = () => {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: createCourse,
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: COURSES_KEY }),
-	});
-};
+/** Create a course. */
+const useCreateCourse = () => useMutation({ mutationFn: createCourse });
 
-/** Update a course, then refresh the list and that course's detail. */
-const useUpdateCourse = () => {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: updateCourse,
-		onSuccess: (_data, vars) => {
-			queryClient.invalidateQueries({ queryKey: COURSES_KEY });
-			queryClient.invalidateQueries({ queryKey: courseKey(vars.id) });
-		},
-	});
-};
+/** Update a course. */
+const useUpdateCourse = () => useMutation({ mutationFn: updateCourse });
 
-/** Delete a course, then refresh the list. */
-const useDeleteCourse = () => {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: deleteCourse,
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: COURSES_KEY }),
-	});
-};
+/** Delete a course. */
+const useDeleteCourse = () => useMutation({ mutationFn: deleteCourse });
 
 export {
 	useListCourses,
