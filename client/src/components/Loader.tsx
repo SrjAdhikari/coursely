@@ -7,9 +7,10 @@ const Loader = () => (
 	<div
 		role="status"
 		aria-label="Loading"
-		className="flex min-h-screen items-center justify-center gap-2"
+		className="flex flex-col min-h-screen items-center justify-center gap-2 text-primary"
 	>
-		<LoaderIcon className="size-6 animate-spin text-primary" aria-hidden />
+		<LoaderIcon className="size-6 animate-spin" aria-hidden />
+		<span className="text-base font-mono font-medium ">Loading...</span>
 	</div>
 );
 
