@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import FormField from "@/components/form/FormField";
 import FormTextarea from "@/components/form/FormTextarea";
 import StatusSegment from "@/components/StatusSegment";
-import CourseFormLoadFailed from "@/components/admin/CourseFormLoadFailed";
+import LoadFailed from "@/components/common/LoadFailed";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/Loader";
 import {
@@ -36,14 +36,17 @@ const slugify = (value: string) =>
 const CourseFormPage = () => {
 	const { id } = useParams();
 	const isEdit = !!id;
+
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
+
 	const {
 		data: existing,
 		isLoading: courseLoading,
 		isError: courseLoadError,
 		refetch,
 	} = useGetCourse(id ?? "");
+
 	const { mutate: create, isPending: creating } = useCreateCourse();
 	const { mutate: update, isPending: updating } = useUpdateCourse();
 
@@ -93,7 +96,15 @@ const CourseFormPage = () => {
 
 	if (isEdit && courseLoading) return <Loader className="min-h-[60vh]" />;
 	if (isEdit && courseLoadError)
-		return <CourseFormLoadFailed onRetry={() => refetch()} />;
+		return (
+			<LoadFailed
+				title="Couldn't load this course"
+				description="It may have been removed, or something went wrong. Try again or go back to courses."
+				onRetry={() => refetch()}
+				backTo={ROUTES.ADMIN_COURSES}
+				backLabel="Back to courses"
+			/>
+		);
 
 	const onSubmit = (values: CourseFormData) => {
 		const payload: CreateCoursePayload = {

@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-import CoursesLoadFailed from "@/components/admin/CoursesLoadFailed";
+import LoadFailed from "@/components/common/LoadFailed";
 import ROUTES from "@/routes/paths";
 import type { CoursePayload } from "@/types/course.types";
 
@@ -24,8 +24,10 @@ const rowAction =
 const CoursesPage = () => {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
+
 	const { data, isLoading, isError, refetch } = useListCourses();
 	const { mutate: remove } = useDeleteCourse();
+
 	const [query, setQuery] = useState("");
 	const [toDelete, setToDelete] = useState<CoursePayload | null>(null);
 
@@ -33,6 +35,7 @@ const CoursesPage = () => {
 	const filtered = useMemo(() => {
 		const q = query.trim().toLowerCase();
 		if (!q) return courses;
+
 		return courses.filter((course) =>
 			[course.title, course.slug, course.instructorName]
 				.join(" ")
@@ -42,7 +45,14 @@ const CoursesPage = () => {
 	}, [courses, query]);
 
 	if (isLoading) return <Loader className="min-h-[60vh]" />;
-	if (isError) return <CoursesLoadFailed onRetry={() => refetch()} />;
+	if (isError)
+		return (
+			<LoadFailed
+				title="Couldn't load courses"
+				description="Something went wrong while loading your courses. Check your connection and try again."
+				onRetry={() => refetch()}
+			/>
+		);
 
 	const confirmDelete = () => {
 		if (!toDelete) return;

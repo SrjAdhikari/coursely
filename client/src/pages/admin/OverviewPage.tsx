@@ -9,7 +9,7 @@ import { formatPrice } from "@/lib/currency";
 import Loader from "@/components/Loader";
 import { Badge } from "@/components/ui/badge";
 import StatCard from "@/components/admin/StatCard";
-import OverviewLoadFailed from "@/components/admin/OverviewLoadFailed";
+import LoadFailed from "@/components/common/LoadFailed";
 import ROUTES from "@/routes/paths";
 
 // Phase 5 placeholder — sample platform enrollments shown until the
@@ -75,7 +75,9 @@ const OverviewPage = () => {
 
 	if (coursesError || studentsError)
 		return (
-			<OverviewLoadFailed
+			<LoadFailed
+				title="Couldn't load the overview"
+				description="Something went wrong while loading your dashboard. Check your connection and try again."
 				onRetry={() => {
 					refetchCourses();
 					refetchStudents();

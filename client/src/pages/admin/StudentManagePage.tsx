@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useGetStudent, useUpdateStudent } from "@/hooks/useStudents";
 import Loader from "@/components/Loader";
 import { Button } from "@/components/ui/button";
-import StudentLoadFailed from "@/components/admin/StudentLoadFailed";
+import LoadFailed from "@/components/common/LoadFailed";
 import DeactivateDialog from "@/components/admin/DeactivateDialog";
 import { formatPrice } from "@/lib/currency";
 import { STUDENTS_KEY, studentKey } from "@/lib/queryKeys";
@@ -45,7 +45,16 @@ const StudentManagePage = () => {
 	const [confirmingDeactivate, setConfirmingDeactivate] = useState(false);
 
 	if (isLoading) return <Loader className="min-h-[60vh]" />;
-	if (isError || !data) return <StudentLoadFailed onRetry={() => refetch()} />;
+	if (isError || !data)
+		return (
+			<LoadFailed
+				title="Couldn't load this student"
+				description="They may have been removed, or something went wrong. Try again or go back to students."
+				onRetry={() => refetch()}
+				backTo={ROUTES.ADMIN_STUDENTS}
+				backLabel="Back to students"
+			/>
+		);
 
 	const student = data.data;
 

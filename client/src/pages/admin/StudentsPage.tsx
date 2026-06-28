@@ -8,7 +8,7 @@ import { useListStudents } from "@/hooks/useStudents";
 import Loader from "@/components/Loader";
 import { Badge } from "@/components/ui/badge";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
-import StudentsLoadFailed from "@/components/admin/StudentsLoadFailed";
+import LoadFailed from "@/components/common/LoadFailed";
 import ROUTES from "@/routes/paths";
 
 const rowAction =
@@ -37,7 +37,14 @@ const StudentsPage = () => {
 	}, [students, query]);
 
 	if (isLoading) return <Loader className="min-h-[60vh]" />;
-	if (isError) return <StudentsLoadFailed onRetry={() => refetch()} />;
+	if (isError)
+		return (
+			<LoadFailed
+				title="Couldn't load students"
+				description="Something went wrong while loading your students. Check your connection and try again."
+				onRetry={() => refetch()}
+			/>
+		);
 
 	return (
 		<section>
