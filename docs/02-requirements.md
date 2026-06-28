@@ -6,8 +6,8 @@ date: 2026-06-23
 
 # 02 — Requirements
 
-Each requirement is testable and anchored to the challenge brief. **FR** = functional
-(what it does), **NFR** = non-functional (how well — the graded qualities).
+Each requirement is testable. **FR** = functional (what it does), **NFR** = non-functional
+(how well — performance, security, cost, and operability).
 
 ## Functional Requirements
 
@@ -76,7 +76,7 @@ Each requirement is testable and anchored to the challenge brief. **FR** = funct
 
 ## Non-Functional Requirements
 
-### Security (heaviest-weighted)
+### Security (top priority)
 
 - **NFR-1** All mutating endpoints require an authenticated session; management endpoints
   additionally require `role === admin` (enforced server-side, never trusted from client).
@@ -96,13 +96,13 @@ Each requirement is testable and anchored to the challenge brief. **FR** = funct
 ### Cost
 
 - **NFR-7** Total operating cost ≤ ~₹600/month at demo scale. Video egress cost = ₹0
-  (R2 zero-egress). All other services on free tiers except the paid Render API.
+  (R2 zero-egress). All other services on free tiers except the paid (always-on) API host.
 
 ### Performance & availability
 
 - **NFR-8** The deployed site is usable with no local setup, on desktop and mobile
   (responsive).
-- **NFR-9** No cold-start delay on demo (Render paid tier — API does not sleep).
+- **NFR-9** No cold-start delay on demo (paid always-on API host — does not sleep).
 - **NFR-10** Public pages render quickly (CDN-served frontend; course list is a single
   indexed query).
 

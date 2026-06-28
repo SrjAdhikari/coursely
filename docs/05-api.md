@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.3
-date: 2026-06-23
+version: 1.4
+date: 2026-06-28
 ---
 
 # 05 — API
@@ -10,13 +10,23 @@ Plain **REST/JSON over HTTPS**, resource-oriented, mounted under `/api`. The con
 between the Vite client and the Express server. The per-route **RBAC matrix** (§4) is the
 primary evidence of access-control design (NFR-1).
 
+> **Implementation note.** A few names/paths in the shipped API differ from the original draft
+> below: **`POST /api/auth/register`** (not `/signup`); **admin catalog writes live under
+> `/api/admin/*`** (e.g. `POST /api/admin/courses`, `PATCH /api/admin/courses/:id`), not the flat
+> `/courses` paths in §2/§4; the auth guard is **`authenticate`** (not `requireAuth`). The
+> **Media**, **Payments**, **Enrollment/dashboard**, and **Progress** sections are planned for a
+> later release and are not built yet. The live auth + catalog + admin surface is documented in
+> [`authentication/auth-and-sessions.md`](./authentication/auth-and-sessions.md),
+> [`authorization/rbac.md`](./authorization/rbac.md), and
+> [`course-domain/catalog-and-admin.md`](./course-domain/catalog-and-admin.md).
+
 ## 1. Conventions
 
 - **Format:** JSON in/out. Success returns the resource or `{ data }`; errors return a
   consistent shape `{ error: { code, message } }` — **never** stack traces or
   secret-bearing text (NFR-4).
 - **Auth transport:** session-id cookie (httpOnly + Secure + SameSite=Lax), sent
-  automatically by the browser on same-site requests to `api.lms.trovecloud.app`. No tokens in
+  automatically by the browser on same-site requests to `api.coursely.app`. No tokens in
   headers.
 - **Validation:** every request body/param is schema-validated at the route boundary
   before use; invalid input → `400` with a field-level message (NFR-4).

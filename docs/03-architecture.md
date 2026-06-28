@@ -6,12 +6,11 @@ date: 2026-06-23
 
 # 03 — Architecture
 
-Anchored to arc42 (lightweight). This doc captures and justifies the stack; it doubles
-as the submission's "Architecture Explanation" section.
+Anchored to arc42 (lightweight). This doc captures and justifies the stack.
 
 ## 1. Goals & Constraints
 
-Deliver the requirements in `02` within: ~3 weeks, solo, ≤ ~₹600/month, and every layer
+Deliver the requirements in `02` within: a lean timeline, a small team, ≤ ~₹600/month, and every layer
 explainable. These constraints push consistently toward **managed services over
 self-managed infra** and **zero-egress video**.
 
@@ -26,25 +25,25 @@ Actors and external systems the platform talks to:
 - **MongoDB Atlas** — application database.
 
 ```
-Browser ──HTTPS──> Vercel (static client)
-Browser ──HTTPS/fetch(credentials)──> Render (Express API) ──> Atlas (Mongo)
+Browser ──HTTPS──> Static host (SPA)
+Browser ──HTTPS/fetch(credentials)──> API host (Express) ──> Atlas (Mongo)
 Browser ──presigned PUT/GET──> Cloudflare R2  (video bytes never touch the API)
-Stripe ──webhook──> Render (Express API)
-Browser ──redirect──> Stripe Checkout ──redirect──> Vercel
+Stripe ──webhook──> API host (Express)
+Browser ──redirect──> Stripe Checkout ──redirect──> Static host
 ```
 
 ## 3. Solution Strategy (the stack & why)
 
 | Concern        | Decision                                                                                                              | Why this, not the alternative                                                                                                                                                                                                                                                                         |
 | -------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend       | React 19 + Vite + **TypeScript** · Tailwind + **shadcn/ui** · **TanStack Query** + axios, hosted on **Vercel** (free) | CDN-served SPA, zero cost; no SSR need for a small catalog.                                                                                                                                                                                                                                           |
-| API            | **Express 5 + TypeScript** on **Render** paid ($7/mo); **zod** validation                                             | Stateless API moves no video → a managed platform is cost-optimal and removes server hardening burden. EC2 rejected: nothing heavy runs on the box, so it adds ops cost + security surface for no benefit. Free Render rejected: cold-start sleep ruins the live demo.                                |
+| Frontend       | React 19 + Vite + **TypeScript** · Tailwind + **shadcn/ui** · **TanStack Query** + axios, hosted on a **static/CDN host** (free) | CDN-served SPA, zero cost; no SSR need for a small catalog.                                                                                                                                                                                                                                           |
+| API            | **Express 5 + TypeScript** on a **managed host** (~$7/mo, always-on); **zod** validation                                             | Stateless API moves no video → a managed platform is cost-optimal and removes server hardening burden. A self-managed VM was rejected: nothing heavy runs on the box, so it adds ops cost + security surface for no benefit. A free, sleeping tier was rejected: cold-start sleep ruins the live demo.                                |
 | Database       | **MongoDB Atlas M0** (free)                                                                                           | Natural for MERN; document model fits course→section→lesson nesting; free tier suffices at demo scale.                                                                                                                                                                                                |
-| Auth           | **Server-side sessions** — custom `Session` collection (signed cookie carries the session `_id`; Mongo TTL), bcrypt   | Instantly revocable (logout / deactivate) — JWT can't revoke before expiry without a denylist (the state JWT was meant to avoid). A hand-rolled session layer (not `express-session`) mirrors the team's TroveCloud pattern, is explainable line-by-line, and reuses Atlas → no Redis, no extra cost. |
+| Auth           | **Server-side sessions** — custom `Session` collection (signed cookie carries the session `_id`; Mongo TTL), bcrypt   | Instantly revocable (logout / deactivate) — JWT can't revoke before expiry without a denylist (the state JWT was meant to avoid). A hand-rolled session layer (not `express-session`) is explainable line-by-line and reuses Atlas → no Redis, no extra cost. |
 | Payments       | **Stripe Checkout** (test) + webhook                                                                                  | Hosted Checkout minimizes PCI surface; enrollment created only on signature-verified webhook, never on client redirect.                                                                                                                                                                               |
 | Video storage  | **Cloudflare R2** (free tier)                                                                                         | Video cost is bandwidth-dominated; R2 has **zero egress** vs S3's ~$0.09/GB. Headline cost decision.                                                                                                                                                                                                  |
 | Video transfer | Browser ⇄ R2 via **presigned PUT/GET**                                                                                | API never proxies video bytes → no bandwidth/compute on the server; scales for free.                                                                                                                                                                                                                  |
-| Repo           | **Monorepo** (`/client`, `/server`)                                                                                   | One repo to submit; single source of truth; Vercel builds `/client`, Render builds `/server`.                                                                                                                                                                                                         |
+| Repo           | **Monorepo** (`/client`, `/server`)                                                                                   | One repo; single source of truth; the static host builds `/client`, the managed host builds `/server`.                                                                                                                                                                                                         |
 
 ## 4. Building Blocks
 
@@ -91,26 +90,26 @@ which stores the object key on the lesson.
 
 ## 6. Deployment View
 
-- **Vercel** builds `/client`, serves the SPA over its CDN. Env: API base URL.
-- **Render** (Singapore) builds `/server`, runs the Express API; does not sleep (paid).
+- The **static host** builds `/client`, serves the SPA over a CDN. Env: API base URL.
+- The **managed host** (Singapore region) builds `/server`, runs the Express API; does not sleep (paid).
   Env: Mongo URI, cookie-signing secret, Stripe secret + webhook secret, R2 credentials,
   allowed CORS origin.
 - **Atlas M0** — managed Mongo; network access + DB user scoped to the API.
 - **R2** — private bucket; API holds scoped access keys.
-- **Stripe** — test-mode keys; webhook endpoint registered to the Render API URL.
+- **Stripe** — test-mode keys; webhook endpoint registered to the API host URL.
 
 ## 7. Cross-Cutting Concepts
 
-- **Authentication & cookie transport:** the client (`lms.trovecloud.app`, Vercel) and API
-  (`api.lms.trovecloud.app`, Render) are siblings under the registrable domain `trovecloud.app`.
+- **Authentication & cookie transport:** the client (`coursely.app`) and API
+  (`api.coursely.app`) are siblings under the registrable domain `coursely.app`.
   Since `SameSite` is scoped to the eTLD+1, requests between them are **same-site** despite being
   different origins, so the signed session cookie (`httpOnly + Secure + SameSite=Lax`,
   **host-only** — no `Domain` attribute, scoped to the API host and unreadable by sibling apps)
   is still sent on the frontend's cross-origin `fetch`. CORS is locked to the frontend origin with
   `credentials: true`. **Cookie attributes by environment:** dev (`http://localhost`) omits
   `Secure` so the cookie works over plain http; prod is `httpOnly + Secure + SameSite=Lax`,
-  host-only. **Render prerequisite:** this holds only once the API serves from
-  `api.lms.trovecloud.app` — on the default `*.onrender.com` host the cookie is cross-site and
+  host-only. **Custom-domain prerequisite:** this holds only once the API serves from
+  `api.coursely.app` — on a hosting platform's default subdomain the cookie is cross-site and
   blocked, so the custom domain must be wired before auth is tested in prod.
 - **R2 CORS:** the bucket carries a CORS rule allowing the frontend origin for the admin's direct
   presigned **PUT** upload (an XHR, subject to CORS); plain `<video>` GET playback is not subject
@@ -131,13 +130,13 @@ Decisions significant + not-easily-reversed enough to record (full ADRs optional
 
 - **AD-1 R2 over S3** for zero egress (cost).
 - **AD-2 Server-side sessions over JWT** for instant revocation; a **custom `Session`
-  collection** (not `express-session`) to mirror TroveCloud and stay explainable (security/cost).
-- **AD-3 Render paid over EC2** — managed platform fits a stateless API; avoids ops &
+  collection** (not `express-session`) to stay explainable line-by-line (security/cost).
+- **AD-3 Managed platform over a self-managed VM** — fits a stateless API; avoids ops &
   security burden.
 - **AD-4 Direct-to-R2 presigned transfer** — keep video bytes off the API.
 - **AD-5 Enrollment via verified webhook only** — payment integrity.
 - **AD-6 Sibling subdomains under one owned domain** (client + API) → same-site →
-  `SameSite=Lax` host-only session cookie. Chosen over `*.vercel.app`/`*.onrender.com`
+  `SameSite=Lax` host-only session cookie. Chosen over the hosting platforms' default subdomains
   (cross-site, would force `SameSite=None`): stronger CSRF posture at ₹0 (domain already
   owned). Cookie is host-only so the sibling storage app cannot read it.
 
@@ -146,4 +145,4 @@ Decisions significant + not-easily-reversed enough to record (full ADRs optional
 - **CSRF** — largely neutralized by same-site `SameSite=Lax` cookies (AD-6); a lighter
   origin-check / token layer on mutations is added in `06` as defense-in-depth.
 - **R2/Stripe credential leakage** — mitigated by env-only secrets + scoped keys.
-- **Render single instance** — acceptable at demo scale; no HA target in v1.
+- **Single API instance** — acceptable at demo scale; no HA target in v1.

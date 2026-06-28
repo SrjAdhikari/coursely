@@ -6,7 +6,7 @@ date: 2026-06-23
 
 # 06 — Security / Threat Model
 
-L-depth, the heaviest-weighted criterion. Structured by **STRIDE** (Spoofing, Tampering,
+Security is the top design priority. Structured by **STRIDE** (Spoofing, Tampering,
 Repudiation, Information disclosure, Denial of service, Elevation of privilege) walked
 against the trust boundaries below. Each threat names a concrete attack on *this* system
 and the mitigation built for it. Most mitigations were designed into docs 03–05; this doc
@@ -46,7 +46,7 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
 - *Client elevates its own role / sets fields it shouldn't* (mass assignment). → Schema
   validation strips unknown fields; `role` is forced to `student` on signup and can only
   change via the admin route; never trusted from a request body (NFR-1, NFR-4).
-- *Tampering in transit.* → TLS on every hop (Vercel, Render, R2, Stripe).
+- *Tampering in transit.* → TLS on every hop (static host, API host, R2, Stripe).
 - *NoSQL (operator) injection* — an attacker smuggles a query operator into a field,
   e.g. POSTing `{"email": {"$ne": null}}` to a login body to match any user. → Schema
   validation rejects unexpected types (a field typed `string` rejects an object);
@@ -67,7 +67,7 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
   after the enrollment check; `videoKey` is **never** returned in any API response;
   preview lessons are the sole exception (NFR-3, FR-17). This is the content-protection core.
 - *Secrets leaking* (Stripe/R2 keys, session secret, DB URI). → Env-only config on
-  Render/Vercel; `.env` git-ignored; never in the client bundle; R2 keys scoped to the
+  the hosting platforms; `.env` git-ignored; never in the client bundle; R2 keys scoped to the
   bucket; Stripe keys are test-mode (NFR-5).
 - *User enumeration* via auth responses. → Login/signup return **generic** failure
   messages that don't reveal whether an email exists.
@@ -89,7 +89,7 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
   origin.
 - *Security headers.* → `helmet` sets standard headers (HSTS, no-sniff, frame options,
   CSP — see §3) (NFR-6).
-- *Residual:* single Render instance, no WAF/HA in v1 — accepted at demo scale (`09` risks
+- *Residual:* single API instance, no WAF/HA in v1 — accepted at demo scale (`09` risks
   in `03`).
 
 ### E — Elevation of Privilege / Broken Access Control (authorization · OWASP A01)
@@ -136,7 +136,7 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
 
 ## 4. Residual Risks (accepted for v1)
 
-- No HA / WAF / multi-region — single Render instance; acceptable at demo scale.
+- No HA / WAF / multi-region — single API instance; acceptable at demo scale.
 - No 2FA / MFA — out of scope for v1; password + rate limiting only.
 - Bot protection limited to rate limiting (no CAPTCHA).
 - Audit logging is payment-focused, not exhaustive.
