@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Routes, Route } from "react-router";
+import { MemoryRouter, Routes, Route, useNavigate } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const mockCreate = vi.fn();
@@ -207,5 +207,50 @@ describe("CourseFormPage (edit)", () => {
 		);
 		expect(invalidate).toHaveBeenCalledWith({ queryKey: ["courses"] });
 		expect(vi.mocked(toast.success)).toHaveBeenCalledWith("Course updated");
+	});
+
+	it("re-prefills when navigating between two course edit routes", async () => {
+		const user = userEvent.setup();
+		const result = (id: string, title: string) => ({
+			data: { data: { ...loadedCourse.data.data, _id: id, title } },
+			isLoading: false,
+			isError: false,
+			refetch: vi.fn(),
+		});
+		mockGetCourse.mockImplementation((id: string) =>
+			id === "a" ? result("a", "Course A") : result("b", "Course B"),
+		);
+
+		const Harness = () => {
+			const navigate = useNavigate();
+			return (
+				<>
+					<button
+						type="button"
+						onClick={() => navigate("/admin/courses/b/edit")}
+					>
+						go b
+					</button>
+					<Routes>
+						<Route
+							path="/admin/courses/:id/edit"
+							element={<CourseFormPage />}
+						/>
+					</Routes>
+				</>
+			);
+		};
+
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<MemoryRouter initialEntries={["/admin/courses/a/edit"]}>
+					<Harness />
+				</MemoryRouter>
+			</QueryClientProvider>,
+		);
+
+		expect(await screen.findByDisplayValue("Course A")).toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: /go b/i }));
+		expect(await screen.findByDisplayValue("Course B")).toBeInTheDocument();
 	});
 });

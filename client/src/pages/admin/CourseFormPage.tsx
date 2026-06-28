@@ -68,13 +68,15 @@ const CourseFormPage = () => {
 		},
 	});
 
-	// Prefill exactly once, the first time the course loads in edit mode — a
-	// guard so a later refetch can never clobber in-progress edits.
-	const prefilled = useRef(false);
+	// Prefill once per loaded course — keyed by id (not a one-shot flag) so
+	// switching the :id param re-hydrates the form, while a refetch of the same
+	// course never clobbers in-progress edits.
+	const prefilledId = useRef<string | null>(null);
 	useEffect(() => {
 		const course = existing?.data;
-		if (!course || prefilled.current) return;
-		prefilled.current = true;
+		if (!course || prefilledId.current === course._id) return;
+		prefilledId.current = course._id;
+
 		reset({
 			title: course.title,
 			description: course.description,
