@@ -8,11 +8,14 @@ import { useListStudents } from "@/hooks/useStudents";
 import Loader from "@/components/Loader";
 import { Badge } from "@/components/ui/badge";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
+import DataTable, { type Column } from "@/components/common/DataTable";
+import {
+	RowActionButton,
+	RowActions,
+} from "@/components/common/RowActionButton";
 import LoadFailed from "@/components/common/LoadFailed";
 import ROUTES from "@/routes/paths";
-
-const rowAction =
-	"cursor-pointer font-mono text-[13px] text-muted-foreground transition-colors";
+import type { StudentPayload } from "@/types/student.types";
 
 const formatJoinedDate = (iso: string) =>
 	new Date(iso).toLocaleDateString("en-IN", {
@@ -36,7 +39,7 @@ const StudentsPage = () => {
 		);
 	}, [students, query]);
 
-	if (isLoading) return <Loader className="min-h-[60vh]" />;
+	if (isLoading) return <Loader className="min-h-[80vh]" />;
 	if (isError)
 		return (
 			<LoadFailed
@@ -45,6 +48,55 @@ const StudentsPage = () => {
 				onRetry={() => refetch()}
 			/>
 		);
+
+	const columns: Column<StudentPayload>[] = [
+		{
+			header: "Student",
+			cell: (student) => (
+				<>
+					<div className="font-semibold">{student.name}</div>
+					<div className="font-mono text-[11.5px] text-muted-foreground">
+						{student.email}
+					</div>
+				</>
+			),
+		},
+		{
+			header: "Role",
+			cell: (student) => (
+				<Badge variant={student.role === "admin" ? "secondary" : "muted"}>
+					{student.role === "admin" ? "Admin" : "Student"}
+				</Badge>
+			),
+		},
+		{
+			header: "Status",
+			cell: (student) => (
+				<Badge variant={student.isActive ? "accent" : "destructive"}>
+					{student.isActive ? "Active" : "Deactivated"}
+				</Badge>
+			),
+		},
+		{
+			header: "Joined",
+			cellClassName: "font-mono text-muted-foreground",
+			cell: (student) => formatJoinedDate(student.createdAt),
+		},
+		{
+			header: "Actions",
+			align: "right",
+			cell: (student) => (
+				<RowActions>
+					<RowActionButton
+						aria-label={`Manage ${student.name}`}
+						onClick={() => navigate(ROUTES.adminStudent(student._id))}
+					>
+						Manage
+					</RowActionButton>
+				</RowActions>
+			),
+		},
+	];
 
 	return (
 		<section>
@@ -88,78 +140,11 @@ const StudentsPage = () => {
 						/>
 					)
 				) : (
-					<table className="w-full border-collapse">
-						<thead>
-							<tr className="border-b border-border text-left font-mono text-[10.5px] uppercase tracking-wide text-muted-foreground">
-								<th scope="col" className="px-5 py-3 font-medium">
-									Student
-								</th>
-								<th scope="col" className="px-5 py-3 font-medium">
-									Role
-								</th>
-								<th scope="col" className="px-5 py-3 font-medium">
-									Status
-								</th>
-								<th scope="col" className="px-5 py-3 font-medium">
-									Joined
-								</th>
-								<th scope="col" className="px-5 py-3 text-right font-medium">
-									Actions
-								</th>
-							</tr>
-						</thead>
-
-						<tbody>
-							{filtered.map((student) => (
-								<tr
-									key={student._id}
-									className="border-b border-border text-sm last:border-0 hover:bg-muted/40"
-								>
-									<td className="px-5 py-3.5">
-										<div className="font-semibold">{student.name}</div>
-										<div className="font-mono text-[11.5px] text-muted-foreground">
-											{student.email}
-										</div>
-									</td>
-
-									<td className="px-5 py-3.5">
-										<Badge
-											variant={student.role === "admin" ? "secondary" : "muted"}
-										>
-											{student.role === "admin" ? "Admin" : "Student"}
-										</Badge>
-									</td>
-
-									<td className="px-5 py-3.5">
-										<Badge
-											variant={student.isActive ? "accent" : "destructive"}
-										>
-											{student.isActive ? "Active" : "Deactivated"}
-										</Badge>
-									</td>
-
-									<td className="px-5 py-3.5 font-mono text-muted-foreground">
-										{formatJoinedDate(student.createdAt)}
-									</td>
-
-									<td className="px-5 py-3.5">
-										<div className="flex justify-end">
-											<button
-												type="button"
-												aria-label={`Manage ${student.name}`}
-												onClick={() =>
-													navigate(ROUTES.adminStudent(student._id))
-												}
-												className={`${rowAction} hover:text-primary`}
-											>
-												Manage
-											</button>
-										</div>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+					<DataTable
+						columns={columns}
+						rows={filtered}
+						getRowKey={(student) => student._id}
+					/>
 				)}
 			</div>
 		</section>

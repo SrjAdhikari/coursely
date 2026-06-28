@@ -9,19 +9,59 @@ import { formatPrice } from "@/lib/currency";
 import Loader from "@/components/Loader";
 import { Badge } from "@/components/ui/badge";
 import StatCard from "@/components/admin/StatCard";
+import DataTable, { type Column } from "@/components/common/DataTable";
 import LoadFailed from "@/components/common/LoadFailed";
 import ROUTES from "@/routes/paths";
+import type { CoursePayload } from "@/types/course.types";
+
+interface SampleEnrollment {
+	id: string;
+	student: string;
+	course: string;
+	amount: number;
+	purchased: string;
+}
 
 // Phase 5 placeholder — sample platform enrollments shown until the
 // payments/enrollment feature lands. The Enrollments + Revenue tiles and the
 // "Recent enrollments" table all derive from this, so the page stays internally
 // consistent; swap for the real enrollments API then.
-const sampleEnrollments = [
-	{ id: "e1", student: "Rahul Verma", course: "React from Scratch", amount: 89900, purchased: "Jun 23" },
-	{ id: "e2", student: "Karan Mehta", course: "JavaScript Essentials", amount: 69900, purchased: "Jun 21" },
-	{ id: "e3", student: "Priya Nair", course: "TS Deep Dive", amount: 129900, purchased: "Jun 18" },
-	{ id: "e4", student: "Ananya Iyer", course: "HTML Foundations", amount: 49900, purchased: "May 30" },
-	{ id: "e5", student: "Vikram Shah", course: "Node.js & Express APIs", amount: 99900, purchased: "May 22" },
+const sampleEnrollments: SampleEnrollment[] = [
+	{
+		id: "e1",
+		student: "Rahul Verma",
+		course: "React from Scratch",
+		amount: 89900,
+		purchased: "Jun 23",
+	},
+	{
+		id: "e2",
+		student: "Karan Mehta",
+		course: "JavaScript Essentials",
+		amount: 69900,
+		purchased: "Jun 21",
+	},
+	{
+		id: "e3",
+		student: "Priya Nair",
+		course: "TS Deep Dive",
+		amount: 129900,
+		purchased: "Jun 18",
+	},
+	{
+		id: "e4",
+		student: "Ananya Iyer",
+		course: "HTML Foundations",
+		amount: 49900,
+		purchased: "May 30",
+	},
+	{
+		id: "e5",
+		student: "Vikram Shah",
+		course: "Node.js & Express APIs",
+		amount: 99900,
+		purchased: "May 22",
+	},
 ];
 
 const sampleRevenue = sampleEnrollments.reduce(
@@ -29,12 +69,63 @@ const sampleRevenue = sampleEnrollments.reduce(
 	0,
 );
 
-const tableHeadRow =
-	"border-b border-border text-left font-mono text-[10.5px] uppercase tracking-wide text-muted-foreground";
-const tableBodyRow =
-	"border-b border-border text-sm last:border-0 hover:bg-muted/40";
 const viewAllLink =
 	"cursor-pointer font-mono text-xs text-muted-foreground transition-colors hover:text-primary";
+
+const recentCourseColumns: Column<CoursePayload>[] = [
+	{
+		header: "Course",
+		cell: (course) => (
+			<>
+				<div className="font-semibold">{course.title}</div>
+				<div className="font-mono text-[11.5px] text-muted-foreground">
+					{course.slug}
+				</div>
+			</>
+		),
+	},
+	{
+		header: "Instructor",
+		cellClassName: "text-muted-foreground",
+		cell: (course) => course.instructorName,
+	},
+	{
+		header: "Price",
+		cellClassName: "font-mono font-bold",
+		cell: (course) => formatPrice(course.price),
+	},
+	{
+		header: "Status",
+		cell: (course) => (
+			<Badge variant={course.isPublished ? "success" : "muted"}>
+				{course.isPublished ? "Live" : "Draft"}
+			</Badge>
+		),
+	},
+];
+
+const enrollmentColumns: Column<SampleEnrollment>[] = [
+	{
+		header: "Student",
+		cellClassName: "font-medium",
+		cell: (enrollment) => enrollment.student,
+	},
+	{
+		header: "Course",
+		cellClassName: "text-muted-foreground",
+		cell: (enrollment) => enrollment.course,
+	},
+	{
+		header: "Amount",
+		cellClassName: "font-mono font-bold",
+		cell: (enrollment) => formatPrice(enrollment.amount),
+	},
+	{
+		header: "Purchased",
+		cellClassName: "font-mono text-muted-foreground",
+		cell: (enrollment) => enrollment.purchased,
+	},
+];
 
 const OverviewPage = () => {
 	const navigate = useNavigate();
@@ -71,7 +162,7 @@ const OverviewPage = () => {
 	);
 
 	if (coursesLoading || studentsLoading)
-		return <Loader className="min-h-[60vh]" />;
+		return <Loader className="min-h-[80vh]" />;
 
 	if (coursesError || studentsError)
 		return (
@@ -141,54 +232,12 @@ const OverviewPage = () => {
 							No courses yet.
 						</p>
 					) : (
-						<table
-							aria-labelledby="recent-courses-heading"
-							className="w-full border-collapse"
-						>
-							<thead>
-								<tr className={tableHeadRow}>
-									<th scope="col" className="px-5 py-3 font-medium">
-										Course
-									</th>
-									<th scope="col" className="px-5 py-3 font-medium">
-										Instructor
-									</th>
-									<th scope="col" className="px-5 py-3 font-medium">
-										Price
-									</th>
-									<th scope="col" className="px-5 py-3 font-medium">
-										Status
-									</th>
-								</tr>
-							</thead>
-
-							<tbody>
-								{recentCourses.map((course) => (
-									<tr key={course._id} className={tableBodyRow}>
-										<td className="px-5 py-3.5">
-											<div className="font-semibold">{course.title}</div>
-											<div className="font-mono text-[11.5px] text-muted-foreground">
-												{course.slug}
-											</div>
-										</td>
-
-										<td className="px-5 py-3.5 text-muted-foreground">
-											{course.instructorName}
-										</td>
-
-										<td className="px-5 py-3.5 font-mono font-bold">
-											{formatPrice(course.price)}
-										</td>
-
-										<td className="px-5 py-3.5">
-											<Badge variant={course.isPublished ? "success" : "muted"}>
-												{course.isPublished ? "Live" : "Draft"}
-											</Badge>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
+						<DataTable
+							columns={recentCourseColumns}
+							rows={recentCourses}
+							getRowKey={(course) => course._id}
+							ariaLabelledby="recent-courses-heading"
+						/>
 					)}
 				</div>
 
@@ -210,49 +259,12 @@ const OverviewPage = () => {
 						</button>
 					</div>
 
-					<table
-						aria-labelledby="recent-enrollments-heading"
-						className="w-full border-collapse"
-					>
-						<thead>
-							<tr className={tableHeadRow}>
-								<th scope="col" className="px-5 py-3 font-medium">
-									Student
-								</th>
-								<th scope="col" className="px-5 py-3 font-medium">
-									Course
-								</th>
-								<th scope="col" className="px-5 py-3 font-medium">
-									Amount
-								</th>
-								<th scope="col" className="px-5 py-3 font-medium">
-									Purchased
-								</th>
-							</tr>
-						</thead>
-
-						<tbody>
-							{sampleEnrollments.map((enrollment) => (
-								<tr key={enrollment.id} className={tableBodyRow}>
-									<td className="px-5 py-3.5 font-medium">
-										{enrollment.student}
-									</td>
-
-									<td className="px-5 py-3.5 text-muted-foreground">
-										{enrollment.course}
-									</td>
-
-									<td className="px-5 py-3.5 font-mono font-bold">
-										{formatPrice(enrollment.amount)}
-									</td>
-
-									<td className="px-5 py-3.5 font-mono text-muted-foreground">
-										{enrollment.purchased}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+					<DataTable
+						columns={enrollmentColumns}
+						rows={sampleEnrollments}
+						getRowKey={(enrollment) => enrollment.id}
+						ariaLabelledby="recent-enrollments-heading"
+					/>
 				</div>
 			</div>
 		</section>
