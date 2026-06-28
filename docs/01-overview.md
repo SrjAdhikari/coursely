@@ -10,10 +10,7 @@ date: 2026-06-23
 
 Coursely is a course-selling platform in the style of Udemy: visitors discover courses
 publicly, pay once per course, and gain lifetime access to that course's video lessons
-with progress tracking and resume playback. This v1 is the submission for the **VeoLMS**
-core-team selection challenge — a production-like LMS (branded **Coursely**) built to
-demonstrate the design, build, deploy, secure, test, and explain skills the challenge
-evaluates, in service of contributing to the open-source **VeoLMS** project.
+with progress tracking and resume playback.
 
 The design priority is **defensible judgment over feature volume**: a small, secure,
 cost-efficient system whose every decision can be explained, rather than a large system
@@ -43,12 +40,10 @@ access. No per-resource ownership checks are required.
 
 ## Goals & Success Criteria
 
-Success is defined by the challenge's evaluation bar:
-
 1. **Live & usable** — a real user can browse, register, log in, preview, purchase, and
    watch, entirely on the deployed site with no local setup.
 2. **Secure** — payment verification, access control, and content protection are
-   demonstrably designed, not bolted on. (Heaviest-weighted criterion.)
+   demonstrably designed, not bolted on. (The top priority.)
 3. **Cost-efficient** — target operating cost ≈ ₹600/month, with the architecture's cost
    trade-offs written down and justified.
 4. **Explainable** — every architectural, database, auth, payment, and storage decision
@@ -68,20 +63,19 @@ Success is defined by the challenge's evaluation bar:
 - Self-hosted video: MP4 stored in Cloudflare R2, served via short-lived signed URLs,
   gated on enrollment (preview lessons excepted).
 - Seed content: **3 courses** (HTML, CSS, JavaScript), **≥5 lessons each**, with 2–3
-  preview lessons per course. Video sourced from public YouTube content, downloaded and
-  re-hosted.
+  preview lessons per course.
 
 ### Out of scope (v1 non-goals)
 
 Each is deferred, not forgotten:
 
-- **HLS / adaptive streaming & multi-quality transcode** — deferred; mandatory video
-  requirements are met by MP4 + signed URLs. Unblocks as a bonus if time remains.
+- **HLS / adaptive streaming & multi-quality transcode** — deferred; the video
+  requirements are met by MP4 + signed URLs. A possible future enhancement.
 - **Async/server-side video transcoding** — deferred; content is static and small, so
   video is served as-is. Admin upload stores the raw MP4.
 - **Multiple admins / instructor ownership** — out; single platform-owner model chosen.
 - **Reviews & ratings, certificates, coupons/discounts, refunds, subscriptions** — out;
-  not required by the brief and each adds payment/data complexity without scoring value.
+  each adds payment/data complexity without proportionate value in v1.
 
 ## Pricing Model
 
@@ -92,16 +86,14 @@ enrollments flow through Stripe Checkout — there is no separate free-enrollmen
 
 ## Key Constraints
 
-- **Time:** ~3 weeks to the 15 Jul 2026 deadline; full weekend availability, ~2–3
-  weekday hours. Drives mandatory-first sequencing and managed services over self-managed
-  infrastructure.
+- **Time:** a lean delivery timeline drives mandatory-first sequencing and managed
+  services over self-managed infrastructure.
 - **Cost ceiling:** ≈ ₹600/month. Drives zero-egress video storage and free-tier
   managed services.
-- **Solo developer**, must be able to explain every layer unaided.
+- **Small team:** every layer must be explainable by the people who built it.
 
-## Stakeholders
+## Audience
 
-- **Evaluator / project owner** (procodrr) — primary audience; judges the submission and
-  conducts the technical call.
-- **End learners** — future users of the open-source platform.
-- **Developer** (submitter) — owns and must defend all decisions.
+- **End learners** — students who browse, buy, and watch courses.
+- **Platform operator (Admin)** — publishes and manages the catalog and students.
+- **Engineering** — owns the system and must be able to defend every decision.

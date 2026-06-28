@@ -6,9 +6,9 @@ date: 2026-06-23
 
 # 07 — Implementation Plan
 
-Sequenced build order under the real constraints (`01`): ~3 weeks to 15 Jul 2026, solo,
-full weekends + ~2–3 weekday hours. The set of decisions is frozen in `01`–`06`; this doc
-turns them into an order of operations and parks everything deferred.
+Sequenced build order under the real constraints (`01`): small team, lean timeline. The set
+of decisions is frozen in `01`–`06`; this doc turns them into an order of operations and
+parks everything deferred.
 
 ## 1. Sequencing Principle
 
@@ -16,17 +16,17 @@ turns them into an order of operations and parks everything deferred.
 client + API + DB + R2 wired together and *live on the real domain* before building
 features. Rationale: the hard, demo-killing problems — CORS, the SameSite cookie across
 subdomains, the Stripe webhook reaching a public URL — are *integration* problems that
-only appear once deployed. Discovering them in week 1 is cheap; discovering them the night
-before the deadline is fatal. Everything after M0 is layered onto a thing already proven
-to deploy. Mandatory requirements come before any bonus.
+only appear once deployed. Discovering them early is cheap; discovering them at the end is
+expensive. Everything after M0 is layered onto a thing already proven to deploy. Mandatory
+capabilities come before any optional extras.
 
 ## 2. Milestones
 
 ### M0 — Infra + Auth live
 - Monorepo scaffold: `/client` (Vite React), `/server` (Express, layered).
-- Deploy pipeline live: Vercel builds `/client`; Render (paid) builds `/server`; Atlas M0
+- Deploy pipeline live: the static host builds `/client`; the managed host (paid) builds `/server`; Atlas M0
   connected; R2 bucket created (private).
-- Domain wired: `lms.trovecloud.app` → Vercel, `api.lms.trovecloud.app` → Render, SSL on both;
+- Domain wired: `coursely.app` → static host, `api.coursely.app` → managed host, SSL on both;
   CORS locked to the frontend origin; session cookie `httpOnly+Secure+SameSite=Lax`.
 - Auth end-to-end: signup / login / logout / session (custom `Session` collection), bcrypt,
   `requireAuth`/`requireAdmin`, rate limiting + helmet.
@@ -63,17 +63,17 @@ to deploy. Mandatory requirements come before any bonus.
 - Responsive/mobile polish (NFR-8); a few tests (auth, webhook/payment, access control).
 - **Exit:** dashboard + resume work; security controls verifiably in place.
 
-### M4 — Submission + bonus (buffer)
-- Submission artifacts (see §5), including the decision log.
-- Bonus **only if time remains:** HLS/multi-quality, PiP/speed/subtitles, more tests.
+### M4 — Polish + buffer
 - Final live-demo smoke test of the whole flow.
+- Optional extras **only if time remains:** HLS/multi-quality, PiP/speed/subtitles, more
+  tests.
 
-## 3. Deferred / Bonus Backlog
+## 3. Deferred Backlog
 
-Parked deliberately (`01` non-goals + brief bonuses); pull into M4 only if time survives:
-HLS / adaptive streaming, FFmpeg multi-quality transcode + quality switching, async
-server-side transcoding on admin upload, PiP / speed control / subtitles, multiple admins
-/ instructor ownership, reviews/ratings/certificates/coupons/refunds.
+Parked deliberately (`01` non-goals): HLS / adaptive streaming, FFmpeg multi-quality
+transcode + quality switching, async server-side transcoding on admin upload, PiP / speed
+control / subtitles, multiple admins / instructor ownership,
+reviews/ratings/certificates/coupons/refunds.
 
 ## 4. Open Questions (consolidated)
 
@@ -84,17 +84,3 @@ server-side transcoding on admin upload, PiP / speed control / subtitles, multip
 - `/me/dashboard` as one aggregate endpoint vs composed client-side (`05`).
 
 All are implementation-time decisions; none blocks starting M0.
-
-## 5. Submission Checklist (from the brief)
-
-Email to `contact@procodrr.com`, subject **"VeoLMS Core Team Submission"**, including:
-
-- [ ] Live application URL (on `lms.trovecloud.app`).
-- [ ] **Public** GitHub repository (the monorepo) — flip `SrjAdhikari/coursely` from private
-  to public before submitting.
-- [ ] Admin credentials (email + password).
-- [ ] Student credentials (email + password).
-- [ ] Contact info (mobile + WhatsApp).
-- [ ] Architecture explanation — sourced from `03` + the decision log.
-- [ ] "Why I want to join VeoLMS."
-- [ ] Challenges faced — trade-offs, lessons learned (the decision log feeds this).

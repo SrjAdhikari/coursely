@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.2
-date: 2026-06-23
+version: 1.3
+date: 2026-06-28
 ---
 
 # 04 — Data Model
@@ -9,6 +9,12 @@ date: 2026-06-23
 Conceptual → logical → physical for MongoDB (Atlas). Seven collections, **referenced**
 (not embedded), chosen so lessons are first-class documents that progress and signed-URL
 playback can address by `_id`.
+
+> **Implementation note.** Two clarifications on the running system: **`sessions._id` is a Mongo
+> `ObjectId`** (the cookie carries its `.toString()`), not a custom string; and the
+> **`enrollments`** and **`progress`** collections are planned for a later release and are not built
+> yet. The live `users` / `sessions` / `courses` / `sections` / `lessons` shapes match the Mongoose
+> models documented in [`architecture/database-schema.md`](./architecture/database-schema.md).
 
 ## 1. Modeling Approach
 
@@ -37,13 +43,13 @@ would force array-digging inside a course doc on every playback. The curriculum 
 
 | Field | Type | Notes |
 |---|---|---|
-| `_id` | string | the session id — the value stored in the signed `httpOnly` cookie |
+| `_id` | ObjectId | the session id — its `.toString()` is the value stored in the signed `httpOnly` cookie |
 | `userId` | ObjectId → users | session owner |
 | `expiresAt` | Date | **TTL index** — Mongo auto-expires the row; logout deletes it explicitly |
 | `createdAt` | Date | |
 
 Custom session store (not `express-session`): one document per active login, addressed by the
-opaque `_id` carried in the cookie. Mirrors the TroveCloud auth pattern; a fresh `_id` is issued
+opaque `_id` carried in the cookie; a fresh `_id` is issued
 on each login (session-fixation defense, `06`).
 
 ### courses
