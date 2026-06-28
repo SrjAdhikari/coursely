@@ -4,23 +4,30 @@ import { useState, forwardRef, type ReactNode } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
-interface FormFieldProps extends React.ComponentProps<"input"> {
+interface FormFieldProps extends Omit<React.ComponentProps<"input">, "prefix"> {
 	label: string;
 	labelExtra?: ReactNode;
 	error?: string;
+	hint?: ReactNode;
+	prefix?: ReactNode;
 }
 
 /**
- * Reusable form field — renders a label, input, and error message.
+ * Reusable form field — renders a label, input, and an error or hint line.
  * When type is "password", adds a show/hide toggle automatically.
  * Uses forwardRef so React Hook Form's register() can attach its ref.
  *
- * `labelExtra` renders to the right of the label — useful for inline
- * helpers like "Forgot password?", character counts, or help icons.
+ * `labelExtra` renders to the right of the label (inline helpers / links).
+ * `prefix` renders a left adornment inside the input (e.g. a "₹" symbol).
+ * `hint` renders below the input when there is no error.
  */
 const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
-	({ label, labelExtra, error, type, id, ...props }, ref) => {
+	(
+		{ label, labelExtra, error, hint, prefix, type, id, className, ...props },
+		ref,
+	) => {
 		const [showPassword, setShowPassword] = useState(false);
 		const isPassword = type === "password";
 
@@ -32,11 +39,18 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
 				</div>
 
 				<div className="relative">
+					{prefix && (
+						<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-muted-foreground">
+							{prefix}
+						</span>
+					)}
+
 					<Input
 						id={id}
 						ref={ref}
 						type={isPassword && showPassword ? "text" : type}
 						aria-invalid={!!error}
+						className={cn(prefix && "pl-7", className)}
 						{...props}
 					/>
 
@@ -57,9 +71,13 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
 					)}
 				</div>
 
-				{error && (
+				{error ? (
 					<span className="text-sm font-mono text-destructive">{error}</span>
-				)}
+				) : hint ? (
+					<span className="font-mono text-[11px] text-muted-foreground">
+						{hint}
+					</span>
+				) : null}
 			</div>
 		);
 	},
