@@ -30,7 +30,7 @@ const AdminLayout = () => (
 		</aside>
 
 		<div className="ml-62.5 flex min-h-screen flex-col">
-			<header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-9">
+			<header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card/90 px-9 backdrop-blur">
 				<div className="flex-1" />
 				<ThemeToggle />
 			</header>
