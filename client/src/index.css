@@ -6,8 +6,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-	--font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
-	--font-heading: "Clash Display", "Satoshi", sans-serif;
+	--font-heading: "Clash Display", ui-sans-serif, system-ui, sans-serif;
 	--font-mono:
 		"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 	--color-sidebar-ring: var(--sidebar-ring);
@@ -182,7 +181,7 @@
 		filter: blur(44px);
 	}
 	html {
-		@apply font-sans;
+		@apply font-mono;
 	}
 	h1,
 	h2,
