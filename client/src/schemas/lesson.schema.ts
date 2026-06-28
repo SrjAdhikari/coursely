@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 /**
- * Lesson modal form. `order`/`duration` are optional digit strings (blank = default).
+ * Lesson dialog form. `order`/`duration` are optional digit strings (blank = default).
  */
 const lessonFormSchema = z.object({
 	title: z
