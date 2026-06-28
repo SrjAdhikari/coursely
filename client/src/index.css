@@ -76,6 +76,7 @@
 	--success: oklch(0.55 0.14 150);
 	--success-muted: oklch(0.72 0.19 150 / 0.12);
 	--border: oklch(0.926 0.011 106.606);
+	--grid-op: 0.6;
 	--input: oklch(0.867 0.014 106.679);
 	--ring: oklch(0.849 0.207 128.85);
 	--chart-1: oklch(0.87 0 0);
@@ -116,6 +117,7 @@
 	--success: oklch(0.84 0.15 152);
 	--success-muted: oklch(0.72 0.19 150 / 0.14);
 	--border: oklch(0.266 0.009 248.183);
+	--grid-op: 0.18;
 	--input: oklch(0.338 0.011 248.158);
 	--ring: oklch(0.897 0.179 126.665);
 	--chart-1: oklch(0.87 0 0);
@@ -152,6 +154,7 @@
 			linear-gradient(var(--border) 1px, transparent 1px),
 			linear-gradient(90deg, var(--border) 1px, transparent 1px);
 		background-size: 64px 64px;
+		opacity: var(--grid-op);
 		-webkit-mask-image: radial-gradient(
 			ellipse 90% 55% at 50% 0%,
 			#000 30%,
