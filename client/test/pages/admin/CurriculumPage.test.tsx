@@ -180,5 +180,9 @@ describe("CurriculumPage", () => {
 		});
 		renderPage();
 		expect(screen.getByRole("alert")).toBeInTheDocument();
+		expect(screen.getByText(/couldn't load this course/i)).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: /back to courses/i }),
+		).toBeInTheDocument();
 	});
 });

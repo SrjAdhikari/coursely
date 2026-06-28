@@ -9,40 +9,54 @@ import { Search, Plus, LibraryBig, SearchX } from "lucide-react";
 import { useListCourses, useDeleteCourse } from "@/hooks/useCourses";
 import { formatPrice } from "@/lib/currency";
 import { COURSES_KEY } from "@/lib/queryKeys";
+
 import Loader from "@/components/Loader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
+import DataTable, { type Column } from "@/components/common/DataTable";
+import {
+	RowActionButton,
+	RowActions,
+} from "@/components/common/RowActionButton";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-import CoursesLoadFailed from "@/components/admin/CoursesLoadFailed";
+import LoadFailed from "@/components/common/LoadFailed";
+
 import ROUTES from "@/routes/paths";
 import type { CoursePayload } from "@/types/course.types";
-
-const rowAction =
-	"cursor-pointer font-mono text-[13px] text-muted-foreground transition-colors";
 
 const CoursesPage = () => {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
+
 	const { data, isLoading, isError, refetch } = useListCourses();
 	const { mutate: remove } = useDeleteCourse();
+
 	const [query, setQuery] = useState("");
 	const [toDelete, setToDelete] = useState<CoursePayload | null>(null);
 
 	const courses = useMemo(() => data?.data ?? [], [data]);
 	const filtered = useMemo(() => {
-		const q = query.trim().toLowerCase();
-		if (!q) return courses;
+		const term = query.trim().toLowerCase();
+		if (!term) return courses;
+
 		return courses.filter((course) =>
 			[course.title, course.slug, course.instructorName]
 				.join(" ")
 				.toLowerCase()
-				.includes(q),
+				.includes(term),
 		);
 	}, [courses, query]);
 
-	if (isLoading) return <Loader className="min-h-[60vh]" />;
-	if (isError) return <CoursesLoadFailed onRetry={() => refetch()} />;
+	if (isLoading) return <Loader className="min-h-[80vh]" />;
+	if (isError)
+		return (
+			<LoadFailed
+				title="Couldn't load courses"
+				description="Something went wrong while loading your courses. Check your connection and try again."
+				onRetry={() => refetch()}
+			/>
+		);
 
 	const confirmDelete = () => {
 		if (!toDelete) return;
@@ -54,6 +68,63 @@ const CoursesPage = () => {
 			onError: (err) => toast.error(err.message),
 		});
 	};
+
+	const columns: Column<CoursePayload>[] = [
+		{
+			header: "Course",
+			cell: (course) => (
+				<>
+					<div className="font-semibold">{course.title}</div>
+					<div className="font-mono text-[11.5px] text-muted-foreground">
+						{course.slug}
+					</div>
+				</>
+			),
+		},
+		{
+			header: "Instructor",
+			cellClassName: "text-muted-foreground",
+			cell: (course) => course.instructorName,
+		},
+		{
+			header: "Price",
+			cellClassName: "font-mono font-bold",
+			cell: (course) => formatPrice(course.price),
+		},
+		{
+			header: "Status",
+			cell: (course) => (
+				<Badge variant={course.isPublished ? "success" : "muted"}>
+					{course.isPublished ? "Live" : "Draft"}
+				</Badge>
+			),
+		},
+		{
+			header: "Actions",
+			align: "right",
+			cell: (course) => (
+				<RowActions>
+					<RowActionButton
+						onClick={() => navigate(ROUTES.adminCourseCurriculum(course._id))}
+					>
+						Curriculum
+					</RowActionButton>
+					<RowActionButton
+						onClick={() => navigate(ROUTES.adminCourseEdit(course._id))}
+					>
+						Edit
+					</RowActionButton>
+					<RowActionButton
+						variant="destructive"
+						aria-label={`Delete ${course.title}`}
+						onClick={() => setToDelete(course)}
+					>
+						Delete
+					</RowActionButton>
+				</RowActions>
+			),
+		},
+	];
 
 	return (
 		<section>
@@ -77,7 +148,7 @@ const CoursesPage = () => {
 						<Search className="size-4 text-muted-foreground" />
 						<input
 							value={query}
-							onChange={(e) => setQuery(e.target.value)}
+							onChange={(event) => setQuery(event.target.value)}
 							placeholder="Search courses…"
 							aria-label="Search courses"
 							className="flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-muted-foreground"
@@ -104,88 +175,11 @@ const CoursesPage = () => {
 						/>
 					)
 				) : (
-					<table className="w-full border-collapse">
-						<thead>
-							<tr className="border-b border-border text-left font-mono text-[10.5px] uppercase tracking-wide text-muted-foreground">
-								<th scope="col" className="px-5 py-3 font-medium">
-									Course
-								</th>
-								<th scope="col" className="px-5 py-3 font-medium">
-									Instructor
-								</th>
-								<th scope="col" className="px-5 py-3 font-medium">
-									Price
-								</th>
-								<th scope="col" className="px-5 py-3 font-medium">
-									Status
-								</th>
-								<th scope="col" className="px-5 py-3 text-right font-medium">
-									Actions
-								</th>
-							</tr>
-						</thead>
-
-						<tbody>
-							{filtered.map((course) => (
-								<tr
-									key={course._id}
-									className="border-b border-border text-sm last:border-0 hover:bg-muted/40"
-								>
-									<td className="px-5 py-3.5">
-										<div className="font-semibold">{course.title}</div>
-										<div className="font-mono text-[11.5px] text-muted-foreground">
-											{course.slug}
-										</div>
-									</td>
-
-									<td className="px-5 py-3.5 text-muted-foreground">
-										{course.instructorName}
-									</td>
-
-									<td className="px-5 py-3.5 font-mono font-bold">
-										{formatPrice(course.price)}
-									</td>
-
-									<td className="px-5 py-3.5">
-										<Badge variant={course.isPublished ? "success" : "muted"}>
-											{course.isPublished ? "Live" : "Draft"}
-										</Badge>
-									</td>
-
-									<td className="px-5 py-3.5">
-										<div className="flex justify-end gap-3.5">
-											<button
-												type="button"
-												onClick={() =>
-													navigate(ROUTES.adminCourseCurriculum(course._id))
-												}
-												className={`${rowAction} hover:text-primary`}
-											>
-												Curriculum
-											</button>
-											<button
-												type="button"
-												onClick={() =>
-													navigate(ROUTES.adminCourseEdit(course._id))
-												}
-												className={`${rowAction} hover:text-primary`}
-											>
-												Edit
-											</button>
-											<button
-												type="button"
-												aria-label={`Delete ${course.title}`}
-												onClick={() => setToDelete(course)}
-												className={`${rowAction} hover:text-destructive`}
-											>
-												Delete
-											</button>
-										</div>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+					<DataTable
+						columns={columns}
+						rows={filtered}
+						getRowKey={(course) => course._id}
+					/>
 				)}
 			</div>
 

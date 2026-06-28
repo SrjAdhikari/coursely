@@ -160,6 +160,9 @@ describe("StudentManagePage", () => {
 		expect(
 			screen.getByText(/couldn't load this student/i),
 		).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: /back to students/i }),
+		).toBeInTheDocument();
 
 		await user.click(screen.getByRole("button", { name: /try again/i }));
 		expect(mockRefetch).toHaveBeenCalledOnce();

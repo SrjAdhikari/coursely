@@ -11,7 +11,7 @@ import { useDeleteSection, useDeleteLesson } from "@/hooks/useCurriculum";
 import SectionDialog from "@/components/admin/SectionDialog";
 import LessonDialog from "@/components/admin/LessonDialog";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-import CourseLoadFailed from "@/components/admin/CourseFormLoadFailed";
+import LoadFailed from "@/components/common/LoadFailed";
 import Loader from "@/components/Loader";
 import { Button } from "@/components/ui/button";
 import { courseKey } from "@/lib/queryKeys";
@@ -64,7 +64,16 @@ const CurriculumPage = () => {
 	};
 
 	if (isLoading) return <Loader className="min-h-[60vh]" />;
-	if (isError || !course) return <CourseLoadFailed onRetry={() => refetch()} />;
+	if (isError || !course)
+		return (
+			<LoadFailed
+				title="Couldn't load this course"
+				description="It may have been removed, or something went wrong. Try again or go back to courses."
+				onRetry={() => refetch()}
+				backTo={ROUTES.ADMIN_COURSES}
+				backLabel="Back to courses"
+			/>
+		);
 
 	return (
 		<section className="max-w-4xl">

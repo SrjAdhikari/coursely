@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import { useGetStudent, useUpdateStudent } from "@/hooks/useStudents";
 import Loader from "@/components/Loader";
 import { Button } from "@/components/ui/button";
-import StudentLoadFailed from "@/components/admin/StudentLoadFailed";
+import DataTable, { type Column } from "@/components/common/DataTable";
+import LoadFailed from "@/components/common/LoadFailed";
 import DeactivateDialog from "@/components/admin/DeactivateDialog";
 import { formatPrice } from "@/lib/currency";
 import { STUDENTS_KEY, studentKey } from "@/lib/queryKeys";
@@ -26,26 +27,65 @@ const formatJoinedDate = (iso: string) =>
 		year: "numeric",
 	});
 
+interface StudentEnrollment {
+	course: string;
+	purchased: string;
+	amount: number;
+	progress: number;
+}
+
 // Phase 5 placeholder — sample enrollments shown until the payments/enrollment
 // feature lands; swap for real data from the enrollments API then.
-const sampleEnrollments = [
+const sampleEnrollments: StudentEnrollment[] = [
 	{ course: "React from Scratch", purchased: "Jun 23", amount: 89900, progress: 38 },
 	{ course: "JavaScript Essentials", purchased: "Apr 12", amount: 69900, progress: 100 },
 	{ course: "HTML Foundations", purchased: "Mar 30", amount: 49900, progress: 100 },
 	{ course: "Node.js & Express APIs", purchased: "May 18", amount: 99900, progress: 22 },
 ];
 
+const enrollmentColumns: Column<StudentEnrollment>[] = [
+	{
+		header: "Course",
+		cellClassName: "font-medium",
+		cell: (enrollment) => enrollment.course,
+	},
+	{
+		header: "Purchased",
+		cellClassName: "font-mono text-muted-foreground",
+		cell: (enrollment) => enrollment.purchased,
+	},
+	{
+		header: "Amount",
+		cellClassName: "font-mono font-semibold",
+		cell: (enrollment) => formatPrice(enrollment.amount),
+	},
+	{
+		header: "Progress",
+		cellClassName: "font-mono",
+		cell: (enrollment) => `${enrollment.progress}%`,
+	},
+];
+
 const StudentManagePage = () => {
 	const { id = "" } = useParams();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	
+
 	const { data, isLoading, isError, refetch } = useGetStudent(id);
 	const { mutate: updateStudent, isPending } = useUpdateStudent();
 	const [confirmingDeactivate, setConfirmingDeactivate] = useState(false);
 
 	if (isLoading) return <Loader className="min-h-[60vh]" />;
-	if (isError || !data) return <StudentLoadFailed onRetry={() => refetch()} />;
+	if (isError || !data)
+		return (
+			<LoadFailed
+				title="Couldn't load this student"
+				description="They may have been removed, or something went wrong. Try again or go back to students."
+				onRetry={() => refetch()}
+				backTo={ROUTES.ADMIN_STUDENTS}
+				backLabel="Back to students"
+			/>
+		);
 
 	const student = data.data;
 
@@ -163,47 +203,20 @@ const StudentManagePage = () => {
 
 			<div className="overflow-hidden rounded-xl border border-border bg-card">
 				<div className="border-b border-border p-5">
-					<h2 className="font-heading text-lg font-semibold">
+					<h2
+						id="their-enrollments-heading"
+						className="font-heading text-lg font-semibold"
+					>
 						Their enrollments
 					</h2>
 				</div>
 
-				<table className="w-full border-collapse">
-					<thead>
-						<tr className="border-b border-border text-left font-mono text-[10.5px] uppercase tracking-wide text-muted-foreground">
-							<th scope="col" className="px-5 py-3 font-medium">
-								Course
-							</th>
-							<th scope="col" className="px-5 py-3 font-medium">
-								Purchased
-							</th>
-							<th scope="col" className="px-5 py-3 font-medium">
-								Amount
-							</th>
-							<th scope="col" className="px-5 py-3 font-medium">
-								Progress
-							</th>
-						</tr>
-					</thead>
-
-					<tbody>
-						{sampleEnrollments.map((enrollment) => (
-							<tr
-								key={enrollment.course}
-								className="border-b border-border text-sm last:border-0 hover:bg-muted/40"
-							>
-								<td className="px-5 py-3.5 font-medium">{enrollment.course}</td>
-								<td className="px-5 py-3.5 font-mono text-muted-foreground">
-									{enrollment.purchased}
-								</td>
-								<td className="px-5 py-3.5 font-mono font-semibold">
-									{formatPrice(enrollment.amount)}
-								</td>
-								<td className="px-5 py-3.5 font-mono">{enrollment.progress}%</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
+				<DataTable
+					columns={enrollmentColumns}
+					rows={sampleEnrollments}
+					getRowKey={(enrollment) => enrollment.course}
+					ariaLabelledby="their-enrollments-heading"
+				/>
 			</div>
 
 			{confirmingDeactivate && (

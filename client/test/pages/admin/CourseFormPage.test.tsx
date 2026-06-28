@@ -165,6 +165,9 @@ describe("CourseFormPage (edit)", () => {
 		renderAt("/admin/courses/c1/edit");
 		expect(screen.getByRole("alert")).toBeInTheDocument();
 		expect(screen.getByText(/couldn't load this course/i)).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: /back to courses/i }),
+		).toBeInTheDocument();
 	});
 
 	it("prefills the loaded course and submits an update payload in paise", async () => {
