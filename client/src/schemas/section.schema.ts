@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 /** 
- * Section modal form. `order` is an optional digit string (blank = default 0). 
+ * Section dialog form. `order` is an optional digit string (blank = default 0).
  */
 const sectionFormSchema = z.object({
 	title: z

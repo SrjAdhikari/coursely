@@ -2,15 +2,23 @@
 
 import { LoaderIcon } from "lucide-react";
 
-/** Centered full-screen spinner shown while the auth check is in flight. */
-const Loader = () => (
+import { cn } from "@/lib/utils";
+
+/**
+ * Centered spinner. Full-screen by default (auth checks); pass `className` to
+ * override the height for inline use, e.g. inside a card or table body.
+ */
+const Loader = ({ className }: { className?: string }) => (
 	<div
 		role="status"
 		aria-label="Loading"
-		className="flex flex-col min-h-screen items-center justify-center gap-2 text-primary"
+		className={cn(
+			"flex flex-col items-center justify-center gap-2 text-primary",
+			className ?? "min-h-screen",
+		)}
 	>
 		<LoaderIcon className="size-6 animate-spin" aria-hidden />
-		<span className="text-base font-mono font-medium ">Loading...</span>
+		<span className="text-base font-mono font-medium">Loading...</span>
 	</div>
 );
 
