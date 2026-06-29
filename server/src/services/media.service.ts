@@ -15,11 +15,12 @@ import {
 	courseTrailerKey,
 	presignPut,
 	presignGet,
+	objectExists,
 } from "../lib/r2";
 
 import type { PublicUser } from "../models/user.model";
 
-const { NOT_FOUND, UNAUTHORIZED, FORBIDDEN } = httpStatus;
+const { NOT_FOUND, UNAUTHORIZED, FORBIDDEN, BAD_REQUEST } = httpStatus;
 const {
 	LESSON_NOT_FOUND,
 	COURSE_NOT_FOUND,
@@ -27,11 +28,12 @@ const {
 	TRAILER_NOT_FOUND,
 	UNAUTHORIZED_ACCESS,
 	NOT_ENROLLED,
+	UPLOAD_INCOMPLETE,
 } = appErrorCode;
 
 /**
  * Admin: mint a presigned PUT for a lesson's video.
- * 
+ *
  * @throws {AppError} 404 LESSON_NOT_FOUND if the lesson does not exist.
  * @returns The upload URL and the canonical (server-derived) video key.
  */
@@ -48,20 +50,29 @@ const createLessonUploadUrl = async (lessonId: string) => {
 };
 
 /**
- * Admin: confirm a lesson video upload — store the canonical key + duration.
- * The key is server-derived (never client-supplied).
- * @throws {AppError} 404 LESSON_NOT_FOUND if the lesson does not exist.
+ * Admin: confirm a lesson video upload — verify the object exists in R2, then
+ * store the canonical key + duration. The key is server-derived (never client-supplied).
+ *
+ * @throws {AppError} 404 LESSON_NOT_FOUND / 400 UPLOAD_INCOMPLETE
  */
 const setLessonVideo = async (lessonId: string, duration: number) => {
-	const lesson = await Lesson.findByIdAndUpdate(
-		lessonId,
-		{ videoKey: lessonVideoKey(lessonId), duration },
-		{ returnDocument: "after", runValidators: true },
-	);
-
+	const lesson = await Lesson.findById(lessonId);
 	if (!lesson) {
 		throw new AppError("Lesson not found", NOT_FOUND, LESSON_NOT_FOUND);
 	}
+
+	const videoKey = lessonVideoKey(lessonId);
+	if (!(await objectExists(videoKey))) {
+		throw new AppError(
+			"Video upload not found in storage",
+			BAD_REQUEST,
+			UPLOAD_INCOMPLETE,
+		);
+	}
+
+	lesson.videoKey = videoKey;
+	lesson.duration = duration;
+	await lesson.save();
 
 	return lesson;
 };
@@ -85,19 +96,28 @@ const createCourseTrailerUploadUrl = async (courseId: string) => {
 };
 
 /**
- * Admin: confirm a course trailer upload — store the canonical key.
- * @throws {AppError} 404 COURSE_NOT_FOUND if the course does not exist.
+ * Admin: confirm a course trailer upload — verify the object exists in R2,
+ * then store the canonical key.
+ *
+ * @throws {AppError} 404 COURSE_NOT_FOUND / 400 UPLOAD_INCOMPLETE
  */
 const setCourseTrailer = async (courseId: string) => {
-	const course = await Course.findByIdAndUpdate(
-		courseId,
-		{ trailerKey: courseTrailerKey(courseId) },
-		{ returnDocument: "after", runValidators: true },
-	);
-
+	const course = await Course.findById(courseId);
 	if (!course) {
 		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
 	}
+
+	const trailerKey = courseTrailerKey(courseId);
+	if (!(await objectExists(trailerKey))) {
+		throw new AppError(
+			"Trailer upload not found in storage",
+			BAD_REQUEST,
+			UPLOAD_INCOMPLETE,
+		);
+	}
+
+	course.trailerKey = trailerKey;
+	await course.save();
 
 	return course;
 };

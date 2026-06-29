@@ -9,6 +9,7 @@ vi.mock("../../src/lib/r2", async (importOriginal) => {
 		...actual,
 		presignPut: vi.fn(async (key: string) => `https://r2.test/put/${key}`),
 		presignGet: vi.fn(async (key: string) => `https://r2.test/get/${key}`),
+		objectExists: vi.fn(async () => true),
 	};
 });
 

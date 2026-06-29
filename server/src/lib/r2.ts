@@ -4,6 +4,7 @@ import {
 	S3Client,
 	PutObjectCommand,
 	GetObjectCommand,
+	HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -52,12 +53,26 @@ const presignGet = (key: string) =>
 		{ expiresIn: PLAYBACK_URL_TTL_SECONDS },
 	);
 
+/** Whether an object exists in the bucket (HeadObject). 404 → false; other errors rethrow. */
+const objectExists = async (key: string): Promise<boolean> => {
+	try {
+		await r2Client.send(new HeadObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+		return true;
+	} catch (error) {
+		const status = (error as { $metadata?: { httpStatusCode?: number } })
+			?.$metadata?.httpStatusCode;
+		if (status === 404 || (error as Error)?.name === "NotFound") return false;
+		throw error;
+	}
+};
+
 export {
 	r2Client,
 	lessonVideoKey,
 	courseTrailerKey,
 	presignPut,
 	presignGet,
+	objectExists,
 	UPLOAD_URL_TTL_SECONDS,
 	PLAYBACK_URL_TTL_SECONDS,
 };

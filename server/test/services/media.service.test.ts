@@ -9,6 +9,7 @@ vi.mock("../../src/lib/r2", async (importOriginal) => {
 		...actual,
 		presignPut: vi.fn(async (key: string) => `https://r2.test/put/${key}`),
 		presignGet: vi.fn(async (key: string) => `https://r2.test/get/${key}`),
+		objectExists: vi.fn(async () => true),
 	};
 });
 vi.mock("../../src/services/enrollment.service", () => ({
@@ -24,6 +25,7 @@ import {
 	getCourseTrailerUrl,
 } from "../../src/services/media.service";
 import { isEnrolled } from "../../src/services/enrollment.service";
+import { objectExists } from "../../src/lib/r2";
 import {
 	createTestCourse,
 	createTestSection,
@@ -31,6 +33,7 @@ import {
 } from "../helpers/factories";
 
 const mockedIsEnrolled = vi.mocked(isEnrolled);
+const mockedObjectExists = vi.mocked(objectExists);
 
 beforeEach(() => {
 	mockedIsEnrolled.mockReset();
@@ -72,6 +75,14 @@ describe("media.service — admin upload/confirm", () => {
 		).rejects.toMatchObject({ statusCode: 404, errorCode: "LESSON_NOT_FOUND" });
 	});
 
+	it("setLessonVideo 400s when the upload is not in storage", async () => {
+		mockedObjectExists.mockResolvedValueOnce(false);
+		const { lesson } = await seedLesson();
+		await expect(
+			setLessonVideo(lesson._id.toString(), 540),
+		).rejects.toMatchObject({ statusCode: 400, errorCode: "UPLOAD_INCOMPLETE" });
+	});
+
 	it("createCourseTrailerUploadUrl returns a presigned PUT + canonical key", async () => {
 		const course = await createTestCourse();
 		const id = course._id.toString();
@@ -85,6 +96,14 @@ describe("media.service — admin upload/confirm", () => {
 		const id = course._id.toString();
 		const updated = await setCourseTrailer(id);
 		expect(updated.trailerKey).toBe(`courses/${id}/trailer.mp4`);
+	});
+
+	it("setCourseTrailer 400s when the upload is not in storage", async () => {
+		mockedObjectExists.mockResolvedValueOnce(false);
+		const course = await createTestCourse();
+		await expect(
+			setCourseTrailer(course._id.toString()),
+		).rejects.toMatchObject({ statusCode: 400, errorCode: "UPLOAD_INCOMPLETE" });
 	});
 });
 
