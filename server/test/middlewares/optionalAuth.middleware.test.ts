@@ -37,4 +37,23 @@ describe("optionalAuth", () => {
 		expect(req.user).toBeUndefined();
 		expect(next).toHaveBeenCalledWith();
 	});
+
+	it("does not attach a user for an inactive account", async () => {
+		const user = await createTestUser({ isActive: false });
+		const session = await Session.create({ userId: user._id });
+		const { req, next } = await run({ sid: session._id.toString() });
+		expect(req.user).toBeUndefined();
+		expect(next).toHaveBeenCalledWith();
+	});
+
+	it("does not attach a user for an expired session", async () => {
+		const user = await createTestUser();
+		const session = await Session.create({
+			userId: user._id,
+			expiresAt: new Date(Date.now() - 1000),
+		});
+		const { req, next } = await run({ sid: session._id.toString() });
+		expect(req.user).toBeUndefined();
+		expect(next).toHaveBeenCalledWith();
+	});
 });
