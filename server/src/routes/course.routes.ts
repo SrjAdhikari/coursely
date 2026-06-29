@@ -16,6 +16,11 @@ import {
 	updateCourseHandler,
 	deleteCourseHandler,
 } from "../controllers/course.controller";
+import {
+	getCourseTrailerUrlHandler,
+	createCourseTrailerUploadUrlHandler,
+	setCourseTrailerHandler,
+} from "../controllers/media.controller";
 
 import validateBody from "../middlewares/validate.middleware";
 
@@ -32,6 +37,12 @@ const courseRouter = Router();
  * @route GET /api/courses
  */
 courseRouter.get("/", listCoursesHandler);
+
+/**
+ * Mint an ungated signed GET for a course trailer
+ * @route GET /api/courses/:slug/trailer-url
+ */
+courseRouter.get("/:slug/trailer-url", getCourseTrailerUrlHandler);
 
 /**
  * Get a published course + curriculum by slug
@@ -79,6 +90,21 @@ adminCourseRouter.patch(
  * @route DELETE /api/admin/courses/:id
  */
 adminCourseRouter.delete("/courses/:id", deleteCourseHandler);
+
+/**
+ * Mint a presigned PUT for a course trailer
+ * @route POST /api/admin/courses/:id/trailer-url
+ */
+adminCourseRouter.post(
+	"/courses/:id/trailer-url",
+	createCourseTrailerUploadUrlHandler,
+);
+
+/**
+ * Store the course trailer key after upload
+ * @route PATCH /api/admin/courses/:id/trailer
+ */
+adminCourseRouter.patch("/courses/:id/trailer", setCourseTrailerHandler);
 
 export default courseRouter;
 export { adminCourseRouter };
