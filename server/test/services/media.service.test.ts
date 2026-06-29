@@ -89,14 +89,24 @@ describe("media.service — admin upload/confirm", () => {
 });
 
 describe("getLessonPlaybackUrl", () => {
-	const seedPlayableLesson = async (overrides: Record<string, unknown> = {}) => {
-		const course = await createTestCourse();
+	const seedPlayableLesson = async (
+		lessonOverrides: Record<string, unknown> = {},
+		courseOverrides: Record<string, unknown> = {},
+	) => {
+		const course = await createTestCourse(courseOverrides);
 		const section = await createTestSection(course._id);
 		return createTestLesson(section._id, course._id, {
 			videoKey: "lessons/x/source.mp4",
-			...overrides,
+			...lessonOverrides,
 		});
 	};
+
+	const makeUser = (role: "student" | "admin") => ({
+		id: new mongoose.Types.ObjectId().toString(),
+		name: "Test",
+		email: "test@example.com",
+		role,
+	});
 
 	it("mints a URL for a preview lesson without a user", async () => {
 		const lesson = await seedPlayableLesson({ isPreview: true });
@@ -116,10 +126,7 @@ describe("getLessonPlaybackUrl", () => {
 		mockedIsEnrolled.mockResolvedValue(false);
 		const lesson = await seedPlayableLesson({ isPreview: false });
 		await expect(
-			getLessonPlaybackUrl(
-				lesson._id.toString(),
-				new mongoose.Types.ObjectId().toString(),
-			),
+			getLessonPlaybackUrl(lesson._id.toString(), makeUser("student")),
 		).rejects.toMatchObject({ statusCode: 403, errorCode: "NOT_ENROLLED" });
 	});
 
@@ -128,7 +135,7 @@ describe("getLessonPlaybackUrl", () => {
 		const lesson = await seedPlayableLesson({ isPreview: false });
 		const { url } = await getLessonPlaybackUrl(
 			lesson._id.toString(),
-			new mongoose.Types.ObjectId().toString(),
+			makeUser("student"),
 		);
 		expect(url).toBe("https://r2.test/get/lessons/x/source.mp4");
 	});
@@ -144,6 +151,29 @@ describe("getLessonPlaybackUrl", () => {
 		await expect(
 			getLessonPlaybackUrl(new mongoose.Types.ObjectId().toString()),
 		).rejects.toMatchObject({ statusCode: 404, errorCode: "LESSON_NOT_FOUND" });
+	});
+
+	it("404s a draft course's preview lesson for a non-admin (no existence leak)", async () => {
+		const lesson = await seedPlayableLesson(
+			{ isPreview: true },
+			{ isPublished: false },
+		);
+		await expect(
+			getLessonPlaybackUrl(lesson._id.toString()),
+		).rejects.toMatchObject({ statusCode: 404, errorCode: "LESSON_NOT_FOUND" });
+	});
+
+	it("lets an admin play a draft course's lesson (pre-publish authoring)", async () => {
+		const lesson = await seedPlayableLesson(
+			{ isPreview: false },
+			{ isPublished: false },
+		);
+		const { url } = await getLessonPlaybackUrl(
+			lesson._id.toString(),
+			makeUser("admin"),
+		);
+		expect(url).toBe("https://r2.test/get/lessons/x/source.mp4");
+		expect(mockedIsEnrolled).not.toHaveBeenCalled();
 	});
 });
 
@@ -167,6 +197,18 @@ describe("getCourseTrailerUrl", () => {
 
 	it("404s an unpublished/unknown course slug", async () => {
 		await expect(getCourseTrailerUrl("ghost")).rejects.toMatchObject({
+			statusCode: 404,
+			errorCode: "COURSE_NOT_FOUND",
+		});
+	});
+
+	it("404s an unpublished course even if it has a trailer", async () => {
+		const course = await createTestCourse({
+			slug: "draft-with-trailer",
+			isPublished: false,
+			trailerKey: "courses/x/trailer.mp4",
+		});
+		await expect(getCourseTrailerUrl(course.slug)).rejects.toMatchObject({
 			statusCode: 404,
 			errorCode: "COURSE_NOT_FOUND",
 		});
