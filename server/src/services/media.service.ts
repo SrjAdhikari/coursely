@@ -3,15 +3,29 @@
 import Course from "../models/course.model";
 import Lesson from "../models/lesson.model";
 
+import { isEnrolled } from "./enrollment.service";
+
 import AppError from "../errors/AppError";
 
 import httpStatus from "../constants/httpStatus";
 import appErrorCode from "../constants/appErrorCode";
 
-import { lessonVideoKey, courseTrailerKey, presignPut } from "../lib/r2";
+import {
+	lessonVideoKey,
+	courseTrailerKey,
+	presignPut,
+	presignGet,
+} from "../lib/r2";
 
-const { NOT_FOUND } = httpStatus;
-const { LESSON_NOT_FOUND, COURSE_NOT_FOUND } = appErrorCode;
+const { NOT_FOUND, UNAUTHORIZED, FORBIDDEN } = httpStatus;
+const {
+	LESSON_NOT_FOUND,
+	COURSE_NOT_FOUND,
+	VIDEO_NOT_FOUND,
+	TRAILER_NOT_FOUND,
+	UNAUTHORIZED_ACCESS,
+	NOT_ENROLLED,
+} = appErrorCode;
 
 /**
  * Admin: mint a presigned PUT for a lesson's video.
@@ -78,9 +92,72 @@ const setCourseTrailer = async (courseId: string) => {
 	return course;
 };
 
+/**
+ * Mint a ~1h playback URL for a lesson's video.
+ * Preview lessons are ungated; paid lessons require an authenticated, enrolled user.
+ * @throws {AppError} 404 LESSON_NOT_FOUND / 404 VIDEO_NOT_FOUND / 401 UNAUTHORIZED_ACCESS / 403 NOT_ENROLLED
+ */
+const getLessonPlaybackUrl = async (lessonId: string, userId?: string) => {
+	const lesson = await Lesson.findById(lessonId).lean();
+	if (!lesson) {
+		throw new AppError("Lesson not found", NOT_FOUND, LESSON_NOT_FOUND);
+	}
+	if (!lesson.videoKey) {
+		throw new AppError(
+			"This lesson has no video yet",
+			NOT_FOUND,
+			VIDEO_NOT_FOUND,
+		);
+	}
+
+	if (!lesson.isPreview) {
+		if (!userId) {
+			throw new AppError(
+				"Authentication required",
+				UNAUTHORIZED,
+				UNAUTHORIZED_ACCESS,
+			);
+		}
+		const enrolled = await isEnrolled(userId, lesson.courseId.toString());
+		if (!enrolled) {
+			throw new AppError(
+				"You are not enrolled in this course",
+				FORBIDDEN,
+				NOT_ENROLLED,
+			);
+		}
+	}
+
+	const url = await presignGet(lesson.videoKey);
+	return { url };
+};
+
+/**
+ * Public: mint an ungated ~1h playback URL for a published course's trailer.
+ * @throws {AppError} 404 COURSE_NOT_FOUND / 404 TRAILER_NOT_FOUND
+ */
+const getCourseTrailerUrl = async (slug: string) => {
+	const course = await Course.findOne({ slug, isPublished: true }).lean();
+	if (!course) {
+		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
+	}
+	if (!course.trailerKey) {
+		throw new AppError(
+			"This course has no trailer",
+			NOT_FOUND,
+			TRAILER_NOT_FOUND,
+		);
+	}
+
+	const url = await presignGet(course.trailerKey);
+	return { url };
+};
+
 export {
 	createLessonUploadUrl,
 	setLessonVideo,
 	createCourseTrailerUploadUrl,
 	setCourseTrailer,
+	getLessonPlaybackUrl,
+	getCourseTrailerUrl,
 };
