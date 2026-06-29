@@ -4,6 +4,7 @@ import User, { type UserRole } from "../../src/models/user.model";
 import Course from "../../src/models/course.model";
 import Section from "../../src/models/section.model";
 import Lesson from "../../src/models/lesson.model";
+import Enrollment from "../../src/models/enrollment.model";
 import type { Types } from "mongoose";
 
 interface UserOverrides {
@@ -64,4 +65,10 @@ const createTestLesson = (
 		...overrides,
 	});
 
-export { createTestUser, createTestCourse, createTestSection, createTestLesson };
+const createTestEnrollment = (
+	userId: Types.ObjectId,
+	courseId: Types.ObjectId,
+	overrides: Record<string, unknown> = {},
+) => Enrollment.create({ userId, courseId, ...overrides });
+
+export { createTestUser, createTestCourse, createTestSection, createTestLesson, createTestEnrollment };
