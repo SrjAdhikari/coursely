@@ -15,11 +15,19 @@ import appErrorCode from "../constants/appErrorCode";
 const { UNAUTHORIZED, FORBIDDEN } = httpStatus;
 const { UNAUTHORIZED_ACCESS, ACCOUNT_DEACTIVATED } = appErrorCode;
 
-/** The user fields `authenticate` needs from the session — never the password. */
+/** The user fields the auth middlewares need from the session — never the password. */
 type SessionUser = Pick<
 	UserDocument,
 	"_id" | "name" | "email" | "role" | "isActive"
 >;
+
+/** Load a session with its user populated in one round-trip (never the password). */
+const findSessionWithUser = (sessionId: string) =>
+	Session.findById(sessionId)
+		.populate<{
+			userId: SessionUser | null;
+		}>("userId", "name email role isActive")
+		.lean();
 
 /**
  * Require a valid session: read the signed cookie, load the session and its
@@ -40,13 +48,7 @@ const authenticate: RequestHandler = async (req, res, next) => {
 		);
 	}
 
-	// One round-trip; project only the fields we need — never the password.
-	const session = await Session.findById(sessionId)
-		.populate<{ userId: SessionUser | null }>(
-			"userId",
-			"name email role isActive",
-		)
-		.lean();
+	const session = await findSessionWithUser(sessionId);
 
 	// Missing/expired session, or a user that no longer exists.
 	if (
@@ -74,7 +76,36 @@ const authenticate: RequestHandler = async (req, res, next) => {
 
 	req.user = toPublicUser(user);
 	req.sessionId = session._id.toString();
+
+	next();
+};
+
+/**
+ * Best-effort authentication: if a valid, active, unexpired session cookie is
+ * present, attach `req.user` (+ `req.sessionId`); otherwise continue anonymously.
+ * Never throws — used by routes that serve both public and authenticated callers
+ * (e.g. lesson playback: preview is ungated, paid is enrollment-gated).
+ */
+const optionalAuth: RequestHandler = async (req, _res, next) => {
+	const sessionId = req.signedCookies[SESSION_COOKIE_NAME] as
+		| string
+		| undefined;
+	if (!sessionId) return next();
+
+	const session = await findSessionWithUser(sessionId);
+
+	if (
+		session &&
+		session.userId &&
+		session.userId.isActive &&
+		session.expiresAt.getTime() > Date.now()
+	) {
+		req.user = toPublicUser(session.userId);
+		req.sessionId = session._id.toString();
+	}
+
 	next();
 };
 
 export default authenticate;
+export { optionalAuth };

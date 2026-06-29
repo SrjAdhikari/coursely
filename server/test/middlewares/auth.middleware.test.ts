@@ -1,10 +1,10 @@
-//* test/middlewares/optionalAuth.middleware.test.ts
+//* test/middlewares/auth.middleware.test.ts
 
 import { describe, it, expect, vi } from "vitest";
 import mongoose from "mongoose";
 import type { Request, Response } from "express";
 
-import optionalAuth from "../../src/middlewares/optionalAuth.middleware";
+import { optionalAuth } from "../../src/middlewares/auth.middleware";
 import Session from "../../src/models/session.model";
 import { createTestUser } from "../helpers/factories";
 

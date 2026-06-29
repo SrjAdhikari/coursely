@@ -8,7 +8,7 @@
 import { Router } from "express";
 import authRouter from "./auth.routes";
 import courseRouter from "./course.routes";
-import { lessonRouter } from "./lesson.routes";
+import { publicLessonRouter } from "./lesson.routes";
 import adminRouter from "./admin.routes";
 
 const router = Router();
@@ -29,7 +29,7 @@ router.use("/courses", courseRouter);
  * Public lesson media routes
  * @route /api/lessons
  */
-router.use("/lessons", lessonRouter);
+router.use("/lessons", publicLessonRouter);
 
 /**
  * Admin routes (authenticated admin only)

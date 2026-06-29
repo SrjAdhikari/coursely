@@ -19,7 +19,7 @@ import {
 } from "../controllers/media.controller";
 
 import validateBody from "../middlewares/validate.middleware";
-import optionalAuth from "../middlewares/optionalAuth.middleware";
+import { optionalAuth } from "../middlewares/auth.middleware";
 
 import {
 	createLessonSchema,
@@ -28,16 +28,20 @@ import {
 import { setLessonVideoSchema } from "../validators/media.validator";
 
 /** Public lesson router — mounted at /api/lessons */
-const lessonRouter = Router();
+const publicLessonRouter = Router();
+
+/** Admin lesson router — mounted inside adminRouter at /api/admin */
+const adminLessonRouter = Router();
 
 /**
  * Mint a playback URL (preview = ungated; paid = enrollment-gated)
  * @route GET /api/lessons/:id/playback-url
  */
-lessonRouter.get("/:id/playback-url", optionalAuth, getLessonPlaybackUrlHandler);
-
-/** Admin lesson router — mounted inside adminRouter at /api/admin */
-const adminLessonRouter = Router();
+publicLessonRouter.get(
+	"/:id/playback-url",
+	optionalAuth,
+	getLessonPlaybackUrlHandler,
+);
 
 /**
  * Create a new lesson
@@ -82,4 +86,4 @@ adminLessonRouter.patch(
 );
 
 export default adminLessonRouter;
-export { lessonRouter };
+export { publicLessonRouter };
