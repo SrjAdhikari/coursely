@@ -15,12 +15,13 @@ import httpStatus from "../constants/httpStatus";
 
 const { OK } = httpStatus;
 
-/** @route POST /api/admin/lessons/:id/upload-url */
 const createLessonUploadUrlHandler: RequestHandler<{ id: string }> = async (
 	req,
 	res,
 ) => {
-	const { uploadUrl, videoKey } = await createLessonUploadUrl(req.params.id);
+	const lessonId = req.params.id;
+	const { uploadUrl, videoKey } = await createLessonUploadUrl(lessonId);
+
 	res.status(OK).json({
 		success: true,
 		message: "Upload URL generated successfully",
@@ -28,13 +29,15 @@ const createLessonUploadUrlHandler: RequestHandler<{ id: string }> = async (
 	});
 };
 
-/** @route PATCH /api/admin/lessons/:id/video */
 const setLessonVideoHandler: RequestHandler<{ id: string }> = async (
 	req,
 	res,
 ) => {
 	const { duration } = req.body;
-	const lesson = await setLessonVideo(req.params.id, duration);
+	const lessonId = req.params.id;
+
+	const lesson = await setLessonVideo(lessonId, duration);
+
 	res.status(OK).json({
 		success: true,
 		message: "Lesson video saved successfully",
@@ -42,12 +45,13 @@ const setLessonVideoHandler: RequestHandler<{ id: string }> = async (
 	});
 };
 
-/** @route GET /api/lessons/:id/playback-url */
 const getLessonPlaybackUrlHandler: RequestHandler<{ id: string }> = async (
 	req,
 	res,
 ) => {
-	const { url } = await getLessonPlaybackUrl(req.params.id, req.user);
+	const lessonId = req.params.id;
+	const { url } = await getLessonPlaybackUrl(lessonId, req.user);
+
 	res.status(OK).json({
 		success: true,
 		message: "Playback URL generated successfully",
@@ -55,12 +59,12 @@ const getLessonPlaybackUrlHandler: RequestHandler<{ id: string }> = async (
 	});
 };
 
-/** @route POST /api/admin/courses/:id/trailer-url */
 const createCourseTrailerUploadUrlHandler: RequestHandler<{ id: string }> =
 	async (req, res) => {
-		const { uploadUrl, trailerKey } = await createCourseTrailerUploadUrl(
-			req.params.id,
-		);
+		const courseId = req.params.id;
+		const { uploadUrl, trailerKey } =
+			await createCourseTrailerUploadUrl(courseId);
+
 		res.status(OK).json({
 			success: true,
 			message: "Trailer upload URL generated successfully",
@@ -68,12 +72,13 @@ const createCourseTrailerUploadUrlHandler: RequestHandler<{ id: string }> =
 		});
 	};
 
-/** @route PATCH /api/admin/courses/:id/trailer */
 const setCourseTrailerHandler: RequestHandler<{ id: string }> = async (
 	req,
 	res,
 ) => {
-	const course = await setCourseTrailer(req.params.id);
+	const courseId = req.params.id;
+	const course = await setCourseTrailer(courseId);
+
 	res.status(OK).json({
 		success: true,
 		message: "Course trailer saved successfully",
@@ -81,12 +86,13 @@ const setCourseTrailerHandler: RequestHandler<{ id: string }> = async (
 	});
 };
 
-/** @route GET /api/courses/:slug/trailer-url */
 const getCourseTrailerUrlHandler: RequestHandler<{ slug: string }> = async (
 	req,
 	res,
 ) => {
-	const { url } = await getCourseTrailerUrl(req.params.slug);
+	const slug = req.params.slug;
+	const { url } = await getCourseTrailerUrl(slug);
+
 	res.status(OK).json({
 		success: true,
 		message: "Trailer URL generated successfully",
