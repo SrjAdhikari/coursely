@@ -23,6 +23,10 @@ const envConfig = Object.freeze({
 	MONGODB_URI: getEnv("MONGODB_URI"),
 	COOKIE_SECRET: getEnv("COOKIE_SECRET"),
 	APP_ORIGIN: getEnv("APP_ORIGIN"),
+	R2_ACCOUNT_ID: getEnv("R2_ACCOUNT_ID"),
+	R2_ACCESS_KEY_ID: getEnv("R2_ACCESS_KEY_ID"),
+	R2_SECRET_ACCESS_KEY: getEnv("R2_SECRET_ACCESS_KEY"),
+	R2_BUCKET: getEnv("R2_BUCKET"),
 });
 
 export default envConfig;

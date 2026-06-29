@@ -2,7 +2,7 @@
 
 /**
  * Centralized application error codes.
- * 
+ *
  * @readonly
  * @enum {string}
  */
@@ -30,6 +30,12 @@ const appErrorCode = Object.freeze({
 	LESSON_NOT_FOUND: "LESSON_NOT_FOUND",
 	STUDENT_NOT_FOUND: "STUDENT_NOT_FOUND",
 	COURSE_HAS_ENROLLMENTS: "COURSE_HAS_ENROLLMENTS",
+
+	// Media / enrollment
+	NOT_ENROLLED: "NOT_ENROLLED",
+	VIDEO_NOT_FOUND: "VIDEO_NOT_FOUND",
+	TRAILER_NOT_FOUND: "TRAILER_NOT_FOUND",
+	UPLOAD_INCOMPLETE: "UPLOAD_INCOMPLETE",
 });
 
 export default appErrorCode;

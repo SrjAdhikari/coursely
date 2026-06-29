@@ -16,6 +16,11 @@ import {
 	updateCourseHandler,
 	deleteCourseHandler,
 } from "../controllers/course.controller";
+import {
+	getCourseTrailerUrlHandler,
+	createCourseTrailerUploadUrlHandler,
+	setCourseTrailerHandler,
+} from "../controllers/media.controller";
 
 import validateBody from "../middlewares/validate.middleware";
 
@@ -25,22 +30,28 @@ import {
 } from "../validators/course.validator";
 
 /** Public catalog router — mounted at /api/courses */
-const courseRouter = Router();
+const publicCourseRouter = Router();
+
+/** Admin course router — mounted inside adminRouter at /api/admin */
+const adminCourseRouter = Router();
 
 /**
  * List published courses (optional ?q= text search)
  * @route GET /api/courses
  */
-courseRouter.get("/", listCoursesHandler);
+publicCourseRouter.get("/", listCoursesHandler);
+
+/**
+ * Mint an ungated signed GET for a course trailer
+ * @route GET /api/courses/:slug/trailer-url
+ */
+publicCourseRouter.get("/:slug/trailer-url", getCourseTrailerUrlHandler);
 
 /**
  * Get a published course + curriculum by slug
  * @route GET /api/courses/:slug
  */
-courseRouter.get("/:slug", getCourseBySlugHandler);
-
-/** Admin course router — mounted inside adminRouter at /api/admin */
-const adminCourseRouter = Router();
+publicCourseRouter.get("/:slug", getCourseBySlugHandler);
 
 /**
  * List all courses (drafts + published)
@@ -80,5 +91,20 @@ adminCourseRouter.patch(
  */
 adminCourseRouter.delete("/courses/:id", deleteCourseHandler);
 
-export default courseRouter;
-export { adminCourseRouter };
+/**
+ * Mint a presigned PUT for a course trailer
+ * @route POST /api/admin/courses/:id/trailer-url
+ */
+adminCourseRouter.post(
+	"/courses/:id/trailer-url",
+	createCourseTrailerUploadUrlHandler,
+);
+
+/**
+ * Store the course trailer key after upload
+ * @route PATCH /api/admin/courses/:id/trailer
+ */
+adminCourseRouter.patch("/courses/:id/trailer", setCourseTrailerHandler);
+
+export default adminCourseRouter;
+export { publicCourseRouter };
