@@ -56,4 +56,18 @@ describe("optionalAuth", () => {
 		expect(req.user).toBeUndefined();
 		expect(next).toHaveBeenCalledWith();
 	});
+
+	it("continues anonymously when the session lookup rejects (store failure)", async () => {
+		const spy = vi.spyOn(Session, "findById").mockReturnValue({
+			populate: () => ({ lean: () => Promise.reject(new Error("db down")) }),
+		} as unknown as ReturnType<typeof Session.findById>);
+
+		const { req, next } = await run({
+			sid: new mongoose.Types.ObjectId().toString(),
+		});
+
+		expect(req.user).toBeUndefined();
+		expect(next).toHaveBeenCalledWith();
+		spy.mockRestore();
+	});
 });

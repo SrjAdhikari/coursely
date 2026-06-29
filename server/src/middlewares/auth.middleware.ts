@@ -92,16 +92,21 @@ const optionalAuth: RequestHandler = async (req, _res, next) => {
 		| undefined;
 	if (!sessionId) return next();
 
-	const session = await findSessionWithUser(sessionId);
+	try {
+		const session = await findSessionWithUser(sessionId);
 
-	if (
-		session &&
-		session.userId &&
-		session.userId.isActive &&
-		session.expiresAt.getTime() > Date.now()
-	) {
-		req.user = toPublicUser(session.userId);
-		req.sessionId = session._id.toString();
+		if (
+			session &&
+			session.userId &&
+			session.userId.isActive &&
+			session.expiresAt.getTime() > Date.now()
+		) {
+			req.user = toPublicUser(session.userId);
+			req.sessionId = session._id.toString();
+		}
+	} catch {
+		// Best-effort auth: a session-store failure must not break public routes —
+		// degrade to anonymous rather than throwing.
 	}
 
 	next();
