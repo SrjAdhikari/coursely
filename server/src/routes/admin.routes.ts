@@ -10,7 +10,7 @@ import { Router } from "express";
 import authenticate from "../middlewares/auth.middleware";
 import { requireAdmin } from "../middlewares/authorize.middleware";
 
-import { adminCourseRouter } from "./course.routes";
+import adminCourseRouter from "./course.routes";
 import adminSectionRouter from "./section.routes";
 import adminLessonRouter from "./lesson.routes";
 import adminStudentRouter from "./student.routes";

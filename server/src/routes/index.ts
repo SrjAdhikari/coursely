@@ -7,7 +7,7 @@
 
 import { Router } from "express";
 import authRouter from "./auth.routes";
-import courseRouter from "./course.routes";
+import { publicCourseRouter } from "./course.routes";
 import { publicLessonRouter } from "./lesson.routes";
 import adminRouter from "./admin.routes";
 
@@ -23,7 +23,7 @@ router.use("/auth", authRouter);
  * Public catalog routes
  * @route /api/courses
  */
-router.use("/courses", courseRouter);
+router.use("/courses", publicCourseRouter);
 
 /**
  * Public lesson media routes

@@ -30,28 +30,28 @@ import {
 } from "../validators/course.validator";
 
 /** Public catalog router — mounted at /api/courses */
-const courseRouter = Router();
+const publicCourseRouter = Router();
+
+/** Admin course router — mounted inside adminRouter at /api/admin */
+const adminCourseRouter = Router();
 
 /**
  * List published courses (optional ?q= text search)
  * @route GET /api/courses
  */
-courseRouter.get("/", listCoursesHandler);
+publicCourseRouter.get("/", listCoursesHandler);
 
 /**
  * Mint an ungated signed GET for a course trailer
  * @route GET /api/courses/:slug/trailer-url
  */
-courseRouter.get("/:slug/trailer-url", getCourseTrailerUrlHandler);
+publicCourseRouter.get("/:slug/trailer-url", getCourseTrailerUrlHandler);
 
 /**
  * Get a published course + curriculum by slug
  * @route GET /api/courses/:slug
  */
-courseRouter.get("/:slug", getCourseBySlugHandler);
-
-/** Admin course router — mounted inside adminRouter at /api/admin */
-const adminCourseRouter = Router();
+publicCourseRouter.get("/:slug", getCourseBySlugHandler);
 
 /**
  * List all courses (drafts + published)
@@ -106,5 +106,5 @@ adminCourseRouter.post(
  */
 adminCourseRouter.patch("/courses/:id/trailer", setCourseTrailerHandler);
 
-export default courseRouter;
-export { adminCourseRouter };
+export default adminCourseRouter;
+export { publicCourseRouter };
