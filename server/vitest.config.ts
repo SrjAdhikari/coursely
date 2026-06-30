@@ -20,6 +20,8 @@ export default defineConfig({
 			R2_ACCESS_KEY_ID: "test-access-key",
 			R2_SECRET_ACCESS_KEY: "test-secret-key",
 			R2_BUCKET: "coursely-test",
+			STRIPE_SECRET_KEY: "sk_test_dummy_key_for_unit_tests",
+			STRIPE_WEBHOOK_SECRET: "whsec_test_dummy_secret_for_signing",
 		},
 		include: ["test/**/*.test.ts"],
 		globalSetup: ["./test/helpers/globalSetup.ts"],

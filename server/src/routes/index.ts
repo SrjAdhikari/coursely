@@ -9,6 +9,8 @@ import { Router } from "express";
 import authRouter from "./auth.routes";
 import { publicCourseRouter } from "./course.routes";
 import { publicLessonRouter } from "./lesson.routes";
+import { paymentRouter } from "./payment.routes";
+import { enrollmentRouter } from "./enrollment.routes";
 import adminRouter from "./admin.routes";
 
 const router = Router();
@@ -30,6 +32,18 @@ router.use("/courses", publicCourseRouter);
  * @route /api/lessons
  */
 router.use("/lessons", publicLessonRouter);
+
+/**
+ * Checkout routes (authenticated student)
+ * @route /api/checkout
+ */
+router.use("/checkout", paymentRouter);
+
+/**
+ * Enrollment routes (authenticated student)
+ * @route /api/enrollments
+ */
+router.use("/enrollments", enrollmentRouter);
 
 /**
  * Admin routes (authenticated admin only)

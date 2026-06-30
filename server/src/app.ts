@@ -14,6 +14,7 @@ import globalErrorHandler from "./middlewares/error.middleware";
 import { globalLimiter } from "./middlewares/rateLimit.middleware";
 
 import routes from "./routes/index";
+import { stripeWebhookRouter } from "./routes/payment.routes";
 
 const { APP_ORIGIN, COOKIE_SECRET } = envConfig;
 const { OK, NOT_FOUND } = httpStatus;
@@ -46,6 +47,15 @@ app.use(
 		credentials: true,
 		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 	}),
+);
+
+// Stripe webhook needs the UNPARSED body for signature verification, so it is
+// mounted with a raw parser ABOVE express.json() (which would otherwise consume
+// the stream). It is server-to-server, authenticated by signature — no session.
+app.use(
+	"/api/webhooks/stripe",
+	express.raw({ type: "application/json" }),
+	stripeWebhookRouter,
 );
 
 app.use(express.json({ limit: "1mb" }));
