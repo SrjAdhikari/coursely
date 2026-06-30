@@ -65,7 +65,9 @@ const createEnrollment = async (enrollmentData: CreateEnrollmentData) => {
 		return enrollment;
 	} catch (error) {
 		// Concurrent webhook + reconciliation upserts can collide on the unique
-		// index (Mongo upserts don't auto-retry). The row now exists — re-read it.
+		// {userId,courseId} index (Mongo upserts don't auto-retry). On that race the
+		// row now exists — re-read and return it. Any other duplicate-key error, or a
+		// re-read that finds nothing, is unexpected → rethrow rather than swallow.
 		const isDuplicateKey =
 			error instanceof mongoose.mongo.MongoServerError && error.code === 11000;
 		if (!isDuplicateKey) throw error;
@@ -74,6 +76,7 @@ const createEnrollment = async (enrollmentData: CreateEnrollmentData) => {
 			userId: enrollmentData.userId,
 			courseId: enrollmentData.courseId,
 		}).lean();
+		if (!existing) throw error;
 
 		return existing;
 	}

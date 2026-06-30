@@ -1,6 +1,6 @@
 //* test/services/enrollment.service.test.ts
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import mongoose from "mongoose";
 
 import {
@@ -58,6 +58,54 @@ describe("createEnrollment", () => {
 		expect(second!.stripeSessionId).toBe("cs_first");
 		expect(second!.amountPaid).toBe(49900);
 		expect(await Enrollment.countDocuments({ userId, courseId })).toBe(1);
+	});
+});
+
+describe("createEnrollment — concurrent-insert race (E11000)", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	const buildDuplicateError = () => {
+		const duplicateError = new mongoose.mongo.MongoServerError({
+			message: "E11000 duplicate key",
+		});
+		duplicateError.code = 11000;
+		return duplicateError;
+	};
+
+	it("absorbs the {userId,courseId} duplicate and returns the existing row", async () => {
+		const userId = new mongoose.Types.ObjectId().toString();
+		const courseId = new mongoose.Types.ObjectId().toString();
+		const existingRow = { _id: new mongoose.Types.ObjectId(), userId, courseId };
+		const duplicateError = buildDuplicateError();
+
+		vi.spyOn(Enrollment, "findOneAndUpdate").mockReturnValue({
+			lean: () => Promise.reject(duplicateError),
+		} as unknown as ReturnType<typeof Enrollment.findOneAndUpdate>);
+		vi.spyOn(Enrollment, "findOne").mockReturnValue({
+			lean: () => Promise.resolve(existingRow),
+		} as unknown as ReturnType<typeof Enrollment.findOne>);
+
+		const result = await createEnrollment({ userId, courseId });
+		expect(result).toBe(existingRow);
+	});
+
+	it("rethrows when the duplicate isn't the enrollment race (re-read misses)", async () => {
+		const userId = new mongoose.Types.ObjectId().toString();
+		const courseId = new mongoose.Types.ObjectId().toString();
+		const duplicateError = buildDuplicateError();
+
+		vi.spyOn(Enrollment, "findOneAndUpdate").mockReturnValue({
+			lean: () => Promise.reject(duplicateError),
+		} as unknown as ReturnType<typeof Enrollment.findOneAndUpdate>);
+		vi.spyOn(Enrollment, "findOne").mockReturnValue({
+			lean: () => Promise.resolve(null),
+		} as unknown as ReturnType<typeof Enrollment.findOne>);
+
+		await expect(createEnrollment({ userId, courseId })).rejects.toBe(
+			duplicateError,
+		);
 	});
 });
 
