@@ -14,6 +14,7 @@ import adminCourseRouter from "./course.routes";
 import adminSectionRouter from "./section.routes";
 import adminLessonRouter from "./lesson.routes";
 import adminStudentRouter from "./student.routes";
+import adminEnrollmentRouter from "./enrollment.routes";
 
 const adminRouter = Router();
 
@@ -24,5 +25,6 @@ adminRouter.use(adminCourseRouter);
 adminRouter.use(adminSectionRouter);
 adminRouter.use(adminLessonRouter);
 adminRouter.use(adminStudentRouter);
+adminRouter.use(adminEnrollmentRouter);
 
 export default adminRouter;
