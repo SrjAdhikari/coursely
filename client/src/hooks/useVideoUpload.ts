@@ -128,8 +128,14 @@ const useVideoUpload = ({
 	);
 
 	const submitManualDuration = useCallback(
-		(seconds: number) => finish(Math.max(1, Math.round(seconds))),
-		[finish],
+		(seconds: number) => {
+			if (!Number.isFinite(seconds) || seconds <= 0) {
+				fail("Enter a valid duration in seconds.");
+				return;
+			}
+			return finish(Math.max(1, Math.round(seconds)));
+		},
+		[finish, fail],
 	);
 
 	const cancel = useCallback(() => abortRef.current?.abort(), []);

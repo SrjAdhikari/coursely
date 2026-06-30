@@ -66,6 +66,27 @@ describe("useVideoUpload", () => {
 		expect(confirm).toHaveBeenCalledWith(90);
 	});
 
+	it("rejects a non-finite manual duration instead of confirming", async () => {
+		vi.mocked(uploadToR2).mockResolvedValue(undefined);
+		const mint = vi.fn().mockResolvedValue({ uploadUrl: "u" });
+		const confirm = vi.fn().mockResolvedValue({});
+		const probeDuration = vi.fn().mockRejectedValue(new Error("no metadata"));
+		const onError = vi.fn();
+
+		const { result } = renderHook(() =>
+			useVideoUpload({ mint, confirm, probeDuration, onError }),
+		);
+		await act(async () => result.current.start(mp4()));
+		await waitFor(() =>
+			expect(result.current.status).toBe("awaiting-duration"),
+		);
+
+		await act(async () => result.current.submitManualDuration(NaN));
+		expect(result.current.status).toBe("error");
+		expect(onError).toHaveBeenCalled();
+		expect(confirm).not.toHaveBeenCalled();
+	});
+
 	it("confirms without a duration when no probe is configured (trailer)", async () => {
 		vi.mocked(uploadToR2).mockResolvedValue(undefined);
 		const mint = vi.fn().mockResolvedValue({ uploadUrl: "u" });
