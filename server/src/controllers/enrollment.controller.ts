@@ -13,6 +13,7 @@ const { OK } = httpStatus;
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
 
 /** Student: the caller's own enrollments (My Courses). */
 const getMyEnrollmentsHandler: RequestHandler = async (req, res) => {
@@ -28,11 +29,13 @@ const getMyEnrollmentsHandler: RequestHandler = async (req, res) => {
 
 /** Admin: every enrollment, paginated. */
 const listEnrollmentsHandler: RequestHandler = async (req, res) => {
-	const requestedPage = Number(req.query.page);
-	const requestedLimit = Number(req.query.limit);
-	
+	// Floor + bound so a float or huge value can't reach Mongo's skip/limit.
+	const requestedPage = Math.floor(Number(req.query.page));
+	const requestedLimit = Math.floor(Number(req.query.limit));
+
 	const page = requestedPage > 0 ? requestedPage : DEFAULT_PAGE;
-	const limit = requestedLimit > 0 ? requestedLimit : DEFAULT_LIMIT;
+	const limit =
+		requestedLimit > 0 ? Math.min(requestedLimit, MAX_LIMIT) : DEFAULT_LIMIT;
 
 	const result = await listAllEnrollments(page, limit);
 
