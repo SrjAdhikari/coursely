@@ -20,6 +20,19 @@ vi.mock("sonner", () => ({
 	toast: { success: vi.fn(), error: vi.fn() },
 }));
 
+vi.mock("@/hooks/useVideoUpload", () => ({
+	useVideoUpload: () => ({
+		status: "idle",
+		progress: 0,
+		fileName: "",
+		error: null,
+		start: vi.fn(),
+		submitManualDuration: vi.fn(),
+		cancel: vi.fn(),
+		reset: vi.fn(),
+	}),
+}));
+
 import { toast } from "sonner";
 import CourseFormPage from "@/pages/admin/CourseFormPage";
 
@@ -255,5 +268,10 @@ describe("CourseFormPage (edit)", () => {
 		expect(await screen.findByDisplayValue("Course A")).toBeInTheDocument();
 		await user.click(screen.getByRole("button", { name: /go b/i }));
 		expect(await screen.findByDisplayValue("Course B")).toBeInTheDocument();
+	});
+
+	it("shows the trailer upload field in edit mode", async () => {
+		renderAt("/admin/courses/c1/edit");
+		expect(await screen.findByLabelText(/upload trailer/i)).toBeInTheDocument();
 	});
 });

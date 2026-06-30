@@ -15,11 +15,19 @@ import {
 	DialogFooter,
 } from "@/components/ui/dialog";
 import FormField from "@/components/form/FormField";
+import VideoUploadField from "@/components/admin/VideoUploadField";
+import VideoPlayer from "@/components/media/VideoPlayer";
 import { Button } from "@/components/ui/button";
-import { useCreateLesson, useUpdateLesson } from "@/hooks/useCurriculum";
+
 import { lessonFormSchema, type LessonFormData } from "@/schemas/lesson.schema";
-import { courseKey } from "@/lib/queryKeys";
+import { createLessonUploadUrl, setLessonVideo } from "@/api/media.api";
 import type { LessonPayload } from "@/types/course.types";
+
+import { useCreateLesson, useUpdateLesson } from "@/hooks/useCurriculum";
+import { useVideoUpload } from "@/hooks/useVideoUpload";
+
+import { readVideoDuration } from "@/lib/videoDuration";
+import { courseKey } from "@/lib/queryKeys";
 
 interface LessonDialogProps {
 	courseId: string;
@@ -55,7 +63,6 @@ const LessonDialog = ({
 		defaultValues: {
 			title: lesson?.title ?? "",
 			order: lesson ? String(lesson.order) : "",
-			duration: lesson ? String(lesson.duration) : "",
 			isPreview: lesson?.isPreview ?? false,
 		},
 	});
@@ -65,6 +72,19 @@ const LessonDialog = ({
 	useEffect(() => {
 		if (lesson) void trigger();
 	}, [lesson, trigger]);
+
+	// Video upload (edit mode only — a lesson id must exist to mint an upload URL).
+	const videoUpload = useVideoUpload({
+		mint: () => createLessonUploadUrl(lesson?._id ?? "").then((res) => res.data),
+		confirm: (duration) =>
+			setLessonVideo({ id: lesson?._id ?? "", duration: duration ?? 1 }),
+		probeDuration: readVideoDuration,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: courseKey(courseId) });
+			toast.success("Video uploaded");
+		},
+		onError: (message) => toast.error(message),
+	});
 
 	const done = (message: string) => {
 		queryClient.invalidateQueries({ queryKey: courseKey(courseId) });
@@ -76,7 +96,6 @@ const LessonDialog = ({
 		const payload = {
 			title: values.title,
 			order: toNum(values.order),
-			duration: toNum(values.duration),
 			isPreview: values.isPreview,
 		};
 		if (lesson) {
@@ -110,11 +129,7 @@ const LessonDialog = ({
 					</DialogDescription>
 				</DialogHeader>
 
-				<form
-					onSubmit={handleSubmit(onSubmit)}
-					noValidate
-					className="space-y-4"
-				>
+				<form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
 					<FormField
 						label="Lesson title"
 						id="lesson-title"
@@ -123,26 +138,15 @@ const LessonDialog = ({
 						{...register("title")}
 					/>
 
-					<div className="grid grid-cols-2 gap-4">
-						<FormField
-							label="Duration (seconds)"
-							id="lesson-duration"
-							inputMode="numeric"
-							placeholder="0"
-							error={errors.duration?.message}
-							{...register("duration")}
-						/>
-
-						<FormField
-							label="Order"
-							id="lesson-order"
-							inputMode="numeric"
-							placeholder="0"
-							hint="Optional"
-							error={errors.order?.message}
-							{...register("order")}
-						/>
-					</div>
+					<FormField
+						label="Order"
+						id="lesson-order"
+						inputMode="numeric"
+						placeholder="0"
+						hint="Optional — lower numbers appear first"
+						error={errors.order?.message}
+						{...register("order")}
+					/>
 
 					<label className="flex items-center gap-2.5 text-sm">
 						<input type="checkbox" {...register("isPreview")} /> Free preview
@@ -151,17 +155,14 @@ const LessonDialog = ({
 						</span>
 					</label>
 
-					<FormField
-						label="Video"
-						id="lesson-video"
-						disabled
-						placeholder="courses/react/lesson.mp4"
-						labelExtra={
-							<span className="text-[11px] font-normal text-muted-foreground">
-								uploaded in Phase 4 · R2
-							</span>
-						}
-					/>
+					{isEdit && lesson && (
+						<VideoUploadField
+							label="Video"
+							state={videoUpload}
+							hasVideo={!!lesson.videoKey}
+							previewSlot={<VideoPlayer lessonId={lesson._id} />}
+						/>
+					)}
 
 					<DialogFooter>
 						<Button

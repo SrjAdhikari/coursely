@@ -3,7 +3,8 @@
 import { z } from "zod";
 
 /**
- * Lesson dialog form. `order`/`duration` are optional digit strings (blank = default).
+ * Lesson dialog form. `order` is an optional digit string (blank = default).
+ * Duration is NOT here — it is set automatically by the video upload.
  */
 const lessonFormSchema = z.object({
 	title: z
@@ -13,7 +14,6 @@ const lessonFormSchema = z.object({
 		.max(200, "Title must be at most 200 characters"),
 
 	order: z.string().trim().regex(/^\d*$/, "Order must be a whole number"),
-	duration: z.string().trim().regex(/^\d*$/, "Duration must be whole seconds"),
 	isPreview: z.boolean(),
 });
 

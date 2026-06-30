@@ -18,6 +18,22 @@ vi.mock("sonner", () => ({
 	toast: { success: vi.fn(), error: vi.fn() },
 }));
 
+vi.mock("@/hooks/useVideoUpload", () => ({
+	useVideoUpload: () => ({
+		status: "idle",
+		progress: 0,
+		fileName: "",
+		error: null,
+		start: vi.fn(),
+		submitManualDuration: vi.fn(),
+		cancel: vi.fn(),
+		reset: vi.fn(),
+	}),
+}));
+vi.mock("@/components/media/VideoPlayer", () => ({
+	default: () => <div data-testid="player" />,
+}));
+
 import { toast } from "sonner";
 import LessonDialog from "@/components/admin/LessonDialog";
 
@@ -63,7 +79,7 @@ describe("LessonDialog", () => {
 		);
 	});
 
-	it("prefills and updates in edit mode, preserving order/duration/preview", async () => {
+	it("prefills and updates in edit mode, preserving order and preview", async () => {
 		const user = userEvent.setup();
 		renderDialog({ lesson: existingLesson });
 		expect(screen.getByLabelText(/lesson title/i)).toHaveValue("Welcome");
@@ -76,12 +92,13 @@ describe("LessonDialog", () => {
 				payload: expect.objectContaining({
 					title: "Welcome",
 					order: 0,
-					duration: 252,
 					isPreview: true,
 				}),
 			}),
 			expect.any(Object),
 		);
+		const payload = mockUpdate.mock.calls[0][0].payload;
+		expect(payload).not.toHaveProperty("duration");
 	});
 
 	it("invalidates the course detail and toasts on success", async () => {
@@ -108,5 +125,15 @@ describe("LessonDialog", () => {
 			"Lesson title already exists",
 		);
 		expect(screen.getByRole("dialog")).toBeInTheDocument();
+	});
+
+	it("shows the video upload field in edit mode", () => {
+		renderDialog({ lesson: existingLesson });
+		expect(screen.getByLabelText(/upload video/i)).toBeInTheDocument();
+	});
+
+	it("does not show the upload field when creating", () => {
+		renderDialog();
+		expect(screen.queryByLabelText(/upload video/i)).not.toBeInTheDocument();
 	});
 });

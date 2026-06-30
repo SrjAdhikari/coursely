@@ -7,22 +7,32 @@ import { useNavigate, useParams, Link } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import VideoUploadField from "@/components/admin/VideoUploadField";
 import FormField from "@/components/form/FormField";
 import FormTextarea from "@/components/form/FormTextarea";
 import StatusSegment from "@/components/StatusSegment";
 import LoadFailed from "@/components/common/LoadFailed";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/Loader";
+
 import {
 	useGetCourse,
 	useCreateCourse,
 	useUpdateCourse,
 } from "@/hooks/useCourses";
-import { courseFormSchema, type CourseFormData } from "@/schemas/course.schema";
-import { rupeesToPaise, paiseToRupees } from "@/lib/currency";
-import { COURSES_KEY, courseKey } from "@/lib/queryKeys";
+import { useVideoUpload } from "@/hooks/useVideoUpload";
+
 import ROUTES from "@/routes/paths";
 import type { CreateCoursePayload } from "@/types/course.types";
+import { courseFormSchema, type CourseFormData } from "@/schemas/course.schema";
+
+import { rupeesToPaise, paiseToRupees } from "@/lib/currency";
+import { COURSES_KEY, courseKey } from "@/lib/queryKeys";
+
+import {
+	createCourseTrailerUploadUrl,
+	setCourseTrailer,
+} from "@/api/media.api";
 
 /** Mirror of the server's slug rule — preview only; the server is the source of truth. */
 const slugify = (value: string) =>
@@ -49,6 +59,17 @@ const CourseFormPage = () => {
 
 	const { mutate: create, isPending: creating } = useCreateCourse();
 	const { mutate: update, isPending: updating } = useUpdateCourse();
+
+	// Trailer upload (edit mode only — a course id must exist to mint an upload URL).
+	const trailerUpload = useVideoUpload({
+		mint: () => createCourseTrailerUploadUrl(id ?? "").then((res) => res.data),
+		confirm: () => setCourseTrailer(id ?? ""),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: courseKey(id ?? "") });
+			toast.success("Trailer uploaded");
+		},
+		onError: (message) => toast.error(message),
+	});
 
 	const {
 		register,
@@ -215,20 +236,15 @@ const CourseFormPage = () => {
 						/>
 					</div>
 
-					<div className="sm:col-span-2">
-						<FormField
-							label="Trailer key"
-							id="trailerKey"
-							disabled
-							placeholder="courses/react/trailer.mp4"
-							className="font-mono"
-							labelExtra={
-								<span className="font-mono text-[11px] font-normal text-muted-foreground">
-									optional · uploaded in Phase 4
-								</span>
-							}
-						/>
-					</div>
+					{isEdit && id && (
+						<div className="sm:col-span-2">
+							<VideoUploadField
+								label="Trailer"
+								state={trailerUpload}
+								hasVideo={!!existing?.data.trailerKey}
+							/>
+						</div>
+					)}
 
 					<StatusSegment
 						value={isPublished}

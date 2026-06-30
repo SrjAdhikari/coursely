@@ -4,18 +4,21 @@ import { useState } from "react";
 import { useParams, Link } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Play, Pencil, Trash2 } from "lucide-react";
+import { Plus, Play, SquarePen, Trash2, Video } from "lucide-react";
 
 import { useGetCourse } from "@/hooks/useCourses";
 import { useDeleteSection, useDeleteLesson } from "@/hooks/useCurriculum";
+
 import SectionDialog from "@/components/admin/SectionDialog";
 import LessonDialog from "@/components/admin/LessonDialog";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import LoadFailed from "@/components/common/LoadFailed";
 import Loader from "@/components/Loader";
 import { Button } from "@/components/ui/button";
+
 import { courseKey } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
+
 import ROUTES from "@/routes/paths";
 import type { LessonPayload, SectionWithLessons } from "@/types/course.types";
 
@@ -118,7 +121,7 @@ const CurriculumPage = () => {
 							aria-label={`Edit section ${section.title}`}
 							onClick={() => setEditing({ kind: "section", section: section })}
 						>
-							<Pencil className="size-3.5" />
+							<SquarePen className="size-3.5" />
 						</Button>
 
 						<Button
@@ -156,6 +159,15 @@ const CurriculumPage = () => {
 									Preview
 								</span>
 							)}
+
+							{lesson.videoKey && (
+								<Video
+									role="img"
+									className="size-3.5 text-primary"
+									aria-label="Has video"
+								/>
+							)}
+
 							<span className="text-xs text-muted-foreground">
 								{formatDuration(lesson.duration)}
 							</span>
@@ -172,7 +184,7 @@ const CurriculumPage = () => {
 									})
 								}
 							>
-								<Pencil className="size-3.5" />
+								<SquarePen className="size-3.5" />
 							</Button>
 
 							<Button
