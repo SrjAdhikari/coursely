@@ -16,3 +16,6 @@ export const courseKey = (id: string) => ["courses", id] as const;
 /** Admin students list + per-student detail. */
 export const STUDENTS_KEY = ["students"] as const;
 export const studentKey = (id: string) => ["students", id] as const;
+
+/** Per-lesson signed playback URL (short-lived; never persisted). */
+export const lessonPlaybackKey = (id: string) => ["lessonPlayback", id] as const;

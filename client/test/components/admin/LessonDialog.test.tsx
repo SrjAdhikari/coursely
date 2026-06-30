@@ -1,7 +1,7 @@
 //* test/components/admin/LessonDialog.test.tsx
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ComponentProps } from "react";
@@ -16,6 +16,27 @@ vi.mock("@/hooks/useCurriculum", () => ({
 
 vi.mock("sonner", () => ({
 	toast: { success: vi.fn(), error: vi.fn() },
+}));
+
+const useVideoUploadMock = vi.hoisted(() => vi.fn());
+vi.mock("@/hooks/useVideoUpload", () => ({
+	useVideoUpload: () => useVideoUploadMock(),
+}));
+
+const idleUpload = () => ({
+	status: "idle",
+	isBusy: false,
+	progress: 0,
+	fileName: "",
+	totalBytes: 0,
+	error: null,
+	start: vi.fn(),
+	submitManualDuration: vi.fn(),
+	cancel: vi.fn(),
+	reset: vi.fn(),
+});
+vi.mock("@/components/media/VideoPlayer", () => ({
+	default: () => <div data-testid="player" />,
 }));
 
 import { toast } from "sonner";
@@ -42,7 +63,29 @@ const renderDialog = (
 	);
 
 describe("LessonDialog", () => {
-	beforeEach(() => vi.resetAllMocks());
+	beforeEach(() => {
+		vi.resetAllMocks();
+		useVideoUploadMock.mockReturnValue(idleUpload());
+	});
+
+	it("disables Save while a video upload is in progress", async () => {
+		useVideoUploadMock.mockReturnValue({
+			...idleUpload(),
+			status: "uploading",
+			isBusy: true,
+			fileName: "v.mp4",
+			totalBytes: 1_000,
+			progress: 20,
+		});
+		renderDialog({ lesson: existingLesson });
+		const save = screen.getByRole("button", { name: /save changes/i });
+		// Let the edit-mode revalidation settle so the form is valid; an active
+		// upload must still keep Save disabled (else it would silently drop it).
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		});
+		expect(save).toBeDisabled();
+	});
 
 	it("creates a lesson under its section", async () => {
 		const user = userEvent.setup();
@@ -63,7 +106,7 @@ describe("LessonDialog", () => {
 		);
 	});
 
-	it("prefills and updates in edit mode, preserving order/duration/preview", async () => {
+	it("prefills and updates in edit mode, preserving order and preview", async () => {
 		const user = userEvent.setup();
 		renderDialog({ lesson: existingLesson });
 		expect(screen.getByLabelText(/lesson title/i)).toHaveValue("Welcome");
@@ -76,12 +119,13 @@ describe("LessonDialog", () => {
 				payload: expect.objectContaining({
 					title: "Welcome",
 					order: 0,
-					duration: 252,
 					isPreview: true,
 				}),
 			}),
 			expect.any(Object),
 		);
+		const payload = mockUpdate.mock.calls[0][0].payload;
+		expect(payload).not.toHaveProperty("duration");
 	});
 
 	it("invalidates the course detail and toasts on success", async () => {
@@ -108,5 +152,15 @@ describe("LessonDialog", () => {
 			"Lesson title already exists",
 		);
 		expect(screen.getByRole("dialog")).toBeInTheDocument();
+	});
+
+	it("shows the video upload field in edit mode", () => {
+		renderDialog({ lesson: existingLesson });
+		expect(screen.getByLabelText(/upload video/i)).toBeInTheDocument();
+	});
+
+	it("does not show the upload field when creating", () => {
+		renderDialog();
+		expect(screen.queryByLabelText(/upload video/i)).not.toBeInTheDocument();
 	});
 });

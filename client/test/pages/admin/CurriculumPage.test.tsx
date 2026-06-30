@@ -52,6 +52,7 @@ const loaded = {
 							order: 0,
 							isPreview: true,
 							duration: 252,
+							videoKey: "lessons/x/source.mp4",
 						},
 					],
 				},
@@ -169,6 +170,11 @@ describe("CurriculumPage", () => {
 		});
 		renderPage();
 		expect(screen.getByRole("status")).toBeInTheDocument();
+	});
+
+	it("marks lessons that already have a video", () => {
+		renderPage();
+		expect(screen.getByLabelText(/has video/i)).toBeInTheDocument();
 	});
 
 	it("shows the load-failed state when the course fails to load", () => {
