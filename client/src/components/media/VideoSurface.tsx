@@ -115,7 +115,7 @@ const VideoSurface = ({ src }: VideoSurfaceProps) => {
 					"absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-linear-to-t from-black/80 via-black/40 to-transparent px-3 pt-10 pb-2.5 text-white transition-opacity duration-200",
 					controlsVisible || !playing
 						? "opacity-100"
-						: "pointer-events-none opacity-0",
+						: "pointer-events-none invisible opacity-0",
 				)}
 			>
 				{/* Scrub bar: buffered + played track with a thumb under a transparent range. */}
