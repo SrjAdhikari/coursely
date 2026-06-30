@@ -76,7 +76,12 @@ const createCheckoutSession = async (
 				},
 			},
 		],
-		metadata: { userId, courseId },
+		metadata: {
+			userId,
+			courseId,
+			expectedAmount: String(course.price),
+			expectedCurrency: course.currency.toLowerCase(),
+		},
 		client_reference_id: userId,
 		customer_email: user?.email,
 		success_url: `${APP_ORIGIN}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -99,15 +104,18 @@ const createCheckoutSession = async (
 const recordEnrollmentFromSession = async (
 	session: Stripe.Checkout.Session,
 ) => {
+	// Defense in depth: never enroll an unpaid session, even if a caller forgets.
+	if (session.payment_status !== "paid") return null;
+
 	const userId = session.metadata?.userId;
 	const courseId = session.metadata?.courseId;
 	if (!userId || !courseId) return null;
 
-	const course = await Course.findById(courseId).lean();
-	if (!course) return null;
-
-	const expectedAmount = course.price;
-	const expectedCurrency = course.currency.toLowerCase();
+	// Validate against the snapshot stamped at checkout creation, not the live
+	// course price — an admin price change mid-checkout must not fail a paid buyer.
+	// A missing snapshot → NaN → mismatch → fail-closed (no enrollment).
+	const expectedAmount = Number(session.metadata?.expectedAmount);
+	const expectedCurrency = session.metadata?.expectedCurrency;
 
 	if (
 		session.amount_total !== expectedAmount ||
@@ -126,8 +134,8 @@ const recordEnrollmentFromSession = async (
 		userId,
 		courseId,
 		stripeSessionId: session.id,
-		amountPaid: course.price,
-		currency: course.currency,
+		amountPaid: session.amount_total ?? undefined,
+		currency: session.currency?.toUpperCase(),
 	});
 
 	return enrollment;

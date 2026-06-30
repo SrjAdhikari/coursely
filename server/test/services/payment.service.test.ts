@@ -45,6 +45,8 @@ describe("createCheckoutSession", () => {
 				metadata: {
 					userId: user._id.toString(),
 					courseId: course._id.toString(),
+					expectedAmount: "49900",
+					expectedCurrency: "inr",
 				},
 				line_items: [
 					expect.objectContaining({
@@ -95,11 +97,14 @@ describe("recordEnrollmentFromSession", () => {
 
 		const enrollment = await recordEnrollmentFromSession({
 			id: "cs_ok",
+			payment_status: "paid",
 			amount_total: 49900,
 			currency: "inr",
 			metadata: {
 				userId: user._id.toString(),
 				courseId: course._id.toString(),
+				expectedAmount: "49900",
+				expectedCurrency: "inr",
 			},
 		} as never);
 
@@ -118,7 +123,34 @@ describe("recordEnrollmentFromSession", () => {
 
 		const enrollment = await recordEnrollmentFromSession({
 			id: "cs_bad",
+			payment_status: "paid",
 			amount_total: 100,
+			currency: "inr",
+			metadata: {
+				userId: user._id.toString(),
+				courseId: course._id.toString(),
+				expectedAmount: "49900",
+				expectedCurrency: "inr",
+			},
+		} as never);
+
+		expect(enrollment).toBeNull();
+		expect(
+			await Enrollment.countDocuments({
+				userId: user._id,
+				courseId: course._id,
+			}),
+		).toBe(0);
+	});
+
+	it("returns null (no row) for an unpaid session even when the amount matches", async () => {
+		const user = await createTestUser();
+		const course = await createTestCourse({ price: 49900 });
+
+		const enrollment = await recordEnrollmentFromSession({
+			id: "cs_unpaid",
+			payment_status: "unpaid",
+			amount_total: 49900,
 			currency: "inr",
 			metadata: {
 				userId: user._id.toString(),
@@ -181,6 +213,8 @@ describe("getCheckoutStatus", () => {
 			metadata: {
 				userId: user._id.toString(),
 				courseId: course._id.toString(),
+				expectedAmount: "49900",
+				expectedCurrency: "inr",
 			},
 		} as never);
 

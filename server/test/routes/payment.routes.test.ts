@@ -27,11 +27,15 @@ const studentAgent = async () => {
 
 // Build a signed checkout.session.completed event whose raw body and signature
 // match byte-for-byte (the webhook verifies the unparsed bytes).
-const signedWebhook = (sessionObject: Record<string, unknown>) => {
+const signedWebhook = (
+	sessionObject: Record<string, unknown>,
+	eventType = "checkout.session.completed",
+) => {
+	const { metadata, ...sessionOverrides } = sessionObject;
 	const event = {
 		id: "evt_test",
 		object: "event",
-		type: "checkout.session.completed",
+		type: eventType,
 		data: {
 			object: {
 				id: "cs_webhook",
@@ -39,7 +43,13 @@ const signedWebhook = (sessionObject: Record<string, unknown>) => {
 				payment_status: "paid",
 				amount_total: 49900,
 				currency: "inr",
-				...sessionObject,
+				...sessionOverrides,
+				// Snapshot stamped at checkout creation; the handler validates against it.
+				metadata: {
+					expectedAmount: "49900",
+					expectedCurrency: "inr",
+					...(metadata as Record<string, unknown>),
+				},
 			},
 		},
 	};
@@ -162,6 +172,56 @@ describe("POST /api/webhooks/stripe", () => {
 			await Enrollment.countDocuments({ userId: user._id, courseId: course._id }),
 		).toBe(0);
 	});
+
+	it("acknowledges (200) but does not enroll an unpaid session", async () => {
+		const user = await createTestUser({ email: "wh4@example.com" });
+		const course = await createTestCourse({ price: 49900 });
+		const { payload, header } = signedWebhook({
+			payment_status: "unpaid",
+			metadata: {
+				userId: user._id.toString(),
+				courseId: course._id.toString(),
+			},
+		});
+
+		const res = await request(app)
+			.post("/api/webhooks/stripe")
+			.set("Content-Type", "application/json")
+			.set("stripe-signature", header)
+			.send(payload);
+
+		expect(res.status).toBe(200);
+		expect(res.body.received).toBe(true);
+		expect(
+			await Enrollment.countDocuments({ userId: user._id, courseId: course._id }),
+		).toBe(0);
+	});
+
+	it("acknowledges (200) but does not enroll on an unrelated event type", async () => {
+		const user = await createTestUser({ email: "wh5@example.com" });
+		const course = await createTestCourse({ price: 49900 });
+		const { payload, header } = signedWebhook(
+			{
+				metadata: {
+					userId: user._id.toString(),
+					courseId: course._id.toString(),
+				},
+			},
+			"payment_intent.succeeded",
+		);
+
+		const res = await request(app)
+			.post("/api/webhooks/stripe")
+			.set("Content-Type", "application/json")
+			.set("stripe-signature", header)
+			.send(payload);
+
+		expect(res.status).toBe(200);
+		expect(res.body.received).toBe(true);
+		expect(
+			await Enrollment.countDocuments({ userId: user._id, courseId: course._id }),
+		).toBe(0);
+	});
 });
 
 describe("GET /api/checkout/:sessionId/status", () => {
@@ -180,6 +240,21 @@ describe("GET /api/checkout/:sessionId/status", () => {
 		expect(res.status).toBe(403);
 	});
 
+	it("403s when the retrieved session has no metadata.userId", async () => {
+		const { agent } = await studentAgent();
+		const course = await createTestCourse({ price: 49900 });
+		vi.spyOn(stripe.checkout.sessions, "retrieve").mockResolvedValue({
+			id: "cs_nometa",
+			payment_status: "paid",
+			amount_total: 49900,
+			currency: "inr",
+			metadata: { courseId: course._id.toString() },
+		} as never);
+
+		const res = await agent.get("/api/checkout/cs_nometa/status");
+		expect(res.status).toBe(403);
+	});
+
 	it("reconciles a paid session and reports enrolled", async () => {
 		const { agent, user } = await studentAgent();
 		const course = await createTestCourse({ price: 49900, slug: "react", title: "React" });
@@ -191,6 +266,8 @@ describe("GET /api/checkout/:sessionId/status", () => {
 			metadata: {
 				userId: user._id.toString(),
 				courseId: course._id.toString(),
+				expectedAmount: "49900",
+				expectedCurrency: "inr",
 			},
 		} as never);
 
