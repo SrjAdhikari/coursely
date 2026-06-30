@@ -1,12 +1,20 @@
 //* src/components/admin/VideoUploadField.tsx
 
-import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import {
+	useRef,
+	useState,
+	type ChangeEvent,
+	type DragEvent,
+	type ReactNode,
+} from "react";
 import { Upload, Video, Check, CircleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import FormField from "@/components/form/FormField";
 
 import { VIDEO_MIME, MAX_VIDEO_LABEL } from "@/lib/uploadLimits";
+import { cn } from "@/lib/utils";
 import type { useVideoUpload } from "@/hooks/useVideoUpload";
 
 interface VideoUploadFieldProps {
@@ -16,6 +24,14 @@ interface VideoUploadFieldProps {
 	/** Optional inline preview (the lesson passes a <VideoPlayer>). */
 	previewSlot?: ReactNode;
 }
+
+// Decimal units (1000-based) to match the 1 GB cap and the "MB" labels.
+const formatBytes = (bytes: number): string => {
+	if (bytes >= 1_000_000_000) return `${(bytes / 1_000_000_000).toFixed(1)} GB`;
+	if (bytes >= 1_000_000) return `${Math.round(bytes / 1_000_000)} MB`;
+	if (bytes >= 1_000) return `${Math.round(bytes / 1_000)} KB`;
+	return `${bytes} B`;
+};
 
 /** Shared upload widget for the lesson video and course trailer. Presentational
  * only — all network logic lives in the injected `useVideoUpload` state.
@@ -30,10 +46,12 @@ const VideoUploadField = ({
 
 	const [manualSeconds, setManualSeconds] = useState("");
 	const [showPreview, setShowPreview] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
 
-	const { status, progress, fileName, error } = state;
+	const { status, progress, fileName, totalBytes, error } = state;
 	const showUploaded = status === "done" || (status === "idle" && hasVideo);
 	const canPreview = hasVideo || status === "done";
+	const loadedBytes = Math.round((totalBytes * progress) / 100);
 
 	const manualValid = /^\d+$/.test(manualSeconds) && Number(manualSeconds) >= 1;
 	const pickFile = () => inputRef.current?.click();
@@ -41,6 +59,14 @@ const VideoUploadField = ({
 	const onFileChange = (event: ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
 		event.target.value = ""; // let the same file be re-picked
+		if (file) state.start(file);
+	};
+
+	// Drag-and-drop onto the dropzone; the hook validates (mp4 + size).
+	const onDrop = (event: DragEvent<HTMLButtonElement>) => {
+		event.preventDefault();
+		setIsDragging(false);
+		const file = event.dataTransfer.files?.[0];
 		if (file) state.start(file);
 	};
 
@@ -53,7 +79,14 @@ const VideoUploadField = ({
 
 	return (
 		<div className="space-y-2">
-			<span className="text-sm font-medium">{label}</span>
+			<span className="text-sm font-medium">
+				{label}
+				{status === "uploading" && (
+					<span className="ml-1.5 font-mono text-[11px] font-normal text-muted-foreground">
+						· uploading
+					</span>
+				)}
+			</span>
 
 			<input
 				ref={inputRef}
@@ -68,7 +101,21 @@ const VideoUploadField = ({
 				<button
 					type="button"
 					onClick={pickFile}
-					className="flex w-full flex-col items-center gap-2 rounded-lg border border-dashed border-input px-4 py-6 text-center hover:border-primary/40 hover:bg-muted/40"
+					onDragOver={(event) => {
+						event.preventDefault();
+						setIsDragging(true);
+					}}
+					onDragLeave={(event) => {
+						event.preventDefault();
+						setIsDragging(false);
+					}}
+					onDrop={onDrop}
+					className={cn(
+						"flex w-full flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors",
+						isDragging
+							? "border-primary/60 bg-muted/40"
+							: "border-input hover:border-primary/40 hover:bg-muted/40",
+					)}
 				>
 					<Upload className="size-6 text-primary" aria-hidden />
 					<span className="text-sm">Drag a .mp4 here, or click to browse</span>
@@ -91,21 +138,18 @@ const VideoUploadField = ({
 						</span>
 					</div>
 
-					<div
-						role="progressbar"
+					<Progress
+						value={progress}
 						aria-label="Upload progress"
-						aria-valuenow={progress}
-						aria-valuemin={0}
-						aria-valuemax={100}
-						className="h-1.5 overflow-hidden rounded-full bg-muted"
-					>
-						<div
-							className="h-full rounded-full bg-primary transition-all"
-							style={{ width: `${progress}%` }}
-						/>
-					</div>
+						className="h-1.5 bg-muted"
+					/>
 
-					<div className="mt-2.5 flex justify-end">
+					<div className="mt-2.5 flex items-center justify-between gap-2">
+						<span className="truncate font-mono text-[11px] text-muted-foreground">
+							Uploading to R2 · {formatBytes(loadedBytes)} /{" "}
+							{formatBytes(totalBytes)}
+						</span>
+
 						<Button
 							type="button"
 							variant="ghost"

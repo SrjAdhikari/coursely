@@ -1,7 +1,7 @@
 //* test/components/admin/VideoUploadField.test.tsx
 
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import VideoUploadField from "@/components/admin/VideoUploadField";
@@ -13,6 +13,7 @@ const baseState = (overrides: Partial<State> = {}): State => ({
 	status: "idle",
 	progress: 0,
 	fileName: "",
+	totalBytes: 0,
 	error: null,
 	start: vi.fn(),
 	submitManualDuration: vi.fn(),
@@ -31,12 +32,30 @@ describe("VideoUploadField", () => {
 		expect(state.start).toHaveBeenCalledWith(file);
 	});
 
+	it("starts an upload when a file is dropped on the dropzone", () => {
+		const state = baseState();
+		render(<VideoUploadField label="Video" state={state} hasVideo={false} />);
+		const file = new File(["x"], "v.mp4", { type: "video/mp4" });
+		fireEvent.drop(screen.getByRole("button", { name: /browse/i }), {
+			dataTransfer: { files: [file] },
+		});
+		expect(state.start).toHaveBeenCalledWith(file);
+	});
+
 	it("shows progress and cancels while uploading", async () => {
 		const user = userEvent.setup();
-		const state = baseState({ status: "uploading", progress: 47, fileName: "v.mp4" });
+		const state = baseState({
+			status: "uploading",
+			progress: 47,
+			fileName: "v.mp4",
+			totalBytes: 81_000_000,
+		});
 		render(<VideoUploadField label="Video" state={state} hasVideo={false} />);
 		expect(screen.getByText("47%")).toBeInTheDocument();
 		expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "47");
+		expect(screen.getByText(/uploading to r2/i)).toHaveTextContent(
+			"38 MB / 81 MB",
+		);
 		await user.click(screen.getByRole("button", { name: /cancel/i }));
 		expect(state.cancel).toHaveBeenCalled();
 	});

@@ -46,6 +46,7 @@ const useVideoUpload = ({
 	
 	const [progress, setProgress] = useState(0);
 	const [fileName, setFileName] = useState("");
+	const [totalBytes, setTotalBytes] = useState(0);
 
 	const abortRef = useRef<AbortController | null>(null);
 
@@ -89,6 +90,7 @@ const useVideoUpload = ({
 
 			setError(null);
 			setFileName(file.name);
+			setTotalBytes(file.size);
 			setProgress(0);
 			setStatus("uploading");
 
@@ -137,12 +139,14 @@ const useVideoUpload = ({
 		setProgress(0);
 		setError(null);
 		setFileName("");
+		setTotalBytes(0);
 	}, []);
 
 	return {
 		status,
 		progress,
 		fileName,
+		totalBytes,
 		error,
 		start,
 		submitManualDuration,
