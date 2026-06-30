@@ -1,5 +1,6 @@
 //* src/services/enrollment.service.ts
 
+import mongoose from "mongoose";
 import Enrollment from "../models/enrollment.model";
 
 /** Course summary fields surfaced on a student's My Courses list. */
@@ -35,32 +36,47 @@ const isEnrolled = async (
  * webhook/reconciliation race can neither double-insert nor clobber the payment
  * fields — `$setOnInsert` stamps them only on the first write; a later racer is a
  * no-op read of the existing row. The unique {userId,courseId} index is the hard
- * guarantee; the upsert avoids the E11000 round-trip.
+ * guarantee; on the rare concurrent-insert collision we catch E11000 and re-read.
  *
  * @param enrollmentData - The user/course ids plus the Stripe payment fields.
  * @returns The enrollment row (created or pre-existing).
  */
 const createEnrollment = async (enrollmentData: CreateEnrollmentData) => {
-	const enrollment = await Enrollment.findOneAndUpdate(
-		{ userId: enrollmentData.userId, courseId: enrollmentData.courseId },
-		{
-			$setOnInsert: {
-				userId: enrollmentData.userId,
-				courseId: enrollmentData.courseId,
-				stripeSessionId: enrollmentData.stripeSessionId,
-				amountPaid: enrollmentData.amountPaid,
-				currency: enrollmentData.currency,
+	try {
+		const enrollment = await Enrollment.findOneAndUpdate(
+			{ userId: enrollmentData.userId, courseId: enrollmentData.courseId },
+			{
+				$setOnInsert: {
+					userId: enrollmentData.userId,
+					courseId: enrollmentData.courseId,
+					stripeSessionId: enrollmentData.stripeSessionId,
+					amountPaid: enrollmentData.amountPaid,
+					currency: enrollmentData.currency,
+				},
 			},
-		},
-		{
-			upsert: true,
-			returnDocument: "after",
-			setDefaultsOnInsert: true,
-			runValidators: true,
-		},
-	).lean();
+			{
+				upsert: true,
+				returnDocument: "after",
+				setDefaultsOnInsert: true,
+				runValidators: true,
+			},
+		).lean();
 
-	return enrollment;
+		return enrollment;
+	} catch (error) {
+		// Concurrent webhook + reconciliation upserts can collide on the unique
+		// index (Mongo upserts don't auto-retry). The row now exists — re-read it.
+		const isDuplicateKey =
+			error instanceof mongoose.mongo.MongoServerError && error.code === 11000;
+		if (!isDuplicateKey) throw error;
+
+		const existing = await Enrollment.findOne({
+			userId: enrollmentData.userId,
+			courseId: enrollmentData.courseId,
+		}).lean();
+
+		return existing;
+	}
 };
 
 /**
