@@ -2,6 +2,7 @@
 
 import { useLessonPlaybackUrl } from "@/hooks/useMedia";
 import Loader from "@/components/Loader";
+import VideoSurface from "@/components/media/VideoSurface";
 
 interface VideoPlayerProps {
 	lessonId: string;
@@ -29,15 +30,7 @@ const VideoPlayer = ({ lessonId }: VideoPlayerProps) => {
 		);
 	}
 
-	return (
-		<video
-			src={data.data.url}
-			controls
-			className="aspect-video w-full rounded-lg border border-border bg-black"
-		>
-			<track kind="captions" />
-		</video>
-	);
+	return <VideoSurface src={data.data.url} />;
 };
 
 export default VideoPlayer;
