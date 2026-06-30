@@ -110,6 +110,71 @@ describe("useVideoUpload", () => {
 		expect(onError).toHaveBeenCalledWith("network down");
 	});
 
+	it("does not confirm when cancelled during the duration probe", async () => {
+		vi.mocked(uploadToR2).mockResolvedValue(undefined);
+		const mint = vi.fn().mockResolvedValue({ uploadUrl: "u" });
+		const confirm = vi.fn().mockResolvedValue({});
+		let resolveProbe: (seconds: number) => void = () => {};
+		const probeDuration = vi.fn(
+			() => new Promise<number>((resolve) => (resolveProbe = resolve)),
+		);
+
+		const { result } = renderHook(() =>
+			useVideoUpload({ mint, confirm, probeDuration }),
+		);
+		await act(async () => {
+			result.current.start(mp4());
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		});
+		// PUT is done; the probe is still in flight, so we're still "uploading".
+		expect(result.current.status).toBe("uploading");
+
+		act(() => result.current.cancel());
+		await act(async () => {
+			resolveProbe(120);
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		});
+
+		expect(confirm).not.toHaveBeenCalled();
+		expect(result.current.status).toBe("idle");
+	});
+
+	it("clears the file name when an in-flight upload is cancelled", async () => {
+		vi.mocked(uploadToR2).mockImplementation(() => new Promise<void>(() => {}));
+		const mint = vi.fn().mockResolvedValue({ uploadUrl: "u" });
+
+		const { result } = renderHook(() =>
+			useVideoUpload({ mint, confirm: vi.fn() }),
+		);
+		await act(async () => {
+			result.current.start(mp4());
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		});
+		expect(result.current.status).toBe("uploading");
+		expect(result.current.fileName).toBe("v.mp4");
+
+		act(() => result.current.cancel());
+		expect(result.current.status).toBe("idle");
+		expect(result.current.fileName).toBe("");
+	});
+
+	it("reports isBusy while an upload is in progress", async () => {
+		vi.mocked(uploadToR2).mockImplementation(() => new Promise<void>(() => {}));
+		const mint = vi.fn().mockResolvedValue({ uploadUrl: "u" });
+
+		const { result } = renderHook(() =>
+			useVideoUpload({ mint, confirm: vi.fn() }),
+		);
+		expect(result.current.isBusy).toBe(false);
+
+		await act(async () => {
+			result.current.start(mp4());
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		});
+		expect(result.current.status).toBe("uploading");
+		expect(result.current.isBusy).toBe(true);
+	});
+
 	it("aborts an in-flight upload when the widget unmounts", async () => {
 		const abortSpy = vi.spyOn(AbortController.prototype, "abort");
 		// A PUT that never resolves keeps the hook in the "uploading" state.

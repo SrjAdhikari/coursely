@@ -49,7 +49,12 @@ const VideoUploadField = ({
 	const [isDragging, setIsDragging] = useState(false);
 
 	const { status, progress, fileName, totalBytes, error } = state;
-	const showUploaded = status === "done" || (status === "idle" && hasVideo);
+
+	// Keep the saved-video card on screen for idle/error too, so a failed replace
+	// never makes an existing video look gone.
+	const showUploaded =
+		status === "done" ||
+		((status === "idle" || status === "error") && hasVideo);
 	const canPreview = hasVideo || status === "done";
 	const loadedBytes = Math.round((totalBytes * progress) / 100);
 
@@ -211,7 +216,7 @@ const VideoUploadField = ({
 						</span>
 
 						<span className="min-w-0 flex-1 truncate font-mono text-xs">
-							{fileName || "Video uploaded"}
+							{status === "done" && fileName ? fileName : "Video uploaded"}
 						</span>
 
 						<div className="flex shrink-0 gap-2">
@@ -247,9 +252,11 @@ const VideoUploadField = ({
 						<span>{error}</span>
 					</div>
 
-					<Button type="button" variant="outline" size="sm" onClick={pickFile}>
-						Choose another file
-					</Button>
+					{!hasVideo && (
+						<Button type="button" variant="outline" size="sm" onClick={pickFile}>
+							Choose another file
+						</Button>
+					)}
 				</div>
 			)}
 		</div>

@@ -43,7 +43,7 @@ const useVideoUpload = ({
 }: UseVideoUploadConfig) => {
 	const [status, setStatus] = useState<UploadStatus>("idle");
 	const [error, setError] = useState<string | null>(null);
-	
+
 	const [progress, setProgress] = useState(0);
 	const [fileName, setFileName] = useState("");
 	const [totalBytes, setTotalBytes] = useState(0);
@@ -61,6 +61,14 @@ const useVideoUpload = ({
 		},
 		[onError],
 	);
+
+	// Back to a clean idle; also clears the file name so a cancelled upload never
+	// lingers as the "uploaded" label.
+	const resetToIdle = useCallback(() => {
+		setStatus("idle");
+		setProgress(0);
+		setFileName("");
+	}, []);
 
 	const finish = useCallback(
 		async (duration?: number) => {
@@ -97,6 +105,11 @@ const useVideoUpload = ({
 			const controller = new AbortController();
 			abortRef.current = controller;
 
+			// Only the PUT honors the signal; the probe and confirm steps don't —
+			// so re-check after each await and stop before persisting a cancelled
+			// upload (cancel() has already reset the UI to idle).
+			const cancelled = () => controller.signal.aborted;
+
 			try {
 				const { uploadUrl } = await mint();
 				await uploadToR2(uploadUrl, file, {
@@ -104,23 +117,24 @@ const useVideoUpload = ({
 					signal: controller.signal,
 				});
 
+				if (cancelled()) return;
+
 				if (probeDuration) {
 					try {
 						const seconds = await probeDuration(file);
+						if (cancelled()) return;
 						await finish(Math.max(1, Math.round(seconds)));
 					} catch {
+						if (cancelled()) return;
 						// Bytes are already in R2 — keep them and ask for the length.
 						setStatus("awaiting-duration");
 					}
 				} else {
+					if (cancelled()) return;
 					await finish();
 				}
 			} catch (err) {
-				if (controller.signal.aborted) {
-					setStatus("idle");
-					setProgress(0);
-					return;
-				}
+				if (cancelled()) return;
 				fail(messageOf(err, "Upload failed. Please try again."));
 			}
 		},
@@ -138,7 +152,11 @@ const useVideoUpload = ({
 		[finish, fail],
 	);
 
-	const cancel = useCallback(() => abortRef.current?.abort(), []);
+	// Abort the in-flight request and snap back to idle immediately.
+	const cancel = useCallback(() => {
+		abortRef.current?.abort();
+		resetToIdle();
+	}, [resetToIdle]);
 
 	const reset = useCallback(() => {
 		setStatus("idle");
@@ -148,8 +166,14 @@ const useVideoUpload = ({
 		setTotalBytes(0);
 	}, []);
 
+	const isBusy =
+		status === "uploading" ||
+		status === "confirming" ||
+		status === "awaiting-duration";
+
 	return {
 		status,
+		isBusy,
 		progress,
 		fileName,
 		totalBytes,

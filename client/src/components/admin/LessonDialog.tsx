@@ -175,7 +175,11 @@ const LessonDialog = ({
 							Cancel
 						</Button>
 
-						<Button type="submit" size="lg" disabled={pending || !isValid}>
+						<Button
+							type="submit"
+							size="lg"
+							disabled={pending || !isValid || videoUpload.isBusy}
+						>
 							{isEdit ? "Save changes" : "Add lesson"}
 						</Button>
 					</DialogFooter>

@@ -11,6 +11,7 @@ type State = ReturnType<typeof useVideoUpload>;
 
 const baseState = (overrides: Partial<State> = {}): State => ({
 	status: "idle",
+	isBusy: false,
 	progress: 0,
 	fileName: "",
 	totalBytes: 0,
@@ -83,6 +84,37 @@ describe("VideoUploadField", () => {
 		expect(screen.queryByTestId("player")).not.toBeInTheDocument();
 		await user.click(screen.getByRole("button", { name: /preview/i }));
 		expect(screen.getByTestId("player")).toBeInTheDocument();
+	});
+
+	it("keeps the existing-video card visible when a replacement upload errors", () => {
+		const state = baseState({
+			status: "error",
+			error: "Upload failed. Please try again.",
+		});
+		render(
+			<VideoUploadField
+				label="Video"
+				state={state}
+				hasVideo
+				previewSlot={<div data-testid="player" />}
+			/>,
+		);
+		// The saved video is still represented (Replace stays available)…
+		expect(
+			screen.getByRole("button", { name: /replace/i }),
+		).toBeInTheDocument();
+		// …alongside the error, but without the destructive "choose another file".
+		expect(screen.getByText(/upload failed/i)).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /choose another file/i }),
+		).not.toBeInTheDocument();
+	});
+
+	it("labels the card generically instead of showing a stale file name", () => {
+		const state = baseState({ status: "idle", fileName: "stale.mp4" });
+		render(<VideoUploadField label="Video" state={state} hasVideo />);
+		expect(screen.getByText(/video uploaded/i)).toBeInTheDocument();
+		expect(screen.queryByText("stale.mp4")).not.toBeInTheDocument();
 	});
 
 	it("resets and reopens the picker via Replace", async () => {

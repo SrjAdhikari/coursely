@@ -269,7 +269,7 @@ const CourseFormPage = () => {
 						type="submit"
 						size="lg"
 						className="font-mono"
-						disabled={pending || !isValid}
+						disabled={pending || !isValid || trailerUpload.isBusy}
 					>
 						{isEdit ? "Save changes" : "Create course"}
 					</Button>
