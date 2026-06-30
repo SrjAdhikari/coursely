@@ -27,6 +27,8 @@ const envConfig = Object.freeze({
 	R2_ACCESS_KEY_ID: getEnv("R2_ACCESS_KEY_ID"),
 	R2_SECRET_ACCESS_KEY: getEnv("R2_SECRET_ACCESS_KEY"),
 	R2_BUCKET: getEnv("R2_BUCKET"),
+	STRIPE_SECRET_KEY: getEnv("STRIPE_SECRET_KEY"),
+	STRIPE_WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET"),
 });
 
 export default envConfig;
