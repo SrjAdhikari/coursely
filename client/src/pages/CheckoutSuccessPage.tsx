@@ -103,7 +103,9 @@ const CheckoutSuccessPage = () => {
 			</Result>
 		);
 
-	if (isError)
+	// Only surface the hard error once we've stopped polling — a transient poll
+	// failure mid-flight should keep showing the "confirming" state and self-heal.
+	if (isError && pollDeadlinePassed)
 		return (
 			<Result
 				tone="danger"

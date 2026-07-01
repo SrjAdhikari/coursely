@@ -108,6 +108,43 @@ describe("CheckoutSuccessPage", () => {
 		vi.useRealTimers();
 	});
 
+	it("keeps the confirming state on a transient error while still polling", () => {
+		mockUseCheckoutStatus.mockReturnValue({
+			data: undefined,
+			isLoading: false,
+			isError: true,
+			refetch: mockRefetch,
+		});
+
+		renderAt("/checkout/success?session_id=cs_1");
+
+		expect(screen.getByText(/confirming your payment/i)).toBeInTheDocument();
+		expect(screen.queryByText(/couldn't confirm/i)).not.toBeInTheDocument();
+	});
+
+	it("shows the error screen once the retry window is exhausted", () => {
+		vi.useFakeTimers();
+		mockUseCheckoutStatus.mockReturnValue({
+			data: undefined,
+			isLoading: false,
+			isError: true,
+			refetch: mockRefetch,
+		});
+
+		renderAt("/checkout/success?session_id=cs_1");
+		expect(screen.getByText(/confirming your payment/i)).toBeInTheDocument();
+
+		act(() => {
+			vi.advanceTimersByTime(9000);
+		});
+
+		expect(
+			screen.getByText(/couldn't confirm this checkout/i),
+		).toBeInTheDocument();
+
+		vi.useRealTimers();
+	});
+
 	afterEach(() => {
 		vi.useRealTimers();
 	});
