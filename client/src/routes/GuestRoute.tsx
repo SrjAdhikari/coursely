@@ -5,9 +5,17 @@ import { useCurrentUser } from "@/hooks/useAuth";
 import Loader from "@/components/Loader";
 import ROUTES from "@/routes/paths";
 
-/** A redirect target is safe only if it's an app-internal absolute path. */
+/** A redirect target is safe only if it's an app-internal absolute path.
+ *  Rejects protocol-relative (`//`) and backslash-obfuscated (`/\`) targets,
+ *  which browsers can resolve to an external origin. */
 const safeRedirect = (target: string | null): string | null => {
-	if (!target || !target.startsWith("/") || target.startsWith("//")) return null;
+	if (
+		!target ||
+		!target.startsWith("/") ||
+		target.startsWith("//") ||
+		target.includes("\\")
+	)
+		return null;
 	return target;
 };
 

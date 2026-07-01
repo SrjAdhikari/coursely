@@ -129,6 +129,21 @@ describe("route guards", () => {
 			);
 			expect(screen.getByText("dashboard")).toBeInTheDocument();
 		});
+
+		it("ignores a backslash-obfuscated ?redirect", () => {
+			mockUseCurrentUser.mockReturnValue(authed("student"));
+			render(
+				<MemoryRouter initialEntries={["/login?redirect=%2F%5Cevil.com"]}>
+					<Routes>
+						<Route element={<GuestRoute />}>
+							<Route path="/login" element={<div>login page</div>} />
+						</Route>
+						<Route path="/dashboard" element={<div>dashboard</div>} />
+					</Routes>
+				</MemoryRouter>,
+			);
+			expect(screen.getByText("dashboard")).toBeInTheDocument();
+		});
 	});
 
 	describe("AdminRoute", () => {
