@@ -31,7 +31,7 @@ const CourseCard = ({
 		<div className="relative aspect-video overflow-hidden bg-muted">
 			<img src={thumbnailUrl} alt="" className="size-full object-cover" />
 			{badge && (
-				<span className="absolute right-2.5 top-2.5 rounded-full border border-primary/30 bg-card/90 px-2.5 py-1 font-mono text-[11px] text-primary">
+				<span className="absolute right-2.5 top-2.5 rounded-full border border-primary/30 bg-card/90 px-2.5 py-1 font-mono text-xs text-primary">
 					{badge}
 				</span>
 			)}
@@ -42,7 +42,7 @@ const CourseCard = ({
 				{title}
 			</h3>
 
-			<div className="mt-2 flex items-center gap-2 text-[13px] text-muted-foreground">
+			<div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
 				<span
 					aria-hidden
 					className="size-5 shrink-0 rounded-full bg-linear-to-br from-primary to-primary/60"
