@@ -63,8 +63,16 @@ axiosClient.interceptors.response.use(
 		const requestUrl = error.config?.url ?? "";
 		const isAuthProbe = requestUrl.endsWith("/auth/me");
 
+		// A 403 UNAUTHORIZED_ACCESS is a resource-ownership rejection (e.g. viewing
+		// someone else's checkout), NOT a dead session — never evict on it. Real
+		// session failures are a 401, or a deactivated account (403 ACCOUNT_DEACTIVATED).
+		const isResourceForbidden =
+			error.response?.status === 403 &&
+			normalized.code === "UNAUTHORIZED_ACCESS";
+
 		if (
 			!isAuthProbe &&
+			!isResourceForbidden &&
 			EVICTION_CODES.has(normalized.code) &&
 			!isPublicPath(window.location.pathname)
 		) {

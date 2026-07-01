@@ -25,10 +25,15 @@ const rejectionHandler = (
 
 // A real AxiosError so it flows through the production normalizeError path
 // (normalizeError gates on `error instanceof AxiosError`).
-const makeAxiosError = (code: string, url: string): AxiosError => {
+const makeAxiosError = (
+	code: string,
+	url: string,
+	httpStatus = 401,
+): AxiosError => {
 	const error = new AxiosError("nope");
 	error.config = { url } as InternalAxiosRequestConfig;
 	error.response = {
+		status: httpStatus,
 		data: { status: "fail", error: { code, message: "nope" } },
 	} as AxiosResponse;
 	return error;
@@ -104,5 +109,27 @@ describe("axios eviction interceptor", () => {
 
 		expect(removeQueries).not.toHaveBeenCalled();
 		expect(window.location.href).toBe("/courses/react-basics");
+	});
+
+	it("does NOT evict on a 403 resource-forbidden (another user's checkout)", async () => {
+		await expect(
+			rejectionHandler(
+				makeAxiosError("UNAUTHORIZED_ACCESS", "/checkout/cs_x/status", 403),
+			),
+		).rejects.toMatchObject({ code: "UNAUTHORIZED_ACCESS" });
+
+		expect(removeQueries).not.toHaveBeenCalled();
+		expect(window.location.href).toBe(ROUTES.DASHBOARD);
+	});
+
+	it("still evicts a deactivated account (403 ACCOUNT_DEACTIVATED)", async () => {
+		await expect(
+			rejectionHandler(
+				makeAxiosError("ACCOUNT_DEACTIVATED", "/enrollments/me", 403),
+			),
+		).rejects.toMatchObject({ code: "ACCOUNT_DEACTIVATED" });
+
+		expect(removeQueries).toHaveBeenCalledWith({ queryKey: CURRENT_USER_KEY });
+		expect(window.location.href).toBe(`${ROUTES.LOGIN}?redirect=%2Fdashboard`);
 	});
 });
