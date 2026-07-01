@@ -2,8 +2,14 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Routes, Route } from "react-router";
+import { MemoryRouter, Routes, Route, useSearchParams } from "react-router";
 import type { ComponentType } from "react";
+
+/** Renders the `redirect` search param so tests can assert the return-to path. */
+const RedirectProbe = () => {
+	const [params] = useSearchParams();
+	return <div data-testid="redirect">{params.get("redirect")}</div>;
+};
 
 const mockUseCurrentUser = vi.fn();
 vi.mock("@/hooks/useAuth", () => ({
@@ -57,6 +63,21 @@ describe("route guards", () => {
 			renderGuard(ProtectedRoute);
 			expect(screen.getByText("secret content")).toBeInTheDocument();
 		});
+
+		it("sends an unauthenticated user to login with a return-to redirect", () => {
+			mockUseCurrentUser.mockReturnValue(unauthed);
+			render(
+				<MemoryRouter initialEntries={["/my-courses"]}>
+					<Routes>
+						<Route element={<ProtectedRoute />}>
+							<Route path="/my-courses" element={<div>my courses</div>} />
+						</Route>
+						<Route path="/login" element={<RedirectProbe />} />
+					</Routes>
+				</MemoryRouter>,
+			);
+			expect(screen.getByTestId("redirect")).toHaveTextContent("/my-courses");
+		});
 	});
 
 	describe("GuestRoute", () => {
@@ -76,6 +97,52 @@ describe("route guards", () => {
 			mockUseCurrentUser.mockReturnValue(authed("admin"));
 			renderGuard(GuestRoute);
 			expect(screen.getByText("admin area")).toBeInTheDocument();
+		});
+
+		it("returns an authenticated user to a safe ?redirect path", () => {
+			mockUseCurrentUser.mockReturnValue(authed("student"));
+			render(
+				<MemoryRouter initialEntries={["/login?redirect=%2Fcourses%2Freact"]}>
+					<Routes>
+						<Route element={<GuestRoute />}>
+							<Route path="/login" element={<div>login page</div>} />
+						</Route>
+						<Route path="/courses/:slug" element={<div>course detail</div>} />
+						<Route path="/dashboard" element={<div>dashboard</div>} />
+					</Routes>
+				</MemoryRouter>,
+			);
+			expect(screen.getByText("course detail")).toBeInTheDocument();
+		});
+
+		it("ignores an unsafe protocol-relative ?redirect", () => {
+			mockUseCurrentUser.mockReturnValue(authed("student"));
+			render(
+				<MemoryRouter initialEntries={["/login?redirect=%2F%2Fevil.com"]}>
+					<Routes>
+						<Route element={<GuestRoute />}>
+							<Route path="/login" element={<div>login page</div>} />
+						</Route>
+						<Route path="/dashboard" element={<div>dashboard</div>} />
+					</Routes>
+				</MemoryRouter>,
+			);
+			expect(screen.getByText("dashboard")).toBeInTheDocument();
+		});
+
+		it("ignores a backslash-obfuscated ?redirect", () => {
+			mockUseCurrentUser.mockReturnValue(authed("student"));
+			render(
+				<MemoryRouter initialEntries={["/login?redirect=%2F%5Cevil.com"]}>
+					<Routes>
+						<Route element={<GuestRoute />}>
+							<Route path="/login" element={<div>login page</div>} />
+						</Route>
+						<Route path="/dashboard" element={<div>dashboard</div>} />
+					</Routes>
+				</MemoryRouter>,
+			);
+			expect(screen.getByText("dashboard")).toBeInTheDocument();
 		});
 	});
 

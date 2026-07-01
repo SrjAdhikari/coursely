@@ -19,3 +19,19 @@ export const studentKey = (id: string) => ["students", id] as const;
 
 /** Per-lesson signed playback URL (short-lived; never persisted). */
 export const lessonPlaybackKey = (id: string) => ["lessonPlayback", id] as const;
+
+/** Public catalog list + per-slug detail. */
+export const CATALOG_KEY = ["catalog"] as const;
+export const courseSlugKey = (slug: string) =>
+	["catalog", "slug", slug] as const;
+
+/** The current student's own enrollments (My Courses). */
+export const MY_ENROLLMENTS_KEY = ["enrollments", "me"] as const;
+
+/** Admin enrollments page (paginated). */
+export const adminEnrollmentsKey = (page: number, limit: number) =>
+	["adminEnrollments", page, limit] as const;
+
+/** Reconciled checkout status for a session (success page). */
+export const checkoutStatusKey = (sessionId: string) =>
+	["checkoutStatus", sessionId] as const;

@@ -43,6 +43,13 @@ const PUBLIC_PATHS = new Set<string>([
 ]);
 
 /**
+ * Public pages render fine while logged out. The catalog and any course detail
+ * (`/courses/...`) are public, so a 401 there must NOT hard-redirect.
+ */
+const isPublicPath = (pathname: string): boolean =>
+	PUBLIC_PATHS.has(pathname) || pathname.startsWith(`${ROUTES.CATALOG}/`);
+
+/**
  * Response interceptor — funnels every error through normalizeError so each
  * catch block receives the same predictable { code, message } shape, and on a
  * session-eviction code (outside the /auth/me probe and public pages) clears
@@ -56,13 +63,25 @@ axiosClient.interceptors.response.use(
 		const requestUrl = error.config?.url ?? "";
 		const isAuthProbe = requestUrl.endsWith("/auth/me");
 
+		// A 403 UNAUTHORIZED_ACCESS is a resource-ownership rejection (e.g. viewing
+		// someone else's checkout), NOT a dead session — never evict on it. Real
+		// session failures are a 401, or a deactivated account (403 ACCOUNT_DEACTIVATED).
+		const isResourceForbidden =
+			error.response?.status === 403 &&
+			normalized.code === "UNAUTHORIZED_ACCESS";
+
 		if (
 			!isAuthProbe &&
+			!isResourceForbidden &&
 			EVICTION_CODES.has(normalized.code) &&
-			!PUBLIC_PATHS.has(window.location.pathname)
+			!isPublicPath(window.location.pathname)
 		) {
 			queryClient.removeQueries({ queryKey: CURRENT_USER_KEY });
-			window.location.href = ROUTES.LOGIN;
+			// Preserve where the user was so login can return them there.
+			const returnTo = encodeURIComponent(
+				`${window.location.pathname}${window.location.search}`,
+			);
+			window.location.href = `${ROUTES.LOGIN}?redirect=${returnTo}`;
 		}
 
 		return Promise.reject(normalized);

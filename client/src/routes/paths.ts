@@ -10,9 +10,13 @@ const ROUTES = {
 	LOGIN: "/login",
 	REGISTER: "/signup",
 	CATALOG: "/courses",
+	COURSE_DETAIL: (slug: string) => `/courses/${slug}`,
 
 	// Authenticated
 	DASHBOARD: "/dashboard",
+	CHECKOUT_SUCCESS: "/checkout/success",
+	CHECKOUT_CANCEL: "/checkout/cancel",
+	MY_COURSES: "/my-courses",
 
 	// Admin
 	ADMIN: "/admin",
