@@ -20,6 +20,7 @@ interface PurchaseCardProps {
 	status: PurchaseStatus;
 	onBuy: () => void;
 	isBuying: boolean;
+	isCheckingAccess?: boolean;
 }
 
 /** Footnote under the CTA, tailored to the buyer's state. */
@@ -39,6 +40,7 @@ const PurchaseCard = ({
 	status,
 	onBuy,
 	isBuying,
+	isCheckingAccess = false,
 }: PurchaseCardProps) => {
 	const loginHref = `${ROUTES.LOGIN}?redirect=${encodeURIComponent(
 		ROUTES.COURSE_DETAIL(slug),
@@ -82,7 +84,11 @@ const PurchaseCard = ({
 				)}
 
 				{status === "buyable" && (
-					<Button onClick={onBuy} disabled={isBuying} className="w-full">
+					<Button
+						onClick={onBuy}
+						disabled={isBuying || isCheckingAccess}
+						className="w-full"
+					>
 						{isBuying ? "Redirecting…" : "Buy this course"}
 					</Button>
 				)}

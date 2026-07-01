@@ -31,7 +31,8 @@ const CourseDetailPage = () => {
 	const { data: currentUser } = useCurrentUser();
 	const isLoggedIn = !!currentUser?.data;
 
-	const { data: enrollments } = useMyEnrollments({ enabled: isLoggedIn });
+	const { data: enrollments, isLoading: isLoadingEnrollments } =
+		useMyEnrollments({ enabled: isLoggedIn });
 	const { mutate: startCheckout, isPending } = useCreateCheckout();
 
 	const course = data?.data;
@@ -40,6 +41,10 @@ const CourseDetailPage = () => {
 		if (!course || !enrollments) return false;
 		return enrollments.data.some((row) => row.courseId._id === course._id);
 	}, [course, enrollments]);
+
+	// Ownership is unknown while a logged-in visitor's enrollments load — don't
+	// offer an active Buy (they may already own the course).
+	const isCheckingAccess = isLoggedIn && !!isLoadingEnrollments;
 
 	const lessons = useMemo(
 		() => course?.sections.flatMap((section) => section.lessons) ?? [],
@@ -58,7 +63,7 @@ const CourseDetailPage = () => {
 	);
 
 	const handleBuy = useCallback(() => {
-		if (!course) return;
+		if (!course || isCheckingAccess) return;
 		startCheckout(course._id, {
 			onSuccess: (response) => {
 				if (response.data.url) {
@@ -72,7 +77,7 @@ const CourseDetailPage = () => {
 				queryClient.invalidateQueries({ queryKey: MY_ENROLLMENTS_KEY });
 			},
 		});
-	}, [course, startCheckout, queryClient]);
+	}, [course, isCheckingAccess, startCheckout, queryClient]);
 
 	if (isLoading) return <Loader className="min-h-[80vh]" />;
 	if (isError || !course)
@@ -132,6 +137,7 @@ const CourseDetailPage = () => {
 					status={status}
 					onBuy={handleBuy}
 					isBuying={isPending}
+					isCheckingAccess={isCheckingAccess}
 				/>
 			</div>
 		</div>

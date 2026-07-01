@@ -137,6 +137,17 @@ describe("CourseDetailPage", () => {
 		expect(vi.mocked(toast.error)).toHaveBeenCalled();
 	});
 
+	it("disables Buy while ownership is still loading", () => {
+		mockUseCurrentUser.mockReturnValue({
+			data: { data: { name: "S", role: "student" } },
+		});
+		mockUseMyEnrollments.mockReturnValue({ data: undefined, isLoading: true });
+		renderPage();
+		expect(
+			screen.getByRole("button", { name: /buy this course/i }),
+		).toBeDisabled();
+	});
+
 	it("already enrolled: shows ownership", () => {
 		mockUseCurrentUser.mockReturnValue({
 			data: { data: { name: "S", role: "student" } },
