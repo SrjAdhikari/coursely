@@ -56,26 +56,33 @@ const Result = ({
 const CheckoutSuccessPage = () => {
 	const [searchParams] = useSearchParams();
 	const sessionId = searchParams.get("session_id") ?? "";
-	const [attempts, setAttempts] = useState(0);
-	const queryClient = useQueryClient();
 
+	const [attempts, setAttempts] = useState(0);
+	const [hasEnrolled, setHasEnrolled] = useState(false);
+
+	const queryClient = useQueryClient();
 	const pollDeadlinePassed = attempts >= MAX_POLL_ATTEMPTS;
-	const { data, isError, refetch } = useCheckoutStatus(
-		sessionId,
-		!!sessionId && !pollDeadlinePassed,
-	);
+	// Stop polling once enrolled, past the retry deadline, or with no session.
+	const shouldPoll = !!sessionId && !pollDeadlinePassed && !hasEnrolled;
+
+	const { data, isError, refetch } = useCheckoutStatus(sessionId, shouldPoll);
 	const checkoutStatus = data?.data;
 	const enrolled = checkoutStatus?.enrolled ?? false;
 
-	// Count auto-retries; once we hit the deadline we stop and wait for the user.
+	// Latch enrollment so polling stops immediately (and stays stopped).
 	useEffect(() => {
-		if (!sessionId || pollDeadlinePassed) return;
+		if (enrolled) setHasEnrolled(true);
+	}, [enrolled]);
+
+	// Count auto-retries; when polling stops the interval clears itself.
+	useEffect(() => {
+		if (!shouldPoll) return;
 		const retryTicker = setInterval(
 			() => setAttempts((current) => current + 1),
 			POLL_INTERVAL_MS,
 		);
 		return () => clearInterval(retryTicker);
-	}, [sessionId, pollDeadlinePassed]);
+	}, [shouldPoll]);
 
 	useEffect(() => {
 		if (enrolled)
