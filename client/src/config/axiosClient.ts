@@ -43,6 +43,13 @@ const PUBLIC_PATHS = new Set<string>([
 ]);
 
 /**
+ * Public pages render fine while logged out. The catalog and any course detail
+ * (`/courses/...`) are public, so a 401 there must NOT hard-redirect.
+ */
+const isPublicPath = (pathname: string): boolean =>
+	PUBLIC_PATHS.has(pathname) || pathname.startsWith(`${ROUTES.CATALOG}/`);
+
+/**
  * Response interceptor — funnels every error through normalizeError so each
  * catch block receives the same predictable { code, message } shape, and on a
  * session-eviction code (outside the /auth/me probe and public pages) clears
@@ -59,7 +66,7 @@ axiosClient.interceptors.response.use(
 		if (
 			!isAuthProbe &&
 			EVICTION_CODES.has(normalized.code) &&
-			!PUBLIC_PATHS.has(window.location.pathname)
+			!isPublicPath(window.location.pathname)
 		) {
 			queryClient.removeQueries({ queryKey: CURRENT_USER_KEY });
 			window.location.href = ROUTES.LOGIN;

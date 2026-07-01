@@ -77,6 +77,37 @@ describe("route guards", () => {
 			renderGuard(GuestRoute);
 			expect(screen.getByText("admin area")).toBeInTheDocument();
 		});
+
+		it("returns an authenticated user to a safe ?redirect path", () => {
+			mockUseCurrentUser.mockReturnValue(authed("student"));
+			render(
+				<MemoryRouter initialEntries={["/login?redirect=%2Fcourses%2Freact"]}>
+					<Routes>
+						<Route element={<GuestRoute />}>
+							<Route path="/login" element={<div>login page</div>} />
+						</Route>
+						<Route path="/courses/:slug" element={<div>course detail</div>} />
+						<Route path="/dashboard" element={<div>dashboard</div>} />
+					</Routes>
+				</MemoryRouter>,
+			);
+			expect(screen.getByText("course detail")).toBeInTheDocument();
+		});
+
+		it("ignores an unsafe protocol-relative ?redirect", () => {
+			mockUseCurrentUser.mockReturnValue(authed("student"));
+			render(
+				<MemoryRouter initialEntries={["/login?redirect=%2F%2Fevil.com"]}>
+					<Routes>
+						<Route element={<GuestRoute />}>
+							<Route path="/login" element={<div>login page</div>} />
+						</Route>
+						<Route path="/dashboard" element={<div>dashboard</div>} />
+					</Routes>
+				</MemoryRouter>,
+			);
+			expect(screen.getByText("dashboard")).toBeInTheDocument();
+		});
 	});
 
 	describe("AdminRoute", () => {

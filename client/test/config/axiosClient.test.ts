@@ -82,4 +82,15 @@ describe("axios eviction interceptor", () => {
 		expect(removeQueries).not.toHaveBeenCalled();
 		expect(window.location.href).toBe(ROUTES.DASHBOARD);
 	});
+
+	it("does NOT evict while on a public course detail page", async () => {
+		atPath("/courses/react-basics");
+
+		await expect(
+			rejectionHandler(makeAxiosError("UNAUTHORIZED_ACCESS", "/enrollments/me")),
+		).rejects.toMatchObject({ code: "UNAUTHORIZED_ACCESS" });
+
+		expect(removeQueries).not.toHaveBeenCalled();
+		expect(window.location.href).toBe("/courses/react-basics");
+	});
 });

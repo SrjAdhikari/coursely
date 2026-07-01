@@ -8,11 +8,17 @@ import ProtectedRoute from "@/routes/ProtectedRoute";
 import AdminRoute from "@/routes/AdminRoute";
 
 import AdminLayout from "@/components/layout/AdminLayout";
+import StoreLayout from "@/components/layout/store/StoreLayout";
 
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import DashboardPage from "@/pages/DashboardPage";
+import CatalogPage from "@/pages/CatalogPage";
+import CourseDetailPage from "@/pages/CourseDetailPage";
+import CheckoutSuccessPage from "@/pages/CheckoutSuccessPage";
+import CheckoutCancelPage from "@/pages/CheckoutCancelPage";
+import MyCoursesPage from "@/pages/MyCoursesPage";
 
 import OverviewPage from "@/pages/admin/OverviewPage";
 import CoursesPage from "@/pages/admin/CoursesPage";
@@ -28,6 +34,12 @@ const AppRoutes = () => {
 		<Routes>
 			<Route path={ROUTES.ROOT} element={<HomePage />} />
 
+			{/* Public storefront */}
+			<Route element={<StoreLayout />}>
+				<Route path={ROUTES.CATALOG} element={<CatalogPage />} />
+				<Route path="/courses/:slug" element={<CourseDetailPage />} />
+			</Route>
+
 			{/* Logged-out only */}
 			<Route element={<GuestRoute />}>
 				<Route path={ROUTES.LOGIN} element={<LoginPage />} />
@@ -37,6 +49,19 @@ const AppRoutes = () => {
 			{/* Authenticated */}
 			<Route element={<ProtectedRoute />}>
 				<Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
+
+				{/* Protected storefront */}
+				<Route element={<StoreLayout />}>
+					<Route
+						path={ROUTES.CHECKOUT_SUCCESS}
+						element={<CheckoutSuccessPage />}
+					/>
+					<Route
+						path={ROUTES.CHECKOUT_CANCEL}
+						element={<CheckoutCancelPage />}
+					/>
+					<Route path={ROUTES.MY_COURSES} element={<MyCoursesPage />} />
+				</Route>
 
 				{/* Admin only */}
 				<Route element={<AdminRoute />}>
