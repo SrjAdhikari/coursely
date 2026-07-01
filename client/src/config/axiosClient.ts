@@ -69,7 +69,11 @@ axiosClient.interceptors.response.use(
 			!isPublicPath(window.location.pathname)
 		) {
 			queryClient.removeQueries({ queryKey: CURRENT_USER_KEY });
-			window.location.href = ROUTES.LOGIN;
+			// Preserve where the user was so login can return them there.
+			const returnTo = encodeURIComponent(
+				`${window.location.pathname}${window.location.search}`,
+			);
+			window.location.href = `${ROUTES.LOGIN}?redirect=${returnTo}`;
 		}
 
 		return Promise.reject(normalized);

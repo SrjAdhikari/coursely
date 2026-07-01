@@ -34,8 +34,8 @@ const makeAxiosError = (code: string, url: string): AxiosError => {
 	return error;
 };
 
-const atPath = (pathname: string) =>
-	vi.stubGlobal("location", { pathname, href: pathname });
+const atPath = (pathname: string, search = "") =>
+	vi.stubGlobal("location", { pathname, search, href: pathname });
 
 describe("axios eviction interceptor", () => {
 	beforeEach(() => {
@@ -51,7 +51,19 @@ describe("axios eviction interceptor", () => {
 		).rejects.toMatchObject({ code: "UNAUTHORIZED_ACCESS" });
 
 		expect(removeQueries).toHaveBeenCalledWith({ queryKey: CURRENT_USER_KEY });
-		expect(window.location.href).toBe(ROUTES.LOGIN);
+		expect(window.location.href).toBe(`${ROUTES.LOGIN}?redirect=%2Fdashboard`);
+	});
+
+	it("preserves the current path and query as ?redirect when evicting", async () => {
+		atPath("/my-courses", "?tab=active");
+
+		await expect(
+			rejectionHandler(makeAxiosError("UNAUTHORIZED_ACCESS", "/enrollments/me")),
+		).rejects.toMatchObject({ code: "UNAUTHORIZED_ACCESS" });
+
+		expect(window.location.href).toBe(
+			`${ROUTES.LOGIN}?redirect=${encodeURIComponent("/my-courses?tab=active")}`,
+		);
 	});
 
 	it("does NOT evict on the /auth/me probe (route guards own first-load)", async () => {
