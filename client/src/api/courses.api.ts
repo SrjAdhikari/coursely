@@ -8,6 +8,8 @@ import type {
 	CourseWithCurriculum,
 	CreateCoursePayload,
 	UpdateCoursePayload,
+	PublicCoursePayload,
+	PublicCourseDetailPayload,
 } from "@/types/course.types";
 
 /** List all courses (drafts + published) for the admin table. */
@@ -56,4 +58,28 @@ const deleteCourse = async (id: string) => {
 	return data;
 };
 
-export { listCourses, getCourse, createCourse, updateCourse, deleteCourse };
+/** List published courses for the public catalog (optional search query). */
+const listPublishedCourses = async (q?: string) => {
+	const { data } = await axiosClient.get<
+		ApiSuccessResponse<PublicCoursePayload[]>
+	>("/courses", { params: q ? { q } : undefined });
+	return data;
+};
+
+/** Get one published course with its public curriculum, by slug. */
+const getCourseBySlug = async (slug: string) => {
+	const { data } = await axiosClient.get<
+		ApiSuccessResponse<PublicCourseDetailPayload>
+	>(`/courses/${slug}`);
+	return data;
+};
+
+export {
+	listCourses,
+	getCourse,
+	createCourse,
+	updateCourse,
+	deleteCourse,
+	listPublishedCourses,
+	getCourseBySlug,
+};
