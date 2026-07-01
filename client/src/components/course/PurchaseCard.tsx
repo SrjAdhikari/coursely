@@ -16,6 +16,7 @@ interface PurchaseCardProps {
 	price: number;
 	lessonCount: number;
 	totalDuration: number;
+	previewLessonCount: number;
 	status: PurchaseStatus;
 	onBuy: () => void;
 	isBuying: boolean;
@@ -34,6 +35,7 @@ const PurchaseCard = ({
 	price,
 	lessonCount,
 	totalDuration,
+	previewLessonCount,
 	status,
 	onBuy,
 	isBuying,
@@ -41,6 +43,13 @@ const PurchaseCard = ({
 	const loginHref = `${ROUTES.LOGIN}?redirect=${encodeURIComponent(
 		ROUTES.COURSE_DETAIL(slug),
 	)}`;
+
+	// Split the ₹ glyph from the digits so it can render dimmer than the amount.
+	const formattedPrice = formatPrice(price);
+	const currencySymbol = formattedPrice.slice(0, 1);
+	const priceAmount = formattedPrice.slice(1);
+
+	const showPreviewLine = status !== "enrolled" && previewLessonCount > 0;
 
 	return (
 		<aside className="overflow-hidden rounded-xl border border-input bg-card">
@@ -52,8 +61,11 @@ const PurchaseCard = ({
 					</div>
 				) : (
 					<>
-						<div className="font-heading text-3xl font-bold">
-							{formatPrice(price)}
+						<div className="flex items-baseline gap-1.5 font-heading text-3xl font-bold">
+							<span className="text-base font-medium text-muted-foreground">
+								{currencySymbol}
+							</span>
+							{priceAmount}
 						</div>
 						<p className="mt-1 text-xs text-muted-foreground">
 							One-time payment · lifetime access
@@ -102,6 +114,14 @@ const PurchaseCard = ({
 					<Check className="size-4 text-primary" />
 					Lifetime access
 				</li>
+
+				{showPreviewLine && (
+					<li className="flex items-center gap-2.5">
+						<Check className="size-4 text-primary" />
+						{previewLessonCount} free preview{" "}
+						{previewLessonCount === 1 ? "lesson" : "lessons"}
+					</li>
+				)}
 			</ul>
 
 			<p className="px-5 pb-5 text-center text-xs text-muted-foreground">

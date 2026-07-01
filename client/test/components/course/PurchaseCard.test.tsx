@@ -11,6 +11,7 @@ const base = {
 	price: 149900,
 	lessonCount: 18,
 	totalDuration: 20520,
+	previewLessonCount: 1,
 	onBuy: vi.fn(),
 	isBuying: false,
 };
@@ -27,7 +28,9 @@ const renderCard = (
 describe("PurchaseCard", () => {
 	it("shows the price and what's included", () => {
 		renderCard({});
-		expect(screen.getByText("₹1,499")).toBeInTheDocument();
+		// The ₹ glyph renders in its own (dimmer) span, split from the digits.
+		expect(screen.getByText("₹")).toBeInTheDocument();
+		expect(screen.getByText("1,499")).toBeInTheDocument();
 		expect(screen.getByText(/18 video lessons/i)).toBeInTheDocument();
 		expect(screen.getByText(/5h 42m of content/i)).toBeInTheDocument();
 	});
@@ -52,6 +55,21 @@ describe("PurchaseCard", () => {
 		expect(screen.getByRole("button", { name: /redirecting/i })).toBeDisabled();
 	});
 
+	it("shows a singular free preview line for one preview lesson", () => {
+		renderCard({ status: "buyable", previewLessonCount: 1 });
+		expect(screen.getByText("1 free preview lesson")).toBeInTheDocument();
+	});
+
+	it("pluralizes the free preview line for multiple preview lessons", () => {
+		renderCard({ status: "buyable", previewLessonCount: 3 });
+		expect(screen.getByText("3 free preview lessons")).toBeInTheDocument();
+	});
+
+	it("hides the free preview line when there are no preview lessons", () => {
+		renderCard({ status: "buyable", previewLessonCount: 0 });
+		expect(screen.queryByText(/free preview/i)).not.toBeInTheDocument();
+	});
+
 	it("enrolled: shows ownership and a My Courses link", () => {
 		renderCard({ status: "enrolled" });
 		expect(screen.getByText(/enrolled · full access/i)).toBeInTheDocument();
@@ -63,7 +81,12 @@ describe("PurchaseCard", () => {
 	it("enrolled: shows the ownership headline and hides the price", () => {
 		renderCard({ status: "enrolled" });
 		expect(screen.getByText(/you own this course/i)).toBeInTheDocument();
-		expect(screen.queryByText("₹1,499")).not.toBeInTheDocument();
+		expect(screen.queryByText("1,499")).not.toBeInTheDocument();
+	});
+
+	it("enrolled: hides the free preview line", () => {
+		renderCard({ status: "enrolled", previewLessonCount: 2 });
+		expect(screen.queryByText(/free preview/i)).not.toBeInTheDocument();
 	});
 
 	it("guest: notes that login brings the buyer back here", () => {
