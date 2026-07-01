@@ -9,8 +9,9 @@ const useCreateCheckout = () => useMutation({ mutationFn: createCheckout });
 
 /**
  * Reconcile a checkout session (success page). `poll` drives a refetch interval
- * while the payment is still settling; the page turns it off once enrolled or
- * after its retry deadline.
+ * while the payment is still settling; polling stops automatically once the
+ * session reconciles as enrolled, and the page turns `poll` off at its retry
+ * deadline.
  */
 const useCheckoutStatus = (sessionId: string, poll: boolean) =>
 	useQuery({
@@ -18,7 +19,8 @@ const useCheckoutStatus = (sessionId: string, poll: boolean) =>
 		queryFn: () => getCheckoutStatus(sessionId),
 		enabled: !!sessionId,
 		retry: false,
-		refetchInterval: poll ? 1500 : false,
+		refetchInterval: (query) =>
+			poll && !query.state.data?.data.enrolled ? 1500 : false,
 	});
 
 export { useCreateCheckout, useCheckoutStatus };

@@ -53,4 +53,27 @@ describe("payment hooks", () => {
 		expect(result.current.fetchStatus).toBe("idle");
 		expect(getCheckoutStatus).not.toHaveBeenCalled();
 	});
+
+	it("stops polling once the session reconciles as enrolled", async () => {
+		vi.useFakeTimers();
+		vi.mocked(getCheckoutStatus).mockResolvedValue({
+			success: true,
+			message: "ok",
+			data: { enrolled: true, status: "paid" },
+		});
+
+		renderHook(() => useCheckoutStatus("sess_1", true), { wrapper });
+
+		// Flush the initial fetch, then advance well past several poll intervals.
+		await vi.advanceTimersByTimeAsync(50);
+		const callsAfterInitial = vi.mocked(getCheckoutStatus).mock.calls.length;
+		await vi.advanceTimersByTimeAsync(5000);
+
+		expect(callsAfterInitial).toBe(1);
+		expect(vi.mocked(getCheckoutStatus).mock.calls.length).toBe(
+			callsAfterInitial,
+		);
+
+		vi.useRealTimers();
+	});
 });

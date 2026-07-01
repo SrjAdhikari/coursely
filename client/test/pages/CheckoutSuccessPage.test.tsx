@@ -82,26 +82,6 @@ describe("CheckoutSuccessPage", () => {
 		).toBeInTheDocument();
 	});
 
-	it("stops polling once enrollment is confirmed", () => {
-		mockUseCheckoutStatus.mockReturnValue({
-			data: {
-				data: {
-					enrolled: true,
-					status: "paid",
-					course: { slug: "react", title: "React" },
-				},
-			},
-			isLoading: false,
-			isError: false,
-			refetch: mockRefetch,
-		});
-
-		renderAt("/checkout/success?session_id=cs_1");
-
-		const lastCallPollArg = mockUseCheckoutStatus.mock.calls.at(-1)?.[1];
-		expect(lastCallPollArg).toBe(false);
-	});
-
 	it("stops polling and shows a still-processing message after the poll deadline", () => {
 		vi.useFakeTimers();
 		mockUseCheckoutStatus.mockReturnValue({
