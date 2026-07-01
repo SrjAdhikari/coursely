@@ -61,7 +61,11 @@ const CourseDetailPage = () => {
 		if (!course) return;
 		startCheckout(course._id, {
 			onSuccess: (response) => {
-				if (response.data.url) redirectTo(response.data.url);
+				if (response.data.url) {
+					redirectTo(response.data.url);
+				} else {
+					toast.error("Couldn't start checkout. Please try again.");
+				}
 			},
 			onError: (error) => {
 				toast.error(error.message);

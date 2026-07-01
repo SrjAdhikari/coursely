@@ -30,6 +30,7 @@ vi.mock("@/lib/navigation", () => ({ redirectTo: mockRedirectTo }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 import CourseDetailPage from "@/pages/CourseDetailPage";
+import { toast } from "sonner";
 
 const courseData = {
 	_id: "c1",
@@ -118,6 +119,22 @@ describe("CourseDetailPage", () => {
 		);
 		expect(mockMutate).toHaveBeenCalledWith("c1", expect.any(Object));
 		expect(mockRedirectTo).toHaveBeenCalledWith("https://stripe.test/go");
+	});
+
+	it("shows an error when checkout returns no redirect URL", async () => {
+		mockUseCurrentUser.mockReturnValue({
+			data: { data: { name: "S", role: "student" } },
+		});
+		mockUseMyEnrollments.mockReturnValue({ data: { data: [] } });
+		mockMutate.mockImplementation((_id, opts) =>
+			opts.onSuccess({ data: { url: null } }),
+		);
+		renderPage();
+		await userEvent.click(
+			screen.getByRole("button", { name: /buy this course/i }),
+		);
+		expect(mockRedirectTo).not.toHaveBeenCalled();
+		expect(vi.mocked(toast.error)).toHaveBeenCalled();
 	});
 
 	it("already enrolled: shows ownership", () => {
