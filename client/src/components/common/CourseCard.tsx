@@ -31,7 +31,7 @@ const CourseCard = ({
 		<div className="relative aspect-video overflow-hidden bg-muted">
 			<img src={thumbnailUrl} alt="" className="size-full object-cover" />
 			{badge && (
-				<span className="absolute right-2.5 top-2.5 rounded-full border border-primary/30 bg-card/90 px-2.5 py-1 font-mono text-xs text-primary">
+				<span className="absolute right-2.5 top-2.5 rounded-full border border-primary/30 bg-card/90 px-2.5 py-1 text-xs text-primary">
 					{badge}
 				</span>
 			)}
@@ -57,7 +57,7 @@ const CourseCard = ({
 			)}
 
 			<div className="mt-4 flex items-center justify-end border-t border-border pt-3.5">
-				<span className="font-mono text-base font-semibold text-foreground">
+				<span className="text-base font-semibold text-foreground">
 					{meta}
 				</span>
 			</div>

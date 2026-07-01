@@ -20,7 +20,7 @@ interface CurriculumAccordionProps {
 const CurriculumAccordion = ({ sections }: CurriculumAccordionProps) => {
 	if (sections.length === 0) {
 		return (
-			<p className="font-mono text-sm text-muted-foreground">
+			<p className="text-sm text-muted-foreground">
 				Curriculum coming soon.
 			</p>
 		);
@@ -56,7 +56,7 @@ const CurriculumAccordion = ({ sections }: CurriculumAccordionProps) => {
 						<AccordionTrigger className="hover:no-underline">
 							<span className="flex flex-1 items-center justify-between gap-3 pr-3">
 								<span className="font-medium">{section.title}</span>
-								<span className="font-mono text-xs text-muted-foreground">
+								<span className="text-xs text-muted-foreground">
 									{lessonCount} {lessonCount === 1 ? "lesson" : "lessons"} ·{" "}
 									{formatRuntime(sectionSeconds)}
 								</span>
@@ -80,12 +80,12 @@ const CurriculumAccordion = ({ sections }: CurriculumAccordionProps) => {
 										{lesson.isPreview ? (
 											<Badge variant="accent">Preview</Badge>
 										) : (
-											<span className="font-mono text-xs text-muted-foreground">
+											<span className="text-xs text-muted-foreground">
 												Enroll to unlock
 											</span>
 										)}
 
-										<span className="font-mono text-xs text-muted-foreground">
+										<span className="text-xs text-muted-foreground">
 											{formatLessonDuration(lesson.duration)}
 										</span>
 									</li>
