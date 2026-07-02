@@ -9,3 +9,16 @@
 | 05  | [API](05-api.md)                          | Endpoints, contracts, per-route auth & RBAC matrix        | approved (v1.4) |
 | 06  | [Security / Threat Model](06-security.md) | STRIDE threats + mitigations                              | approved        |
 | 07  | [Implementation Plan](07-plan.md)         | Sequenced build order, milestones, open questions         | approved (v1.2) |
+
+## Feature reference (as-built)
+
+Endpoint docs written from the shipped code; the full as-built index lives in [README](README.md).
+The payments + enrollment set is linked here for discoverability.
+
+| Area       | Endpoint                              | Document                                                       | Purpose                                                     |
+| ---------- | ------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------- |
+| Payments   | `POST /api/checkout`                  | [Checkout Session](payments/checkout-session.md)              | Create a Stripe Checkout session for a published course.   |
+| Payments   | `POST /api/webhooks/stripe`           | [Stripe Webhook](payments/stripe-webhook.md)                  | Signature-verified, idempotent enrollment fulfillment.     |
+| Payments   | `GET /api/checkout/:sessionId/status` | [Checkout Reconciliation](payments/checkout-reconciliation.md) | Success-page backstop; confirms payment with Stripe.      |
+| Enrollment | `GET /api/enrollments/me`             | [My Courses (Student)](enrollment/my-courses.md)             | A student lists their own enrollments (caller-scoped).      |
+| Enrollment | `GET /api/admin/enrollments`          | [Admin Enrollment Listing](enrollment/admin-enrollments.md) | Paginated admin list of every enrollment across students.  |

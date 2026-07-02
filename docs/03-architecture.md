@@ -70,11 +70,20 @@ API calls carry the cookie; middleware loads the session, checks expiry/`isActiv
 **Purchase → enrollment (the integrity-critical flow).**
 
 1. Student clicks Buy → API (auth required) creates a Stripe Checkout Session for that
-   course's price → returns the URL → browser redirects to Stripe.
+   course's price, **stamping the expected amount + currency into the session metadata** (a
+   price snapshot) → returns the URL → browser redirects to Stripe.
 2. Student pays on Stripe → Stripe redirects back to the client success page.
-3. **Independently**, Stripe POSTs `checkout.session.completed` to the API webhook → API
-   verifies the signature, validates amount/currency against the course, then creates the
-   `enrollment`. The client success page only _reads_ enrollment state; it never creates it.
+3. **Independently**, Stripe POSTs `checkout.session.completed` to the API webhook (mounted with
+   a **raw-body parser above `express.json`** so the signature can be verified) → API verifies the
+   signature, validates the paid amount/currency against **that metadata snapshot** (not the live
+   course — a mid-checkout price change must not fail a buyer who already paid), then records the
+   `enrollment`.
+4. **Reconciliation backstop.** If the webhook is delayed, the success page polls
+   `GET /api/checkout/:sessionId/status`, which asks Stripe directly (never trusting a browser
+   "I paid") and records the same enrollment. Both paths funnel through one recorder and an
+   **idempotent `$setOnInsert` upsert** on the unique `{userId, courseId}` index, so the
+   webhook + reconciliation race can neither double-enroll nor clobber the payment fields. The
+   client success page only _reads_ enrollment state; it never creates it.
 
 **Video playback.**
 

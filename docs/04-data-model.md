@@ -11,10 +11,10 @@ Conceptual → logical → physical for MongoDB (Atlas). Seven collections, **re
 playback can address by `_id`.
 
 > **Implementation note.** Two clarifications on the running system: **`sessions._id` is a Mongo
-> `ObjectId`** (the cookie carries its `.toString()`), not a custom string; and the
-> **`enrollments`** and **`progress`** collections are planned for a later release and are not built
-> yet. The live `users` / `sessions` / `courses` / `sections` / `lessons` shapes match the Mongoose
-> models documented in [`architecture/database-schema.md`](./architecture/database-schema.md).
+> `ObjectId`** (the cookie carries its `.toString()`), not a custom string; and the **`progress`**
+> collection is planned for a later release and is not built yet. The live `users` / `sessions` /
+> `courses` / `sections` / `lessons` / `enrollments` shapes match the Mongoose models documented in
+> [`architecture/database-schema.md`](./architecture/database-schema.md).
 
 ## 1. Modeling Approach
 
@@ -97,10 +97,17 @@ on each login (session-fixation defense, `06`).
 | `_id` | ObjectId | |
 | `userId` | ObjectId → users | |
 | `courseId` | ObjectId → courses | |
-| `stripeSessionId` | string | Checkout session that paid for it (audit trail) |
-| `amountPaid` | int | paise actually charged |
-| `currency` | string | validated against course at webhook time (NFR-2) |
-| `createdAt` | Date | purchase time |
+| `stripeSessionId` | string? | Checkout session that paid for it (audit trail) |
+| `amountPaid` | int? | **actual paise charged** (`session.amount_total`) — not the course's list price |
+| `currency` | string? | **actual charge currency**, uppercased (`session.currency`); validated against the checkout-time price snapshot, not the live course (NFR-2) |
+| `createdAt` | Date | purchase time; **no `updatedAt`** — an enrollment is written once, never mutated |
+
+> **Write path.** An enrollment is created by an idempotent `findOneAndUpdate` upsert with
+> `$setOnInsert` — a **single-document write, not a transaction**. The payment fields are stamped
+> only on first insert, so a concurrent webhook + reconciliation race is a harmless no-op re-read
+> and can never clobber the recorded charge; the unique `{userId, courseId}` index is the hard
+> guarantee (one enrollment per pair), and an E11000 collision on a simultaneous insert is caught
+> and re-read.
 
 ### progress
 

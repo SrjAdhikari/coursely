@@ -33,14 +33,22 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
   (`isActive=false`) invalidate the session server-side immediately.
 - *Credential stuffing / brute force on login.* → Per-IP rate limiting on auth routes (NFR-6).
 - *Forged payment event* — attacker POSTs a fake `checkout.session.completed` to grant
-  themselves enrollment. → **Stripe signature verification** against the webhook secret;
-  unsigned/invalid events are rejected before any DB write (FR-11, NFR-2). This is the
-  single most important integrity control.
+  themselves enrollment. → **Stripe signature verification** against the webhook secret,
+  computed over the **raw request body** — so `POST /api/webhooks/stripe` is mounted with a
+  raw parser **above `express.json`** (which would otherwise consume the stream and break the
+  signature). Unsigned/invalid events are rejected (`400 WEBHOOK_SIGNATURE_INVALID`) before
+  any DB write (FR-11, NFR-2). This is the single most important integrity control.
 
 ### T — Tampering (integrity)
 - *Client tampers with price or pays less.* → Price is read from the **course record**
-  server-side at checkout, never from the client; the webhook re-validates
-  `amount_total`/`currency` against the course before creating enrollment (NFR-2).
+  server-side at checkout, never from the client, and **stamped into the Checkout Session
+  metadata** as `expectedAmount`/`expectedCurrency`. The webhook re-validates
+  `amount_total`/`currency` against **that snapshot** — not the live course record — before
+  creating enrollment; a mismatch is logged (`PAYMENT_AMOUNT_MISMATCH`) and enrollment is
+  skipped (fail-closed — a missing snapshot yields `NaN`, which never matches). Validating
+  against the checkout-time snapshot is what blocks a tampered/underpaid charge from enrolling
+  while still honoring a legitimate paid buyer whose course was re-priced by an admin
+  mid-checkout (NFR-2).
 - *Client forges enrollment* (skips payment). → Enrollment is written **only** by the
   signature-verified webhook; the client success page only *reads* state (FR-11).
 - *Client elevates its own role / sets fields it shouldn't* (mass assignment). → Schema
@@ -99,6 +107,10 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
 - *IDOR — reading another user's data* (progress, enrollments, dashboard). → Every
   per-user query is scoped to `req.user._id` **from the session**, never a client-supplied
   `userId`. No "fetch my data" endpoint accepts a user identifier from the client.
+- *IDOR — reconciling another user's checkout* via `GET /api/checkout/:sessionId/status`.
+  → The endpoint asserts the retrieved session's `metadata.userId` matches the session caller
+  before returning any status; a mismatch is `403 UNAUTHORIZED_ACCESS`, so a guessed
+  `sessionId` can't leak another buyer's purchase or trigger their enrollment.
 - *Watching a paid lesson without enrolling.* → `playback-url` mints a signed GET only
   after confirming `isPreview` or an enrollment row for `{session user, lesson.courseId}`;
   otherwise `403` (FR-17).

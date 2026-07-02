@@ -14,8 +14,9 @@ primary evidence of access-control design (NFR-1).
 > below: **`POST /api/auth/register`** (not `/signup`); **admin catalog writes live under
 > `/api/admin/*`** (e.g. `POST /api/admin/courses`, `PATCH /api/admin/courses/:id`), not the flat
 > `/courses` paths in §2/§4; the auth guard is **`authenticate`** (not `requireAuth`). The
-> **Media**, **Payments**, **Enrollment/dashboard**, and **Progress** sections are planned for a
-> later release and are not built yet. The live auth + catalog + admin surface is documented in
+> **Progress** endpoints and the aggregate **`GET /api/me/dashboard`** are the only sections still
+> planned for a later release; **Media**, **Payments**, and **Enrollment** are live. The shipped
+> auth + catalog + admin surface is documented in
 > [`authentication/auth-and-sessions.md`](./authentication/auth-and-sessions.md),
 > [`authorization/rbac.md`](./authorization/rbac.md), and
 > [`course-domain/catalog-and-admin.md`](./course-domain/catalog-and-admin.md).
@@ -73,22 +74,36 @@ primary evidence of access-control design (NFR-1).
   course has no `trailerKey`. Distinct from preview lessons (FR-3).
 
 ### Payments
-- `POST /api/checkout` — student; create a Stripe Checkout Session for a `courseId` at the
-  course's stored price; return the Checkout URL. Rejected if already enrolled (`409`).
-  **Stamps `{ userId, courseId }` into the Checkout Session `metadata`** — the sole link the
-  (sessionless) webhook and the reconciliation endpoint use to know who/what to enroll.
-- `POST /api/webhooks/stripe` — **see §3**; signature-verified; creates the enrollment.
-- `GET /api/checkout/:sessionId/status` — student; **reconciliation fallback** — the
-  server independently retrieves the Checkout Session from Stripe, **asserts
-  `session.metadata.userId === req.user._id`** (a student cannot act on another user's
-  `sessionId` — IDOR, `06 §2-E`), and if `payment_status === 'paid'`, confirms/creates the
-  enrollment (idempotent). Backstop for a delayed/failed webhook (see §3).
+- `POST /api/checkout` — **student** (`authenticate`); body `{ courseId }` (validated). Creates a
+  Stripe hosted-Checkout Session for the **published** course at its stored price and returns
+  `{ url }` (the hosted Checkout URL to redirect to). Errors: `404 COURSE_NOT_FOUND` (missing **or
+  a draft** — a draft never leaks), `409 ALREADY_ENROLLED`. **Stamps
+  `{ userId, courseId, expectedAmount, expectedCurrency }` into the Session `metadata`** — the sole
+  link the (sessionless) webhook and the reconciliation endpoint use to know who/what to enroll,
+  plus the price snapshot they validate against. Sets `success_url` / `cancel_url`. Prices are
+  integer paise passed **1:1** as Stripe `unit_amount` (no ×100).
+- `POST /api/webhooks/stripe` — **see §3**; signature-verified (no session); records the
+  enrollment. Returns a bare `{ received: true }` `200`.
+- `GET /api/checkout/:sessionId/status` — **student, own session**; **reconciliation fallback** —
+  the server independently retrieves the Checkout Session from Stripe, **asserts
+  `session.metadata.userId === req.user.id`** (a student cannot act on another user's `sessionId` —
+  IDOR, `06 §2-E`), and if `payment_status === 'paid'` confirms/creates the enrollment (idempotent,
+  via the shared recorder). Returns `{ enrolled, status, course? { slug, title } }` — `course` is
+  present only when paid + enrolled; a pending session returns `{ enrolled: false, status }`.
+  Errors: `404 CHECKOUT_SESSION_NOT_FOUND`, `403 UNAUTHORIZED_ACCESS`. Backstop for a
+  delayed/failed webhook (see §3).
 
 ### Enrollment & dashboard
-- `GET /api/enrollments/me` — student; my enrollments → "My Courses".
-- `GET /api/me/dashboard` — student; aggregated: enrolled courses, per-course progress %,
-  "continue learning" (next incomplete lesson), recently watched (FR-18).
-- `GET /api/admin/enrollments` — admin; all enrollments, who bought what + when (FR-23).
+- `GET /api/enrollments/me` — **student**; the caller's enrollments → "My Courses", newest-first,
+  each with its course summary populated (`title`, `slug`, `thumbnailUrl`, `instructorName`,
+  `price`, `currency`).
+- `GET /api/admin/enrollments?page&limit` — **admin**; every enrollment — who bought what + when
+  (FR-23). Paginated: `page` (default `1`) and `limit` (default `10`, **max `100`**), newest-first.
+  Returns `{ items, pagination { page, limit, total, totalPages } }`, each item's `userId`
+  populated `{ name, email }` and `courseId` `{ title }`.
+- `GET /api/me/dashboard` — **student**; aggregated: enrolled courses, per-course progress %,
+  "continue learning" (next incomplete lesson), recently watched (FR-18). *(Planned — not yet
+  built.)*
 
 ### Progress
 - `PUT /api/progress/:lessonId` — student; upsert `{ seconds, completed }`. Allowed only
@@ -111,9 +126,13 @@ database. Its authenticity comes from the **Stripe signature**, not a session:
   verification.
 - Handler verifies `Stripe-Signature` against the webhook secret. On
   `checkout.session.completed`: read `{ userId, courseId }` from the session **`metadata`**
-  (stamped at `POST /api/checkout`), validate `amount_total`/`currency` against the course
-  record, then upsert the enrollment for that user+course. The unique `{userId, courseId}`
-  index makes the handler safe under Stripe's at-least-once retries (NFR-2, FR-11/13).
+  (stamped at `POST /api/checkout`), validate `amount_total`/`currency` against the
+  **`expectedAmount`/`expectedCurrency` snapshot in that same `metadata`** — **not the live course
+  record**, so a mid-checkout admin price change can't fail a buyer who has already paid — then
+  upsert the enrollment for that user+course. A mismatch is **logged (`PAYMENT_AMOUNT_MISMATCH`)
+  and skipped, never thrown**, so the webhook still acknowledges `200` and Stripe stops retrying.
+  The unique `{userId, courseId}` index makes the handler safe under Stripe's at-least-once retries
+  (NFR-2, FR-11/13).
 
 **Failure / reconciliation.** If the API is down or errors when Stripe POSTs, Stripe
 **retries with backoff for ~3 days**, so transient outages self-heal. As a synchronous
@@ -148,7 +167,8 @@ checkout.session.completed` replays events for the idempotency/amount tests.
 
 ## 5. Open Questions (tracked in 07-plan)
 
-- Pagination on admin lists (`/admin/students`, `/admin/enrollments`) — limit/offset
-  deferred; trivial dataset at demo scale, add only if lists grow.
+- Pagination on admin lists: **`/admin/enrollments` now ships `?page&limit`** (default `10`,
+  max `100`); `/admin/students` pagination is still deferred — trivial dataset at demo scale,
+  add only if the list grows.
 - Whether `/me/dashboard` is one aggregate endpoint or composed client-side from smaller
   reads — decided during implementation by what keeps the dashboard query simple.
