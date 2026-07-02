@@ -109,3 +109,88 @@ describe("VideoSurface", () => {
 		expect(getVideo(container).muted).toBe(true);
 	});
 });
+
+describe("VideoSurface progress reporting", () => {
+	it("resumes to the saved position once metadata is ready", () => {
+		const { container } = render(
+			<VideoSurface src="https://r2/v" resumePositionSeconds={30} />,
+		);
+		const video = getVideo(container);
+		setMediaProp(video, "duration", 100);
+		Object.defineProperty(video, "currentTime", {
+			configurable: true,
+			writable: true,
+			value: 0,
+		});
+
+		fireEvent.loadedMetadata(video);
+
+		expect(video.currentTime).toBe(30);
+	});
+
+	it("reports position at most once per interval during playback", () => {
+		const onReportPosition = vi.fn();
+		const { container } = render(
+			<VideoSurface src="https://r2/v" onReportPosition={onReportPosition} />,
+		);
+		const video = getVideo(container);
+		setMediaProp(video, "duration", 600);
+		fireEvent.durationChange(video);
+		setMediaProp(video, "paused", false);
+
+		setMediaProp(video, "currentTime", 12); // +12s from 0 → fires
+		fireEvent.timeUpdate(video);
+		setMediaProp(video, "currentTime", 20); // +8s → below interval, no fire
+		fireEvent.timeUpdate(video);
+		setMediaProp(video, "currentTime", 24); // +12s from last report → fires
+		fireEvent.timeUpdate(video);
+
+		expect(onReportPosition).toHaveBeenCalledTimes(2);
+		expect(onReportPosition).toHaveBeenNthCalledWith(1, 12, { reason: "interval" });
+		expect(onReportPosition).toHaveBeenNthCalledWith(2, 24, { reason: "interval" });
+	});
+
+	it("flushes the latest position on pause", () => {
+		const onReportPosition = vi.fn();
+		const { container } = render(
+			<VideoSurface src="https://r2/v" onReportPosition={onReportPosition} />,
+		);
+		const video = getVideo(container);
+		setMediaProp(video, "currentTime", 40);
+		fireEvent.pause(video);
+		expect(onReportPosition).toHaveBeenLastCalledWith(40, { reason: "pause" });
+	});
+
+	it("flushes on ended", () => {
+		const onReportPosition = vi.fn();
+		const { container } = render(
+			<VideoSurface src="https://r2/v" onReportPosition={onReportPosition} />,
+		);
+		const video = getVideo(container);
+		setMediaProp(video, "currentTime", 599);
+		fireEvent.ended(video);
+		expect(onReportPosition).toHaveBeenLastCalledWith(599, { reason: "ended" });
+	});
+
+	it("flushes on unmount", () => {
+		const onReportPosition = vi.fn();
+		const { container, unmount } = render(
+			<VideoSurface src="https://r2/v" onReportPosition={onReportPosition} />,
+		);
+		const video = getVideo(container);
+		setMediaProp(video, "currentTime", 55);
+		unmount();
+		expect(onReportPosition).toHaveBeenLastCalledWith(55, { reason: "unmount" });
+	});
+
+	it("does not flush a 0 position on unmount before playback advances", () => {
+		const onReportPosition = vi.fn();
+		const { container, unmount } = render(
+			<VideoSurface src="https://r2/v" onReportPosition={onReportPosition} />,
+		);
+		const video = getVideo(container);
+		setMediaProp(video, "currentTime", 0);
+		unmount();
+		expect(onReportPosition).not.toHaveBeenCalled();
+	});
+});

@@ -35,3 +35,7 @@ export const adminEnrollmentsKey = (page: number, limit: number) =>
 /** Reconciled checkout status for a session (success page). */
 export const checkoutStatusKey = (sessionId: string) =>
 	["checkoutStatus", sessionId] as const;
+
+/** The caller's own progress rows for a course (LearnPage resume + sidebar). */
+export const courseProgressKey = (courseId: string) =>
+	["progress", "course", courseId] as const;

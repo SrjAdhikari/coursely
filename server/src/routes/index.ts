@@ -11,6 +11,7 @@ import { publicCourseRouter } from "./course.routes";
 import { publicLessonRouter } from "./lesson.routes";
 import { paymentRouter } from "./payment.routes";
 import { enrollmentRouter } from "./enrollment.routes";
+import { progressRouter } from "./progress.routes";
 import adminRouter from "./admin.routes";
 
 const router = Router();
@@ -44,6 +45,12 @@ router.use("/checkout", paymentRouter);
  * @route /api/enrollments
  */
 router.use("/enrollments", enrollmentRouter);
+
+/**
+ * Progress routes (authenticated learner)
+ * @route /api/progress
+ */
+router.use("/progress", progressRouter);
 
 /**
  * Admin routes (authenticated admin only)

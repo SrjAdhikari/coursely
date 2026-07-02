@@ -34,4 +34,25 @@ const validateBody =
 		next();
 	};
 
+/**
+ * Builds a middleware that validates `req.params` against a Zod schema (e.g. an
+ * ObjectId route id), throwing a 400 AppError on failure. Params are not
+ * reassigned — the string is used as-is downstream.
+ */
+const validateParams =
+	(schema: ZodType): RequestHandler =>
+	(req, _res, next) => {
+		const result = schema.safeParse(req.params);
+
+		if (!result.success) {
+			const message = result.error.issues
+				.map((issue) => issue.message)
+				.join("; ");
+			throw new AppError(message, BAD_REQUEST, VALIDATION_ERROR);
+		}
+
+		next();
+	};
+
 export default validateBody;
+export { validateParams };

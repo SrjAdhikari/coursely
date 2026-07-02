@@ -3,9 +3,12 @@
 import { useLessonPlaybackUrl } from "@/hooks/useMedia";
 import Loader from "@/components/Loader";
 import VideoSurface from "@/components/media/VideoSurface";
+import type { ReportPositionHandler } from "@/hooks/useVideoControls";
 
 interface VideoPlayerProps {
 	lessonId: string;
+	resumePositionSeconds?: number;
+	onReportPosition?: ReportPositionHandler;
 }
 
 /**
@@ -13,7 +16,11 @@ interface VideoPlayerProps {
  * server-side (preview = ungated, paid = enrollment, admin bypasses). Fetches a
  * new URL per mount because the signed URL is short-lived.
  */
-const VideoPlayer = ({ lessonId }: VideoPlayerProps) => {
+const VideoPlayer = ({
+	lessonId,
+	resumePositionSeconds,
+	onReportPosition,
+}: VideoPlayerProps) => {
 	const { data, isLoading, isError, error } = useLessonPlaybackUrl(lessonId);
 
 	if (isLoading) return <Loader className="aspect-video" />;
@@ -30,7 +37,13 @@ const VideoPlayer = ({ lessonId }: VideoPlayerProps) => {
 		);
 	}
 
-	return <VideoSurface src={data.data.url} />;
+	return (
+		<VideoSurface
+			src={data.data.url}
+			resumePositionSeconds={resumePositionSeconds}
+			onReportPosition={onReportPosition}
+		/>
+	);
 };
 
 export default VideoPlayer;

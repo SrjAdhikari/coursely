@@ -13,6 +13,18 @@ import { clamp } from "@/lib/playerHelpers";
 const SEEK_STEP_SECONDS = 5;
 const VOLUME_STEP = 0.1;
 const CONTROLS_IDLE_MS = 2500;
+const REPORT_INTERVAL_SECONDS = 12; // throttle position reports during playback
+
+export type ReportReason = "interval" | "pause" | "ended" | "unmount";
+export type ReportPositionHandler = (
+	seconds: number,
+	meta: { reason: ReportReason },
+) => void;
+
+interface VideoControlsOptions {
+	resumePositionSeconds?: number;
+	onReportPosition?: ReportPositionHandler;
+}
 
 /**
  * Owns the imperative bridge to a native `<video>`: it holds the element/container
@@ -20,10 +32,18 @@ const CONTROLS_IDLE_MS = 2500;
  * actions (play, seek, volume, rate, fullscreen, keyboard). Keeping it here makes
  * the surface component thin and lets the logic be unit-tested without a query.
  */
-export const useVideoControls = () => {
+export const useVideoControls = ({
+	resumePositionSeconds = 0,
+	onReportPosition,
+}: VideoControlsOptions = {}) => {
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const onReportPositionRef = useRef(onReportPosition);
+	const resumeSecondsRef = useRef(resumePositionSeconds);
+	const hasResumedRef = useRef(false);
+	const lastReportedRef = useRef(0);
 
 	const [playing, setPlaying] = useState(false);
 	const [currentTime, setCurrentTime] = useState(0);
@@ -35,6 +55,12 @@ export const useVideoControls = () => {
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [isBuffering, setIsBuffering] = useState(false);
 	const [controlsVisible, setControlsVisible] = useState(true);
+
+	// Keep the latest callback / resume value without re-subscribing the media effect.
+	useEffect(() => {
+		onReportPositionRef.current = onReportPosition;
+		resumeSecondsRef.current = resumePositionSeconds;
+	}, [onReportPosition, resumePositionSeconds]);
 
 	// --- Auto-hide: reveal on activity, fade out after idle while playing. ---
 	const hideControls = useCallback(() => {
@@ -52,6 +78,14 @@ export const useVideoControls = () => {
 				CONTROLS_IDLE_MS,
 			);
 		}
+	}, []);
+
+	// Report the live playhead and remember it as the last-reported position.
+	const report = useCallback((reason: ReportReason) => {
+		const video = videoRef.current;
+		if (!video) return;
+		lastReportedRef.current = video.currentTime;
+		onReportPositionRef.current?.(video.currentTime, { reason });
 	}, []);
 
 	// --- Imperative actions (operate on the live element, read at call time). ---
@@ -156,10 +190,29 @@ export const useVideoControls = () => {
 		const onPause = () => {
 			setPlaying(false);
 			revealControls();
+			report("pause");
 		};
-		const onTimeUpdate = () => setCurrentTime(video.currentTime);
+		const onTimeUpdate = () => {
+			setCurrentTime(video.currentTime);
+			if (
+				!video.paused &&
+				video.currentTime - lastReportedRef.current >= REPORT_INTERVAL_SECONDS
+			) {
+				report("interval");
+			}
+		};
 		const onDurationChange = () =>
 			setDuration(Number.isFinite(video.duration) ? video.duration : 0);
+		const onLoadedMetadata = () => {
+			onDurationChange();
+			const resume = resumeSecondsRef.current;
+			// Seek to the saved position once, only if it's within the clip.
+			if (!hasResumedRef.current && resume > 0 && resume < video.duration) {
+				hasResumedRef.current = true;
+				video.currentTime = resume;
+			}
+		};
+		const onEnded = () => report("ended");
 		const onProgress = () => {
 			const ranges = video.buffered;
 			setBufferedEnd(ranges.length ? ranges.end(ranges.length - 1) : 0);
@@ -181,7 +234,8 @@ export const useVideoControls = () => {
 		video.addEventListener("pause", onPause);
 		video.addEventListener("timeupdate", onTimeUpdate);
 		video.addEventListener("durationchange", onDurationChange);
-		video.addEventListener("loadedmetadata", onDurationChange);
+		video.addEventListener("loadedmetadata", onLoadedMetadata);
+		video.addEventListener("ended", onEnded);
 		video.addEventListener("progress", onProgress);
 		video.addEventListener("volumechange", onVolumeChange);
 		video.addEventListener("ratechange", onRateChange);
@@ -195,7 +249,8 @@ export const useVideoControls = () => {
 			video.removeEventListener("pause", onPause);
 			video.removeEventListener("timeupdate", onTimeUpdate);
 			video.removeEventListener("durationchange", onDurationChange);
-			video.removeEventListener("loadedmetadata", onDurationChange);
+			video.removeEventListener("loadedmetadata", onLoadedMetadata);
+			video.removeEventListener("ended", onEnded);
 			video.removeEventListener("progress", onProgress);
 			video.removeEventListener("volumechange", onVolumeChange);
 			video.removeEventListener("ratechange", onRateChange);
@@ -203,8 +258,13 @@ export const useVideoControls = () => {
 			video.removeEventListener("playing", onPlaying);
 			video.removeEventListener("seeking", onSeeking);
 			video.removeEventListener("seeked", onSeeked);
+
+			// Flush the final position on unmount (captured element — videoRef may be
+			// detached). Skip 0 so an early unmount can't overwrite a saved position.
+			if (video.currentTime > 0)
+				onReportPositionRef.current?.(video.currentTime, { reason: "unmount" });
 		};
-	}, [revealControls]);
+	}, [revealControls, report]);
 
 	// Track fullscreen changes scoped to this player's container.
 	useEffect(() => {
