@@ -37,15 +37,24 @@ const LearnPage = () => {
 		data: courseResponse,
 		isLoading: isCourseLoading,
 		isError: isCourseError,
-		refetch,
+		refetch: refetchCourse,
 	} = useGetCourseBySlug(courseSlug);
 
-	const { data: enrollments, isLoading: isEnrollmentsLoading } =
-		useMyEnrollments();
+	const {
+		data: enrollments,
+		isLoading: isEnrollmentsLoading,
+		isError: isEnrollmentsError,
+		refetch: refetchEnrollments,
+	} = useMyEnrollments();
 
 	const course = courseResponse?.data;
-	const { data: progressResponse, isLoading: isProgressLoading } =
-		useCourseProgress(course?._id ?? "");
+
+	const {
+		data: progressResponse,
+		isLoading: isProgressLoading,
+		isError: isProgressError,
+		refetch: refetchProgress,
+	} = useCourseProgress(course?._id ?? "");
 	const { mutate: saveProgress } = useSaveProgress();
 
 	const sections = useMemo(() => course?.sections ?? [], [course]);
@@ -79,22 +88,32 @@ const LearnPage = () => {
 		return (firstIncomplete ?? allLessons[0])?._id;
 	}, [allLessons, progressByLesson]);
 
-	// Latch the first resolved resume lesson so later progress refetches don't
-	// swap the active lesson (and remount the player) out from under playback.
-	// Gate on `progressResponse` so we latch only after progress has loaded —
-	// otherwise we'd capture lesson 1 before completion data exists and a
-	// returning learner would never resume at their first incomplete lesson.
-	const [latchedLessonId, setLatchedLessonId] = useState<string | undefined>(
-		undefined,
-	);
-	if (!latchedLessonId && resumeLessonId && progressResponse) {
-		setLatchedLessonId(resumeLessonId);
+	// Latch the resume lesson per course (only after progress loads) so a refetch
+	// or course switch can't swap the active lesson mid-playback.
+	const [latchedResume, setLatchedResume] = useState<{
+		courseId: string;
+		lessonId: string;
+	} | null>(null);
+
+	if (
+		course &&
+		progressResponse &&
+		resumeLessonId &&
+		latchedResume?.courseId !== course._id
+	) {
+		setLatchedResume({ courseId: course._id, lessonId: resumeLessonId });
 	}
 
+	// Trust the latch only for the currently loaded course.
+	const latchedLessonId =
+		latchedResume?.courseId === course?._id
+			? latchedResume?.lessonId
+			: undefined;
+
 	const currentLessonId = lessonId ?? latchedLessonId;
-	const currentLesson =
-		allLessons.find((lesson) => lesson._id === currentLessonId) ??
-		allLessons[0];
+	const currentLesson = allLessons.find(
+		(lesson) => lesson._id === currentLessonId,
+	);
 
 	const currentSection = sections.find(
 		(section) => section._id === currentLesson?.sectionId,
@@ -135,7 +154,22 @@ const LearnPage = () => {
 			<LoadFailed
 				title="Course not found"
 				description="We couldn't load that course. It may have been unpublished, or the link is wrong."
-				onRetry={() => refetch()}
+				onRetry={() => refetchCourse()}
+				backTo={ROUTES.MY_COURSES}
+				backLabel="Back to My Courses"
+			/>
+		);
+
+	// Don't derive enrollment/resume from a failed request (empty ≠ error) — retry.
+	if (isEnrollmentsError || isProgressError)
+		return (
+			<LoadFailed
+				title="Couldn't load your course"
+				description="We hit a problem loading your enrollment and progress. Check your connection and try again."
+				onRetry={() => {
+					if (isEnrollmentsError) refetchEnrollments();
+					if (isProgressError) refetchProgress();
+				}}
 				backTo={ROUTES.MY_COURSES}
 				backLabel="Back to My Courses"
 			/>
@@ -148,17 +182,28 @@ const LearnPage = () => {
 	if (!isEnrolled)
 		return <Navigate to={ROUTES.COURSE_DETAIL(course.slug)} replace />;
 
-	// With no lesson in the URL, wait for progress so we auto-pick the true
-	// first-incomplete lesson instead of flashing lesson 1 then remounting.
+	// No lesson in the URL: wait for progress before auto-picking the lesson.
 	if (!lessonId && isProgressLoading)
 		return <Loader className="min-h-screen" />;
+
+	// URL lesson id not in this course → not-found (don't swap to lesson 1).
+	if (lessonId && !currentLesson)
+		return (
+			<LoadFailed
+				title="Lesson not found"
+				description="We couldn't find that lesson in this course. It may have been moved or removed."
+				onRetry={() => refetchCourse()}
+				backTo={ROUTES.COURSE_DETAIL(course.slug)}
+				backLabel="Back to course"
+			/>
+		);
 
 	if (!currentLesson)
 		return (
 			<LoadFailed
 				title="No lessons yet"
 				description="This course doesn't have any lessons to watch yet."
-				onRetry={() => refetch()}
+				onRetry={() => refetchCourse()}
 				backTo={ROUTES.MY_COURSES}
 				backLabel="Back to My Courses"
 			/>

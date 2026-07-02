@@ -77,21 +77,25 @@ const enrolled = {
 	isLoading: false,
 };
 
+// Fresh element tree each call — a shared constant would let React bail out of
+// re-rendering the subtree on `rerender`, so a course change wouldn't propagate.
+const appRoutes = () => (
+	<Routes>
+		<Route path="/learn/:courseSlug" element={<LearnPage />} />
+		<Route path="/learn/:courseSlug/:lessonId" element={<LearnPage />} />
+		<Route path="/courses/:slug" element={<div>course detail</div>} />
+	</Routes>
+);
+
 const renderLearn = (path = "/learn/modern-react") => {
 	const queryClient = new QueryClient();
 	const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
-	render(
+	const view = render(
 		<QueryClientProvider client={queryClient}>
-			<MemoryRouter initialEntries={[path]}>
-				<Routes>
-					<Route path="/learn/:courseSlug" element={<LearnPage />} />
-					<Route path="/learn/:courseSlug/:lessonId" element={<LearnPage />} />
-					<Route path="/courses/:slug" element={<div>course detail</div>} />
-				</Routes>
-			</MemoryRouter>
+			<MemoryRouter initialEntries={[path]}>{appRoutes()}</MemoryRouter>
 		</QueryClientProvider>,
 	);
-	return { invalidateSpy };
+	return { invalidateSpy, ...view };
 };
 
 describe("LearnPage", () => {
@@ -176,5 +180,120 @@ describe("LearnPage", () => {
 			"href",
 			"/learn/modern-react/l2",
 		);
+	});
+
+	// Fix #3 — a failed enrollments query must not fall through to an empty list
+	// (which would wrongly bounce an enrolled learner); show a retry state.
+	it("shows a retry state and does not redirect when enrollments fail to load", async () => {
+		const refetchEnrollments = vi.fn();
+		mockUseMyEnrollments.mockReturnValue({
+			data: undefined,
+			isLoading: false,
+			isError: true,
+			refetch: refetchEnrollments,
+		});
+		renderLearn();
+
+		expect(screen.getByRole("alert")).toBeInTheDocument();
+		expect(screen.getByText("Couldn't load your course")).toBeInTheDocument();
+		expect(screen.queryByTestId("player")).not.toBeInTheDocument();
+		expect(screen.queryByText("course detail")).not.toBeInTheDocument();
+
+		await userEvent.click(screen.getByRole("button", { name: /Try again/i }));
+		expect(refetchEnrollments).toHaveBeenCalledTimes(1);
+	});
+
+	// Fix #4 — a lesson id in the URL that isn't part of the course must surface a
+	// not-found state, not silently swap to lesson 1.
+	it("shows a not-found state for a lesson id absent from the course", () => {
+		renderLearn("/learn/modern-react/does-not-exist");
+		expect(screen.getByText("Lesson not found")).toBeInTheDocument();
+		expect(screen.queryByTestId("player")).not.toBeInTheDocument();
+	});
+
+	// Fix #5 — the resume latch is keyed by course, so reusing the component
+	// instance across a course change re-initializes to the new course's resume.
+	it("re-initializes the latched resume lesson when the course changes", () => {
+		const courseA = {
+			...course,
+			_id: "cA",
+			slug: "course-a",
+			sections: [
+				{
+					_id: "sa",
+					courseId: "cA",
+					title: "A",
+					order: 0,
+					lessons: [
+						{ _id: "a1", sectionId: "sa", courseId: "cA", title: "A1", order: 0, isPreview: true, duration: 100 },
+						{ _id: "a2", sectionId: "sa", courseId: "cA", title: "A2", order: 1, isPreview: false, duration: 100 },
+					],
+				},
+			],
+		};
+		const courseB = {
+			...course,
+			_id: "cB",
+			slug: "course-b",
+			sections: [
+				{
+					_id: "sb",
+					courseId: "cB",
+					title: "B",
+					order: 0,
+					lessons: [
+						{ _id: "b1", sectionId: "sb", courseId: "cB", title: "B1", order: 0, isPreview: true, duration: 100 },
+						{ _id: "b2", sectionId: "sb", courseId: "cB", title: "B2", order: 1, isPreview: false, duration: 100 },
+					],
+				},
+			],
+		};
+
+		// Course A resolved with a1 completed → resume latches on a2.
+		mockUseGetCourseBySlug.mockReturnValue({
+			data: { data: courseA },
+			isLoading: false,
+			isError: false,
+			refetch: vi.fn(),
+		});
+		mockUseMyEnrollments.mockReturnValue({
+			data: { data: [{ _id: "e1", courseId: { _id: "cA" } }] },
+			isLoading: false,
+		});
+		mockUseCourseProgress.mockReturnValue({
+			data: { data: [{ lessonId: "a1", positionSeconds: 50, completed: true }] },
+		});
+
+		const queryClient = new QueryClient();
+		const { rerender } = render(
+			<QueryClientProvider client={queryClient}>
+				<MemoryRouter initialEntries={["/learn/course-a"]}>
+					{appRoutes()}
+				</MemoryRouter>
+			</QueryClientProvider>,
+		);
+		expect(screen.getByTestId("player")).toHaveAttribute("data-lesson", "a2");
+
+		// Same component instance now sees course B (no progress) → resume = b1.
+		mockUseGetCourseBySlug.mockReturnValue({
+			data: { data: courseB },
+			isLoading: false,
+			isError: false,
+			refetch: vi.fn(),
+		});
+		mockUseMyEnrollments.mockReturnValue({
+			data: { data: [{ _id: "e2", courseId: { _id: "cB" } }] },
+			isLoading: false,
+		});
+		mockUseCourseProgress.mockReturnValue({ data: { data: [] } });
+
+		rerender(
+			<QueryClientProvider client={queryClient}>
+				<MemoryRouter initialEntries={["/learn/course-a"]}>
+					{appRoutes()}
+				</MemoryRouter>
+			</QueryClientProvider>,
+		);
+		expect(screen.getByTestId("player")).toHaveAttribute("data-lesson", "b1");
 	});
 });
