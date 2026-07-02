@@ -14,11 +14,13 @@ interface EnrolledCourseCardProps {
  */
 const EnrolledCourseCard = ({ enrollment }: EnrolledCourseCardProps) => {
 	const course = enrollment.courseId;
-	const { data } = useCourseProgress(course._id);
+	const { data, isLoading } = useCourseProgress(course._id);
 
 	const hasProgress =
 		data?.data.some((row) => row.completed || row.positionSeconds > 0) ?? false;
-	const ctaLabel = hasProgress ? "Continue" : "Start learning";
+
+	// No label until progress resolves — avoids a "Start learning"→"Continue" flicker.
+	const ctaLabel = isLoading ? "" : hasProgress ? "Continue" : "Start learning";
 
 	return (
 		<CourseCard
@@ -28,7 +30,9 @@ const EnrolledCourseCard = ({ enrollment }: EnrolledCourseCardProps) => {
 			thumbnailUrl={course.thumbnailUrl}
 			badge="Enrolled"
 			meta={
-				<span className="text-sm font-medium text-primary">{ctaLabel}</span>
+				ctaLabel ? (
+					<span className="text-sm font-medium text-primary">{ctaLabel}</span>
+				) : null
 			}
 		/>
 	);

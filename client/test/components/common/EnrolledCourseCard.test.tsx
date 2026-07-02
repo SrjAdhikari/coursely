@@ -54,4 +54,11 @@ describe("EnrolledCourseCard", () => {
 		renderCard();
 		expect(screen.getByText("Continue")).toBeInTheDocument();
 	});
+
+	it("shows no CTA label while progress is loading", () => {
+		mockUseCourseProgress.mockReturnValue({ data: undefined, isLoading: true });
+		renderCard();
+		expect(screen.queryByText("Start learning")).not.toBeInTheDocument();
+		expect(screen.queryByText("Continue")).not.toBeInTheDocument();
+	});
 });
