@@ -21,7 +21,10 @@ import {
 	DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 
-import { useVideoControls } from "@/hooks/useVideoControls";
+import {
+	useVideoControls,
+	type ReportPositionHandler,
+} from "@/hooks/useVideoControls";
 import { formatTime, clamp } from "@/lib/playerHelpers";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +32,8 @@ const PLAYBACK_RATES = [0.5, 1, 1.25, 1.5, 2] as const;
 
 interface VideoSurfaceProps {
 	src: string;
+	resumePositionSeconds?: number;
+	onReportPosition?: ReportPositionHandler;
 }
 
 /**
@@ -36,7 +41,11 @@ interface VideoSurfaceProps {
  * control layer. Takes a plain `src`, so it renders without the playback query —
  * all imperative wiring lives in `useVideoControls`.
  */
-const VideoSurface = ({ src }: VideoSurfaceProps) => {
+const VideoSurface = ({
+	src,
+	resumePositionSeconds,
+	onReportPosition,
+}: VideoSurfaceProps) => {
 	const {
 		videoRef,
 		containerRef,
@@ -59,7 +68,7 @@ const VideoSurface = ({ src }: VideoSurfaceProps) => {
 		handleKeyDown,
 		revealControls,
 		hideControls,
-	} = useVideoControls();
+	} = useVideoControls({ resumePositionSeconds, onReportPosition });
 
 	const playedPercent =
 		duration > 0 ? clamp((currentTime / duration) * 100, 0, 100) : 0;
