@@ -1,0 +1,37 @@
+name: Claude CR Triage
+
+# When CodeRabbit submits a review, Claude verifies each finding against the code
+# and posts one triage comment (verdict + action). It does NOT push fixes.
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  triage:
+    # Only CodeRabbit's review bot — exact identity, not a substring match.
+    if: github.event.review.user.login == 'coderabbitai[bot]' && github.event.review.user.type == 'Bot'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          # Read-only job — don't leave the token in the runner's git config.
+          persist-credentials: false
+
+      - name: Triage CodeRabbit review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            CodeRabbit reviewed ${{ github.repository }} PR #${{ github.event.pull_request.number }}.
+            Fetch its unresolved inline review comments, verify EACH against the current code
+            (read the file — don't trust the comment), and post ONE consolidated triage comment
+            on the PR. For each finding give: a one-line summary, a verdict
+            (VALID / PARTIALLY VALID / WRONG / PRE-EXISTING), and a recommended action, ranked by
+            severity. Do NOT modify code, commit, or push — triage only.
