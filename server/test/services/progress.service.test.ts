@@ -73,6 +73,21 @@ describe("progress.service", () => {
 			expect(again?.completedAt?.getTime()).toBe(first?.completedAt?.getTime());
 		});
 
+		it("keeps completed + completedAt sticky when a later save has a lower position", async () => {
+			const userId = new Types.ObjectId();
+			const courseId = new Types.ObjectId();
+			const lesson = await seedLesson(courseId, 100);
+			await enroll(userId, courseId);
+
+			const completedRow = await saveProgress(userId.toString(), lesson._id.toString(), 96);
+			const laterRow = await saveProgress(userId.toString(), lesson._id.toString(), 10);
+
+			expect(laterRow?.completed).toBe(true);
+			expect(laterRow?.completedAt?.getTime()).toBe(completedRow?.completedAt?.getTime());
+			// Pipeline updates still receive Mongoose timestamps.
+			expect(laterRow?.updatedAt).toBeInstanceOf(Date);
+		});
+
 		it("upserts a single row per user+lesson", async () => {
 			const userId = new Types.ObjectId();
 			const courseId = new Types.ObjectId();

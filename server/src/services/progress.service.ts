@@ -46,36 +46,41 @@ const saveProgress = async (
 		);
 	}
 
-	const existing = await Progress.findOne({ userId, lessonId });
-
+	// Depends only on the lesson, not the existing row — safe to read.
 	const completedNow =
 		lesson.duration > 0 &&
 		positionSeconds / lesson.duration >= COMPLETION_THRESHOLD;
-	const wasCompleted = existing?.completed ?? false;
 
-	// Sticky: once complete, never flips back (rewinding does not un-complete).
-	const completed = wasCompleted || completedNow;
-
-	const update: {
-		positionSeconds: number;
-		completed: boolean;
-		completedAt?: Date;
-	} = { positionSeconds, completed };
-
-	// Stamp completedAt only on the first false→true transition.
-	if (completed && !wasCompleted) {
-		update.completedAt = new Date();
-	}
-
+	// Aggregation-pipeline update: derive sticky `completed`/`completedAt` from the
+	// document's CURRENT value in one atomic op (no read-modify-write TOCTOU race).
+	const stampedAt = new Date();
 	const progress = await Progress.findOneAndUpdate(
 		{ userId, lessonId },
-		{ $set: update, $setOnInsert: { courseId } },
-		{
-			upsert: true,
-			returnDocument: "after",
-			setDefaultsOnInsert: true,
-			runValidators: true,
-		},
+		[
+			{
+				$set: {
+					courseId: { $ifNull: ["$courseId", lesson.courseId] },
+					positionSeconds,
+					// Sticky: once complete, never flips back (rewind does not un-complete).
+					completed: {
+						$or: [{ $ifNull: ["$completed", false] }, completedNow],
+					},
+				},
+			},
+			{
+				// Stage 2 sees stage 1's `completed`; stamp once on false→true.
+				$set: {
+					completedAt: {
+						$cond: [
+							"$completed",
+							{ $ifNull: ["$completedAt", stampedAt] },
+							"$completedAt",
+						],
+					},
+				},
+			},
+		],
+		{ upsert: true, returnDocument: "after", updatePipeline: true },
 	).lean();
 
 	return progress;
