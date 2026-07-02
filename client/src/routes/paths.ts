@@ -17,6 +17,9 @@ const ROUTES = {
 	CHECKOUT_SUCCESS: "/checkout/success",
 	CHECKOUT_CANCEL: "/checkout/cancel",
 	MY_COURSES: "/my-courses",
+	LEARN: (slug: string) => `/learn/${slug}`,
+	LEARN_LESSON: (slug: string, lessonId: string) =>
+		`/learn/${slug}/${lessonId}`,
 
 	// Admin
 	ADMIN: "/admin",

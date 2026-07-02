@@ -19,6 +19,7 @@ import CourseDetailPage from "@/pages/CourseDetailPage";
 import CheckoutSuccessPage from "@/pages/CheckoutSuccessPage";
 import CheckoutCancelPage from "@/pages/CheckoutCancelPage";
 import MyCoursesPage from "@/pages/MyCoursesPage";
+import LearnPage from "@/pages/LearnPage";
 
 import OverviewPage from "@/pages/admin/OverviewPage";
 import CoursesPage from "@/pages/admin/CoursesPage";
@@ -49,6 +50,13 @@ const AppRoutes = () => {
 			{/* Authenticated */}
 			<Route element={<ProtectedRoute />}>
 				<Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
+
+				{/* Learner watch page — full-bleed, not under StoreLayout */}
+				<Route path="/learn/:courseSlug" element={<LearnPage />} />
+				<Route
+					path="/learn/:courseSlug/:lessonId"
+					element={<LearnPage />}
+				/>
 
 				{/* Protected storefront */}
 				<Route element={<StoreLayout />}>
