@@ -258,9 +258,11 @@ export const useVideoControls = ({
 			video.removeEventListener("playing", onPlaying);
 			video.removeEventListener("seeking", onSeeking);
 			video.removeEventListener("seeked", onSeeked);
-			// Flush the final position on unmount / lesson switch using the captured
-			// element (videoRef may already be detached when this cleanup runs).
-			onReportPositionRef.current?.(video.currentTime, { reason: "unmount" });
+
+			// Flush the final position on unmount (captured element — videoRef may be
+			// detached). Skip 0 so an early unmount can't overwrite a saved position.
+			if (video.currentTime > 0)
+				onReportPositionRef.current?.(video.currentTime, { reason: "unmount" });
 		};
 	}, [revealControls, report]);
 

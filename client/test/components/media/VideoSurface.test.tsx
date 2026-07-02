@@ -182,4 +182,15 @@ describe("VideoSurface progress reporting", () => {
 		unmount();
 		expect(onReportPosition).toHaveBeenLastCalledWith(55, { reason: "unmount" });
 	});
+
+	it("does not flush a 0 position on unmount before playback advances", () => {
+		const onReportPosition = vi.fn();
+		const { container, unmount } = render(
+			<VideoSurface src="https://r2/v" onReportPosition={onReportPosition} />,
+		);
+		const video = getVideo(container);
+		setMediaProp(video, "currentTime", 0);
+		unmount();
+		expect(onReportPosition).not.toHaveBeenCalled();
+	});
 });
