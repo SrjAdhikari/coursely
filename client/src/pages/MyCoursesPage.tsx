@@ -6,9 +6,8 @@ import { GraduationCap } from "lucide-react";
 
 import ROUTES from "@/routes/paths";
 import { useMyEnrollments } from "@/hooks/useEnrollments";
-import { formatDate } from "@/lib/date";
 
-import CourseCard from "@/components/common/CourseCard";
+import EnrolledCourseCard from "@/components/common/EnrolledCourseCard";
 import Loader from "@/components/Loader";
 import LoadFailed from "@/components/common/LoadFailed";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
@@ -51,18 +50,9 @@ const MyCoursesPage = () => {
 			) : (
 				<div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
 					{enrollments.map((enrollment) => (
-						<CourseCard
+						<EnrolledCourseCard
 							key={enrollment._id}
-							to={ROUTES.COURSE_DETAIL(enrollment.courseId.slug)}
-							title={enrollment.courseId.title}
-							instructorName={enrollment.courseId.instructorName}
-							thumbnailUrl={enrollment.courseId.thumbnailUrl}
-							badge="Enrolled"
-							meta={
-								<span className="text-xs font-normal text-muted-foreground">
-									Purchased {formatDate(enrollment.createdAt)}
-								</span>
-							}
+							enrollment={enrollment}
 						/>
 					))}
 				</div>

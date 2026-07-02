@@ -9,6 +9,11 @@ vi.mock("@/hooks/useEnrollments", () => ({
 	useMyEnrollments: () => mockUseMyEnrollments(),
 }));
 
+const mockUseCourseProgress = vi.fn();
+vi.mock("@/hooks/useProgress", () => ({
+	useCourseProgress: () => mockUseCourseProgress(),
+}));
+
 import MyCoursesPage from "@/pages/MyCoursesPage";
 
 const enrollment = (id: string, title: string) => ({
@@ -45,13 +50,18 @@ describe("MyCoursesPage", () => {
 		mockUseMyEnrollments.mockReturnValue(
 			ok([enrollment("1", "React Basics")]),
 		);
+		mockUseCourseProgress.mockReturnValue({ data: undefined });
 	});
 
-	it("lists the enrolled courses", () => {
+	it("lists the enrolled courses and links into the LearnPage", () => {
 		renderPage();
 		expect(screen.getByText("React Basics")).toBeInTheDocument();
 		expect(screen.getByText("Enrolled")).toBeInTheDocument();
-		expect(screen.getByText(/purchased/i)).toBeInTheDocument();
+		expect(screen.getByText("Start learning")).toBeInTheDocument();
+		expect(screen.getByRole("link")).toHaveAttribute(
+			"href",
+			"/learn/react-basics",
+		);
 	});
 
 	it("shows the empty state with a browse CTA", () => {
