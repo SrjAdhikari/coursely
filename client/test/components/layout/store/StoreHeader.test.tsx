@@ -42,4 +42,15 @@ describe("StoreHeader", () => {
 			screen.queryByRole("link", { name: /sign up/i }),
 		).not.toBeInTheDocument();
 	});
+
+	it("shows a Dashboard link to /dashboard when logged in", () => {
+		mockUseCurrentUser.mockReturnValue({
+			data: { data: { name: "Suraj", role: "student" } },
+		});
+		renderHeader();
+		expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+			"href",
+			"/dashboard",
+		);
+	});
 });

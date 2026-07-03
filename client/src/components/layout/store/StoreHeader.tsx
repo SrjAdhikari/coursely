@@ -22,19 +22,27 @@ const StoreHeader = () => {
 				<nav className="flex items-center gap-3 text-sm">
 					<Link
 						to={ROUTES.CATALOG}
-						className="text-muted-foreground hover:text-foreground"
+						className="text-muted-foreground hover:text-primary"
 					>
-						Courses
+						Browse Courses
 					</Link>
 
 					{user ? (
 						<>
 							<Link
+								to={ROUTES.DASHBOARD}
+								className="text-muted-foreground hover:text-primary"
+							>
+								Dashboard
+							</Link>
+
+							<Link
 								to={ROUTES.MY_COURSES}
-								className="text-muted-foreground hover:text-foreground"
+								className="text-muted-foreground hover:text-primary"
 							>
 								My Courses
 							</Link>
+
 							<span className="ml-1 border-l border-border pl-3 text-foreground">
 								{user.name}
 							</span>
@@ -44,6 +52,7 @@ const StoreHeader = () => {
 							<Button asChild variant="ghost">
 								<Link to={ROUTES.LOGIN}>Log in</Link>
 							</Button>
+
 							<Button asChild>
 								<Link to={ROUTES.REGISTER}>Sign up</Link>
 							</Button>

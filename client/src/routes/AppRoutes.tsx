@@ -49,8 +49,6 @@ const AppRoutes = () => {
 
 			{/* Authenticated */}
 			<Route element={<ProtectedRoute />}>
-				<Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
-
 				{/* Learner watch page — full-bleed, not under StoreLayout */}
 				<Route path="/learn/:courseSlug" element={<LearnPage />} />
 				<Route
@@ -60,6 +58,7 @@ const AppRoutes = () => {
 
 				{/* Protected storefront */}
 				<Route element={<StoreLayout />}>
+					<Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
 					<Route
 						path={ROUTES.CHECKOUT_SUCCESS}
 						element={<CheckoutSuccessPage />}
