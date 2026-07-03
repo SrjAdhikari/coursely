@@ -42,6 +42,7 @@ export interface RecentLessonPayload {
 	title: string;
 	courseTitle: string;
 	courseSlug: string;
+	thumbnailUrl: string;
 	updatedAt: string;
 }
 
