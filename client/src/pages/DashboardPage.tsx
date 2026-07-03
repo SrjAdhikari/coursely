@@ -111,9 +111,19 @@ const DashboardPage = () => {
 				</div>
 
 				<div className="space-y-3">
-					{activeCourses.map((course) => (
-						<CourseProgressRow key={course.courseId} course={course} />
-					))}
+					{activeCourses.length === 0 ? (
+						<p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+							Nothing in progress yet — pick one from{" "}
+							<Link to={ROUTES.MY_COURSES} className="text-primary">
+								My Courses
+							</Link>{" "}
+							to get going.
+						</p>
+					) : (
+						activeCourses.map((course) => (
+							<CourseProgressRow key={course.courseId} course={course} />
+						))
+					)}
 				</div>
 			</section>
 

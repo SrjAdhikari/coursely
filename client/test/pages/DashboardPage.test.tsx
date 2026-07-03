@@ -60,4 +60,16 @@ describe("DashboardPage", () => {
 		expect(screen.getByText("JavaScript Essentials")).toBeInTheDocument();  // completed, listed
 		expect(screen.queryByText("CSS Layouts")).not.toBeInTheDocument();      // not_started excluded
 	});
+
+	it("shows a fallback in Your courses when enrolled but nothing is started", () => {
+		const allNotStarted: LearningOverviewPayload = {
+			...payload,
+			stats: { ...payload.stats, enrolled: 1, inProgress: 0, completed: 0, lessonsCompleted: 0, overallPercent: 0 },
+			courses: payload.courses.filter((course) => course.state === "not_started"),
+		};
+		mockOverview.mockReturnValue({ data: { data: allNotStarted }, isLoading: false, isError: false });
+		renderPage();
+		expect(screen.getByText(/nothing in progress yet/i)).toBeInTheDocument();
+		expect(screen.queryByText("CSS Layouts")).not.toBeInTheDocument(); // not-started not surfaced here
+	});
 });
