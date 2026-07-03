@@ -33,4 +33,7 @@ describe("formatRelativeTime", () => {
 	it("shows days under a week", () => {
 		expect(formatRelativeTime(ago(3 * DAY))).toBe("3d ago");
 	});
+	it("treats a future timestamp (clock skew) as 'just now', never negative", () => {
+		expect(formatRelativeTime(ago(-5 * MINUTE))).toBe("just now");
+	});
 });
