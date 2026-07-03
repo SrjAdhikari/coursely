@@ -48,15 +48,19 @@ describe("learning.service · getLearningOverview", () => {
     expect(row.percentComplete).toBe(25);
     expect(row.state).toBe("in_progress");
     expect(row.lastActivityAt).not.toBeNull();
-    expect(row.nextLesson).toMatchObject({ lessonId: lessons[1]!._id.toString() });
+    expect(row.nextLesson).toMatchObject({
+      lessonId: lessons[1]!._id.toString(),
+      lessonNumber: 2,
+      sectionTitle: "Test Section",
+    });
     expect(overview.stats).toMatchObject({ enrolled: 1, inProgress: 1, completed: 0, lessonsCompleted: 1 });
   });
 
   it("picks the next incomplete lesson respecting section then lesson order", async () => {
     const user = await createTestUser();
     const course = await createTestCourse();
-    const secB = await createTestSection(course._id, { order: 1 });
-    const secA = await createTestSection(course._id, { order: 0 });
+    const secB = await createTestSection(course._id, { order: 1, title: "Advanced" });
+    const secA = await createTestSection(course._id, { order: 0, title: "Basics" });
     // create B's lesson first in the DB to prove ordering is by order fields, not insertion
     const b1 = await createTestLesson(secB._id, course._id, { order: 0, title: "B1" });
     const a1 = await createTestLesson(secA._id, course._id, { order: 0, title: "A1" });
@@ -66,7 +70,12 @@ describe("learning.service · getLearningOverview", () => {
     await createTestProgress(user._id, a2._id, course._id, { completed: true });
 
     const overview = await getLearningOverview(user._id.toString());
-    expect(overview.courses[0]!.nextLesson).toMatchObject({ lessonId: b1._id.toString(), title: "B1" });
+    expect(overview.courses[0]!.nextLesson).toMatchObject({
+      lessonId: b1._id.toString(),
+      title: "B1",
+      lessonNumber: 3,
+      sectionTitle: "Advanced",
+    });
   });
 
   it("marks an enrolled course with no progress as not_started (next = first lesson)", async () => {
@@ -79,7 +88,11 @@ describe("learning.service · getLearningOverview", () => {
     expect(row.state).toBe("not_started");
     expect(row.completedLessons).toBe(0);
     expect(row.lastActivityAt).toBeNull();
-    expect(row.nextLesson).toMatchObject({ lessonId: lessons[0]!._id.toString() });
+    expect(row.nextLesson).toMatchObject({
+      lessonId: lessons[0]!._id.toString(),
+      lessonNumber: 1,
+      sectionTitle: "Test Section",
+    });
   });
 
   it("marks a fully-watched course as completed with nextLesson null", async () => {

@@ -62,7 +62,7 @@ const getLearningOverview = async (userId: string) => {
 	// Fetch all sections, lessons, and progress rows for the enrolled courses in parallel.
 	const [sections, lessons, progressRows] = await Promise.all([
 		Section.find({ courseId: { $in: courseIds } })
-			.select("_id order")
+			.select("_id order title")
 			.lean(),
 		Lesson.find({ courseId: { $in: courseIds } })
 			.select("_id courseId sectionId order title")
@@ -72,9 +72,12 @@ const getLearningOverview = async (userId: string) => {
 			.lean(),
 	]);
 
-	// Index section order by sectionId for curriculum-order sorting of lessons.
+	// Index section order + title by sectionId for ordering and the next-lesson label.
 	const sectionOrder = new Map(
 		sections.map((section) => [section._id.toString(), section.order]),
+	);
+	const sectionTitleById = new Map(
+		sections.map((section) => [section._id.toString(), section.title]),
 	);
 
 	// Index completed lessons by lessonId for quick lookup.
@@ -126,9 +129,11 @@ const getLearningOverview = async (userId: string) => {
 				? Math.round((completedLessons / totalLessons) * 100)
 				: 0;
 
-		const nextIncomplete = ordered.find(
+		const nextIncompleteIndex = ordered.findIndex(
 			(lesson) => !completedLessonIds.has(lesson._id.toString()),
 		);
+		const nextIncomplete =
+			nextIncompleteIndex >= 0 ? ordered[nextIncompleteIndex] : undefined;
 
 		const lastActivityAt = lastActivityByCourse.get(courseId) ?? null;
 		const state =
@@ -153,6 +158,9 @@ const getLearningOverview = async (userId: string) => {
 				? {
 						lessonId: nextIncomplete._id.toString(),
 						title: nextIncomplete.title,
+						lessonNumber: nextIncompleteIndex + 1,
+						sectionTitle:
+							sectionTitleById.get(nextIncomplete.sectionId.toString()) ?? "",
 					}
 				: null,
 		};
