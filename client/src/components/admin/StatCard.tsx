@@ -17,7 +17,7 @@ const StatCard = ({ label, value, sub }: StatCardProps) => (
 
 		<div className="mt-2 font-heading text-3xl font-bold">{value}</div>
 		{sub ? (
-			<div className="mt-1 font-mono text-xs text-muted-foreground">{sub}</div>
+			<div className="mt-1 font-mono text-xs text-primary">{sub}</div>
 		) : null}
 	</div>
 );
