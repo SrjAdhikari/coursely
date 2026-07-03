@@ -11,32 +11,38 @@ vi.mock("@/hooks/useAuth", () => ({
 
 import StoreHeader from "@/components/layout/store/StoreHeader";
 
-const renderHeader = () =>
+const renderHeaderAt = (initialPath = "/") =>
 	render(
-		<MemoryRouter>
+		<MemoryRouter initialEntries={[initialPath]}>
 			<StoreHeader />
 		</MemoryRouter>,
 	);
+
+const loggedIn = () =>
+	mockUseCurrentUser.mockReturnValue({
+		data: { data: { name: "Suraj", role: "student" } },
+	});
 
 describe("StoreHeader", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows Log in / Sign up when logged out", () => {
 		mockUseCurrentUser.mockReturnValue({ data: undefined });
-		renderHeader();
+		renderHeaderAt();
 		expect(screen.getByRole("link", { name: /log in/i })).toBeInTheDocument();
 		expect(screen.getByRole("link", { name: /sign up/i })).toBeInTheDocument();
-		expect(screen.queryByRole("link", { name: /library/i })).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("link", { name: /library/i }),
+		).not.toBeInTheDocument();
 	});
 
 	it("shows the Library link and the user's name when logged in", () => {
-		mockUseCurrentUser.mockReturnValue({
-			data: { data: { name: "Suraj", role: "student" } },
-		});
-		renderHeader();
-		expect(
-			screen.getByRole("link", { name: /library/i }),
-		).toHaveAttribute("href", "/my-courses");
+		loggedIn();
+		renderHeaderAt();
+		expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute(
+			"href",
+			"/my-courses",
+		);
 		expect(screen.getByText("Suraj")).toBeInTheDocument();
 		expect(
 			screen.queryByRole("link", { name: /sign up/i }),
@@ -44,13 +50,31 @@ describe("StoreHeader", () => {
 	});
 
 	it("shows a Dashboard link to /dashboard when logged in", () => {
-		mockUseCurrentUser.mockReturnValue({
-			data: { data: { name: "Suraj", role: "student" } },
-		});
-		renderHeader();
+		loggedIn();
+		renderHeaderAt();
 		expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
 			"href",
 			"/dashboard",
 		);
+	});
+
+	it("marks the active nav item with aria-current", () => {
+		loggedIn();
+		renderHeaderAt("/dashboard");
+		expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+		expect(
+			screen.getByRole("link", { name: /browse/i }),
+		).not.toHaveAttribute("aria-current", "page");
+	});
+
+	it("renders a theme toggle", () => {
+		mockUseCurrentUser.mockReturnValue({ data: undefined });
+		renderHeaderAt();
+		expect(
+			screen.getByRole("button", { name: /toggle theme/i }),
+		).toBeInTheDocument();
 	});
 });
