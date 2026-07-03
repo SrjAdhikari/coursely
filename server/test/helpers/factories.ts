@@ -5,6 +5,7 @@ import Course from "../../src/models/course.model";
 import Section from "../../src/models/section.model";
 import Lesson from "../../src/models/lesson.model";
 import Enrollment from "../../src/models/enrollment.model";
+import Progress from "../../src/models/progress.model";
 import type { Types } from "mongoose";
 
 interface UserOverrides {
@@ -71,4 +72,18 @@ const createTestEnrollment = (
 	overrides: Record<string, unknown> = {},
 ) => Enrollment.create({ userId, courseId, ...overrides });
 
-export { createTestUser, createTestCourse, createTestSection, createTestLesson, createTestEnrollment };
+const createTestProgress = (
+	userId: Types.ObjectId,
+	lessonId: Types.ObjectId,
+	courseId: Types.ObjectId,
+	overrides: Record<string, unknown> = {},
+) => Progress.create({ userId, lessonId, courseId, ...overrides });
+
+export {
+	createTestUser,
+	createTestCourse,
+	createTestSection,
+	createTestLesson,
+	createTestEnrollment,
+	createTestProgress,
+};

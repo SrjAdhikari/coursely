@@ -1,11 +1,22 @@
 //* src/components/layout/store/StoreHeader.tsx
 
-import { Link } from "react-router";
+import { Link, NavLink } from "react-router";
 
+import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import AppLogo from "@/components/common/AppLogo";
+import ThemeToggle from "@/components/theme/theme-toggle";
 import ROUTES from "@/routes/paths";
+
+// Ghost-button-style nav item; the active route gets a muted pill + primary text.
+const navItemClass = ({ isActive }: { isActive: boolean }) =>
+	cn(
+		"rounded-md px-3 py-1.5 transition-colors",
+		isActive
+			? "bg-muted text-primary"
+			: "text-muted-foreground hover:text-primary",
+	);
 
 /** Minimal shared header for the store pages (a fuller public header comes later). */
 const StoreHeader = () => {
@@ -19,37 +30,41 @@ const StoreHeader = () => {
 					<AppLogo className="text-lg" />
 				</Link>
 
-				<nav className="flex items-center gap-3 text-sm">
-					<Link
-						to={ROUTES.CATALOG}
-						className="text-muted-foreground hover:text-foreground"
-					>
-						Courses
-					</Link>
+				<div className="flex items-center gap-7">
+					<nav className="flex items-center gap-2 text-sm">
+						<NavLink to={ROUTES.CATALOG} className={navItemClass}>
+							Browse
+						</NavLink>
 
-					{user ? (
-						<>
-							<Link
-								to={ROUTES.MY_COURSES}
-								className="text-muted-foreground hover:text-foreground"
-							>
-								My Courses
-							</Link>
-							<span className="ml-1 border-l border-border pl-3 text-foreground">
-								{user.name}
-							</span>
-						</>
-					) : (
-						<>
-							<Button asChild variant="ghost">
-								<Link to={ROUTES.LOGIN}>Log in</Link>
-							</Button>
-							<Button asChild>
-								<Link to={ROUTES.REGISTER}>Sign up</Link>
-							</Button>
-						</>
-					)}
-				</nav>
+						{user ? (
+							<>
+								<NavLink to={ROUTES.DASHBOARD} className={navItemClass}>
+									Dashboard
+								</NavLink>
+
+								<NavLink to={ROUTES.MY_COURSES} className={navItemClass}>
+									Library
+								</NavLink>
+
+								<span className="ml-1 border-l border-border pl-3 text-foreground">
+									{user.name}
+								</span>
+							</>
+						) : (
+							<>
+								<Button asChild variant="ghost">
+									<Link to={ROUTES.LOGIN}>Log in</Link>
+								</Button>
+
+								<Button asChild>
+									<Link to={ROUTES.REGISTER}>Sign up</Link>
+								</Button>
+							</>
+						)}
+					</nav>
+
+					<ThemeToggle />
+				</div>
 			</div>
 		</header>
 	);

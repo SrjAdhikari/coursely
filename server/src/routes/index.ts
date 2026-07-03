@@ -6,13 +6,16 @@
  */
 
 import { Router } from "express";
+
 import authRouter from "./auth.routes";
+import learningRouter from "./learning.routes";
+import adminRouter from "./admin.routes";
+
 import { publicCourseRouter } from "./course.routes";
 import { publicLessonRouter } from "./lesson.routes";
 import { paymentRouter } from "./payment.routes";
 import { enrollmentRouter } from "./enrollment.routes";
 import { progressRouter } from "./progress.routes";
-import adminRouter from "./admin.routes";
 
 const router = Router();
 
@@ -51,6 +54,12 @@ router.use("/enrollments", enrollmentRouter);
  * @route /api/progress
  */
 router.use("/progress", progressRouter);
+
+/**
+ * Learning routes (authenticated learner)
+ * @route /api/learning
+ */
+router.use("/learning", learningRouter);
 
 /**
  * Admin routes (authenticated admin only)
