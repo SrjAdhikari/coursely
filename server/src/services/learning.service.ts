@@ -221,4 +221,4 @@ const getLearningOverview = async (userId: string) => {
 	};
 };
 
-export { getLearningOverview };
+export default getLearningOverview;

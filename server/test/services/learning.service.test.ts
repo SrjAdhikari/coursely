@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getLearningOverview } from "../../src/services/learning.service";
+import getLearningOverview from "../../src/services/learning.service";
 import Progress from "../../src/models/progress.model";
 import {
   createTestUser,
