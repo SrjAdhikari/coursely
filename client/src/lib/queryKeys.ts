@@ -39,3 +39,6 @@ export const checkoutStatusKey = (sessionId: string) =>
 /** The caller's own progress rows for a course (LearnPage resume + sidebar). */
 export const courseProgressKey = (courseId: string) =>
 	["progress", "course", courseId] as const;
+
+/** The caller's aggregated learning overview (stats + course progress + recent). */
+export const LEARNING_OVERVIEW_KEY = ["learning", "overview"] as const;
