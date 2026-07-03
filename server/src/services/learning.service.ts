@@ -100,9 +100,9 @@ const getLearningOverview = async (userId: string) => {
 	const lessonsByCourse = new Map<string, LessonLean[]>();
 	for (const lesson of lessons as LessonLean[]) {
 		const key = lesson.courseId.toString();
-		(lessonsByCourse.get(key) ?? lessonsByCourse.set(key, []).get(key)!).push(
-			lesson,
-		);
+		const bucket = lessonsByCourse.get(key);
+		if (bucket) bucket.push(lesson);
+		else lessonsByCourse.set(key, [lesson]);
 	}
 
 	// Sort lessons in curriculum order.
