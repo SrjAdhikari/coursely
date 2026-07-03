@@ -26,17 +26,17 @@ describe("StoreHeader", () => {
 		renderHeader();
 		expect(screen.getByRole("link", { name: /log in/i })).toBeInTheDocument();
 		expect(screen.getByRole("link", { name: /sign up/i })).toBeInTheDocument();
-		expect(screen.queryByText(/my courses/i)).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: /library/i })).not.toBeInTheDocument();
 	});
 
-	it("shows My Courses and the user's name when logged in", () => {
+	it("shows the Library link and the user's name when logged in", () => {
 		mockUseCurrentUser.mockReturnValue({
 			data: { data: { name: "Suraj", role: "student" } },
 		});
 		renderHeader();
 		expect(
-			screen.getByRole("link", { name: /my courses/i }),
-		).toBeInTheDocument();
+			screen.getByRole("link", { name: /library/i }),
+		).toHaveAttribute("href", "/my-courses");
 		expect(screen.getByText("Suraj")).toBeInTheDocument();
 		expect(
 			screen.queryByRole("link", { name: /sign up/i }),

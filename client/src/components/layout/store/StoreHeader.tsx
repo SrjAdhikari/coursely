@@ -24,7 +24,7 @@ const StoreHeader = () => {
 						to={ROUTES.CATALOG}
 						className="text-muted-foreground hover:text-primary"
 					>
-						Browse Courses
+						Browse
 					</Link>
 
 					{user ? (
@@ -40,7 +40,7 @@ const StoreHeader = () => {
 								to={ROUTES.MY_COURSES}
 								className="text-muted-foreground hover:text-primary"
 							>
-								My Courses
+								Library
 							</Link>
 
 							<span className="ml-1 border-l border-border pl-3 text-foreground">
