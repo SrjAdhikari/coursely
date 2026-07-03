@@ -12,11 +12,20 @@ interface CourseProgressRowProps {
 	course: LearningCoursePayload;
 }
 
+// The line under the progress bar, worded per the course's state.
+const subLineFor = (course: LearningCoursePayload) => {
+	if (course.state === "completed") return "All lessons complete";
+	if (course.state === "not_started") return "Not started yet — begin anytime";
+	return course.nextLesson ? `Next: ${course.nextLesson.title}` : null;
+};
+
 const CourseProgressRow = ({ course }: CourseProgressRowProps) => {
 	// Prefer deep-linking to the next lesson; fall back to the course entry.
 	const resumeTo = course.nextLesson
 		? ROUTES.LEARN_LESSON(course.slug, course.nextLesson.lessonId)
 		: ROUTES.LEARN(course.slug);
+
+	const subLine = subLineFor(course);
 
 	return (
 		<div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
@@ -41,20 +50,22 @@ const CourseProgressRow = ({ course }: CourseProgressRowProps) => {
 
 				<div className="mt-2 flex items-center gap-3">
 					<Progress value={course.percentComplete} className="h-1.5 max-w-xs" />
+
 					<span className="flex-none text-xs text-muted-foreground">
-						{course.completedLessons} / {course.totalLessons} lessons
+						{course.percentComplete}% · {course.completedLessons} /{" "}
+						{course.totalLessons} lessons
 					</span>
 				</div>
 
-				{course.state !== "completed" && course.nextLesson && (
+				{subLine ? (
 					<p className="mt-1.5 truncate text-xs text-muted-foreground">
-						Next: {course.nextLesson.title}
+						{subLine}
 					</p>
-				)}
+				) : null}
 			</div>
 
 			{course.state === "completed" ? (
-				<span className="flex-none text-sm font-medium text-primary">
+				<span className="flex-none rounded-md border border-accent-line bg-accent-soft px-3 py-1.5 text-xs font-medium text-primary">
 					Completed ✓
 				</span>
 			) : (

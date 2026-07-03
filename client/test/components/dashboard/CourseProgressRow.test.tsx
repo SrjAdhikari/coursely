@@ -16,31 +16,36 @@ const renderRow = (course: LearningCoursePayload) =>
 	render(<MemoryRouter><CourseProgressRow course={course} /></MemoryRouter>);
 
 describe("CourseProgressRow", () => {
-	it("shows title, instructor and lesson count", () => {
+	it("shows title, instructor and the percent + lesson count", () => {
 		renderRow(base);
 		expect(screen.getByText("React from Scratch")).toBeInTheDocument();
 		expect(screen.getByText("Priya Nair")).toBeInTheDocument();
-		expect(screen.getByText(/7 \/ 18 lessons/)).toBeInTheDocument();
+		expect(screen.getByText(/39% · 7 \/ 18 lessons/)).toBeInTheDocument();
 	});
 
-	it("in_progress → Resume links to the next lesson", () => {
+	it("in_progress → shows the next lesson and Resume links to it", () => {
 		renderRow(base);
+		expect(
+			screen.getByText("Next: Effects & the dependency array"),
+		).toBeInTheDocument();
 		expect(screen.getByRole("link", { name: /resume/i })).toHaveAttribute(
 			"href", "/learn/react-from-scratch/l9",
 		);
 	});
 
-	it("not_started → Start links to the course", () => {
+	it("not_started → shows the not-started line and Start links to the course", () => {
 		renderRow({ ...base, state: "not_started", completedLessons: 0, percentComplete: 0,
 			lastActivityAt: null, nextLesson: { lessonId: "l1", title: "Intro", lessonNumber: 1, sectionTitle: "Getting started" } });
+		expect(screen.getByText(/not started yet/i)).toBeInTheDocument();
 		expect(screen.getByRole("link", { name: /start/i })).toHaveAttribute(
 			"href", "/learn/react-from-scratch/l1",
 		);
 	});
 
-	it("completed → shows a done indicator, no resume link", () => {
+	it("completed → shows the completed pill and all-lessons line, no resume link", () => {
 		renderRow({ ...base, state: "completed", completedLessons: 18, percentComplete: 100, nextLesson: null });
 		expect(screen.getByText(/completed/i)).toBeInTheDocument();
+		expect(screen.getByText("All lessons complete")).toBeInTheDocument();
 		expect(screen.queryByRole("link", { name: /resume/i })).not.toBeInTheDocument();
 	});
 
