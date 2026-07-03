@@ -1,24 +1,32 @@
 //* src/pages/MyCoursesPage.tsx
 
-import { useMemo } from "react";
 import { Link } from "react-router";
 import { GraduationCap } from "lucide-react";
 
 import ROUTES from "@/routes/paths";
-import { useMyEnrollments } from "@/hooks/useEnrollments";
+import useLearningOverview from "@/hooks/useLearningOverview";
+import type { LearningCourseState } from "@/types/learning.types";
 
-import EnrolledCourseCard from "@/components/common/EnrolledCourseCard";
+import CourseProgressRow from "@/components/dashboard/CourseProgressRow";
 import Loader from "@/components/Loader";
 import LoadFailed from "@/components/common/LoadFailed";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
 import { Button } from "@/components/ui/button";
 
-/** The student's own enrolled courses. */
-const MyCoursesPage = () => {
-	const { data, isLoading, isError, refetch } = useMyEnrollments();
-	const enrollments = useMemo(() => data?.data ?? [], [data]);
+const GROUPS: { state: LearningCourseState; label: string }[] = [
+	{ state: "in_progress", label: "In progress" },
+	{ state: "not_started", label: "Not started" },
+	{ state: "completed", label: "Completed" },
+];
 
-	if (isLoading) return <Loader className="min-h-[80vh]" />;
+/** The student's full enrolled library, grouped by progress state. */
+const MyCoursesPage = () => {
+	const { data, isLoading, isError, refetch } = useLearningOverview();
+	const overview = data?.data;
+	const courses = overview?.courses ?? [];
+
+	if (isLoading) return <Loader />;
+
 	if (isError)
 		return (
 			<LoadFailed
@@ -28,35 +36,58 @@ const MyCoursesPage = () => {
 			/>
 		);
 
+	if (courses.length === 0)
+		return (
+			<EmptyStatePlaceholder
+				icon={GraduationCap}
+				title="No courses yet"
+				description="Browse the catalog and enroll to start learning."
+			>
+				<Button asChild>
+					<Link to={ROUTES.CATALOG}>Browse courses</Link>
+				</Button>
+			</EmptyStatePlaceholder>
+		);
+
+	const lessonsDone = overview?.stats.lessonsCompleted ?? 0;
+	const lessonsTotal = overview?.stats.totalLessons ?? 0;
+
 	return (
-		<section>
-			<div className="mb-7">
+		<section className="space-y-8">
+			<div>
 				<h1 className="font-heading text-3xl font-semibold">My Courses</h1>
 				<p className="mt-1.5 text-sm text-muted-foreground">
-					{enrollments.length} enrolled
+					{courses.length} courses · {lessonsDone} of {lessonsTotal} lessons
+					done
 				</p>
 			</div>
 
-			{enrollments.length === 0 ? (
-				<EmptyStatePlaceholder
-					icon={GraduationCap}
-					title="No courses yet"
-					description="Browse the catalog and enroll to start learning."
-				>
-					<Button asChild>
-						<Link to={ROUTES.CATALOG}>Browse courses</Link>
-					</Button>
-				</EmptyStatePlaceholder>
-			) : (
-				<div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-					{enrollments.map((enrollment) => (
-						<EnrolledCourseCard
-							key={enrollment._id}
-							enrollment={enrollment}
-						/>
-					))}
-				</div>
-			)}
+			{GROUPS.map(({ state, label }) => {
+				const group = courses.filter((course) => course.state === state);
+				if (group.length === 0) return null;
+
+				return (
+					<div key={state}>
+						<div className="mb-4 flex items-center gap-3">
+							<h2 className="flex-none text-xs uppercase tracking-wide text-primary">
+								{label}
+							</h2>
+
+							<span className="flex-none text-xs text-muted-foreground">
+								{group.length} {group.length === 1 ? "course" : "courses"}
+							</span>
+
+							<span aria-hidden className="h-px flex-1 bg-border" />
+						</div>
+
+						<div className="space-y-3">
+							{group.map((course) => (
+								<CourseProgressRow key={course.courseId} course={course} />
+							))}
+						</div>
+					</div>
+				);
+			})}
 		</section>
 	);
 };
