@@ -141,6 +141,7 @@ describe("learning.service · getLearningOverview", () => {
       title: "Lesson 5",
       courseTitle: course.title,
       courseSlug: course.slug,
+      thumbnailUrl: course.thumbnailUrl,
     });
     // strictly descending order
     expect(overview.recentLessons.map((r) => r.lessonId)).toEqual([

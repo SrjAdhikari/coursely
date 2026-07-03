@@ -189,6 +189,7 @@ const getLearningOverview = async (userId: string) => {
 				title: lesson?.title ?? "",
 				courseTitle: course?.title ?? "",
 				courseSlug: course?.slug ?? "",
+				thumbnailUrl: course?.thumbnailUrl ?? "",
 				updatedAt: row.updatedAt,
 			};
 		});
