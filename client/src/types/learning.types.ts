@@ -17,6 +17,8 @@ export interface LearningStatsPayload {
 export interface NextLessonPayload {
 	lessonId: string;
 	title: string;
+	lessonNumber: number;
+	sectionTitle: string;
 }
 
 /** One enrolled course with its progress summary and resume target. */

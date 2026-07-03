@@ -9,7 +9,7 @@ const base: LearningCoursePayload = {
 	thumbnailUrl: "", instructorName: "Priya Nair",
 	totalLessons: 18, completedLessons: 7, percentComplete: 39,
 	state: "in_progress", lastActivityAt: "2026-07-02T09:00:00Z",
-	nextLesson: { lessonId: "l9", title: "Effects & the dependency array" },
+	nextLesson: { lessonId: "l9", title: "Effects & the dependency array", lessonNumber: 9, sectionTitle: "State & hooks" },
 };
 
 const renderRow = (course: LearningCoursePayload) =>
@@ -32,7 +32,7 @@ describe("CourseProgressRow", () => {
 
 	it("not_started → Start links to the course", () => {
 		renderRow({ ...base, state: "not_started", completedLessons: 0, percentComplete: 0,
-			lastActivityAt: null, nextLesson: { lessonId: "l1", title: "Intro" } });
+			lastActivityAt: null, nextLesson: { lessonId: "l1", title: "Intro", lessonNumber: 1, sectionTitle: "Getting started" } });
 		expect(screen.getByRole("link", { name: /start/i })).toHaveAttribute(
 			"href", "/learn/react-from-scratch/l1",
 		);
