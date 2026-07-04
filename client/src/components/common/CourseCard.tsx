@@ -10,6 +10,8 @@ interface CourseCardProps {
 	thumbnailUrl: string;
 	description?: string;
 	badge?: string;
+	category?: string;
+	lessonCount?: number;
 	meta: ReactNode;
 }
 
@@ -22,6 +24,8 @@ const CourseCard = ({
 	thumbnailUrl,
 	description,
 	badge,
+	category,
+	lessonCount,
 	meta,
 }: CourseCardProps) => (
 	<Link
@@ -56,10 +60,24 @@ const CourseCard = ({
 				</p>
 			)}
 
+			{(category || typeof lessonCount === "number") && (
+				<div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+					{category && (
+						<span className="rounded-full border border-border px-2 py-0.5">
+							{category}
+						</span>
+					)}
+
+					{typeof lessonCount === "number" && (
+						<span>
+							{lessonCount} {lessonCount === 1 ? "lesson" : "lessons"}
+						</span>
+					)}
+				</div>
+			)}
+
 			<div className="mt-4 flex items-center justify-end border-t border-border pt-3.5">
-				<span className="text-base font-semibold text-foreground">
-					{meta}
-				</span>
+				<span className="text-base font-semibold text-foreground">{meta}</span>
 			</div>
 		</div>
 	</Link>
