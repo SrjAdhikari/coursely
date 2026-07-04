@@ -45,9 +45,9 @@ const FounderNote = () => (
 				</Avatar>
 
 				<div>
-					<p className="font-semibold">— [Suraj Adhikari]</p>
+					<p className="font-semibold">Suraj Adhikari</p>
 					<p className="text-xs text-muted-foreground">
-						Solo builder · [Full Stack Engineer]
+						Solo builder · Full Stack Engineer
 					</p>
 				</div>
 			</figcaption>
