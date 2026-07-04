@@ -63,3 +63,36 @@ describe("GET /api/courses/:slug", () => {
 		expect(res.body.error.code).toBe("COURSE_NOT_FOUND");
 	});
 });
+
+describe("public course response enrichment", () => {
+	it("carries category, lessonCount, and totalDuration on the list", async () => {
+		const course = await createTestCourse({ slug: "enriched", category: "Web Development" });
+		const section = await createTestSection(course._id);
+		await createTestLesson(section._id, course._id, { duration: 90 });
+
+		const res = await request(app).get("/api/courses");
+		expect(res.status).toBe(200);
+		const item = res.body.data.find((candidate: { slug: string }) => candidate.slug === "enriched");
+		expect(item.category).toBe("Web Development");
+		expect(item.lessonCount).toBe(1);
+		expect(item.totalDuration).toBe(90);
+	});
+
+	it("carries category, counts, and learningOutcomes on the detail (never videoKey)", async () => {
+		const course = await createTestCourse({
+			slug: "enriched-detail",
+			category: "Backend",
+			learningOutcomes: ["Design a schema", "Write an API"],
+		});
+		const section = await createTestSection(course._id);
+		await createTestLesson(section._id, course._id, { duration: 120, isPreview: true, videoKey: "lessons/x/source.mp4" });
+
+		const res = await request(app).get("/api/courses/enriched-detail");
+		expect(res.status).toBe(200);
+		expect(res.body.data.category).toBe("Backend");
+		expect(res.body.data.learningOutcomes).toEqual(["Design a schema", "Write an API"]);
+		expect(res.body.data.lessonCount).toBe(1);
+		expect(res.body.data.totalDuration).toBe(120);
+		expect(res.body.data.sections[0].lessons[0].videoKey).toBeUndefined();
+	});
+});

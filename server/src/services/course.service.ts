@@ -29,6 +29,7 @@ const LIST_FIELDS = {
 	price: 1,
 	currency: 1,
 	isPublished: 1,
+	category: 1,
 	createdAt: 1,
 } as const;
 
@@ -36,6 +37,8 @@ export interface CourseDetail extends Omit<CourseDocument, "trailerKey"> {
 	sections: (SectionDocument & {
 		lessons: Omit<LessonDocument, "videoKey">[];
 	})[];
+	lessonCount: number;
+	totalDuration: number;
 }
 
 interface CourseDetailFull extends CourseDocument {
@@ -43,30 +46,72 @@ interface CourseDetailFull extends CourseDocument {
 }
 
 /**
- * List all published courses, optionally filtered by a search query.
+ * List all published courses, optionally filtered by a search query. Each card
+ * is enriched with lessonCount + totalDuration: one query loads the counting
+ * fields for every listed course's lessons, then the totals are tallied per
+ * course in memory (same approach as getCourseBySlug). A lesson-less course
+ * defaults to 0/0.
  *
  * @param q - Optional search query.
- * @returns An array of published courses matching the query.
+ * @returns An array of published courses, each with lessonCount + totalDuration.
  */
 const listPublishedCourses = async (q?: string) => {
 	// Whitespace-only query = no search: an empty $text match returns nothing, so trim first.
 	const search = q?.trim();
-	if (search) {
-		return Course.find(
-			{ isPublished: true, $text: { $search: search } },
-			LIST_FIELDS,
-		)
-			.sort({ score: { $meta: "textScore" } })
-			.lean();
+	const courses = search
+		? await Course.find(
+				{ isPublished: true, $text: { $search: search } },
+				LIST_FIELDS,
+			)
+				.sort({ score: { $meta: "textScore" } })
+				.lean()
+		: await Course.find({ isPublished: true }, LIST_FIELDS)
+				.sort({ createdAt: -1 })
+				.lean();
+
+	// One query for every listed course's lessons, projected to just the counting
+	// fields, then tally per course in memory.
+	const courseIds = courses.map((course) => course._id);
+	const lessons = await Lesson.find(
+		{ courseId: { $in: courseIds } },
+		{ courseId: 1, duration: 1 },
+	).lean();
+
+	const statsByCourseId = new Map<
+		string,
+		{ lessonCount: number; totalDuration: number }
+	>();
+
+	for (const lesson of lessons) {
+		const key = lesson.courseId.toString();
+		const stats = statsByCourseId.get(key) ?? {
+			lessonCount: 0,
+			totalDuration: 0,
+		};
+
+		stats.lessonCount += 1;
+		stats.totalDuration += lesson.duration;
+		statsByCourseId.set(key, stats);
 	}
 
-	return Course.find({ isPublished: true }, LIST_FIELDS)
-		.sort({ createdAt: -1 })
-		.lean();
+	const coursesWithStats = courses.map((course) => {
+		const stats = statsByCourseId.get(course._id.toString());
+		return {
+			...course,
+			lessonCount: stats?.lessonCount ?? 0,
+			totalDuration: stats?.totalDuration ?? 0,
+		};
+	});
+
+	return coursesWithStats;
 };
 
 /**
  * Get a published course by slug, with its sections and lessons (no videoKey).
+ * lessonCount + totalDuration are totalled in memory from the loaded lessons.
+ * 
+ * @param slug - The slug of the course to fetch.
+ * @returns A promise resolving to the course with its sections and lessons.
  * @throws {AppError} 404 COURSE_NOT_FOUND if the course does not exist.
  */
 const getCourseBySlug = async (slug: string): Promise<CourseDetail> => {
@@ -90,6 +135,7 @@ const getCourseBySlug = async (slug: string): Promise<CourseDetail> => {
 		string,
 		Omit<LessonDocument, "videoKey">[]
 	>();
+
 	for (const lesson of lessons) {
 		const key = lesson.sectionId.toString();
 		const bucket = lessonsBySection.get(key) ?? [];
@@ -97,12 +143,20 @@ const getCourseBySlug = async (slug: string): Promise<CourseDetail> => {
 		lessonsBySection.set(key, bucket);
 	}
 
+	const lessonCount = lessons.length;
+	const totalDuration = lessons.reduce(
+		(total, lesson) => total + lesson.duration,
+		0,
+	);
+
 	return {
 		...course,
 		sections: sections.map((section) => ({
 			...section,
 			lessons: lessonsBySection.get(section._id.toString()) ?? [],
 		})),
+		lessonCount,
+		totalDuration,
 	} as CourseDetail;
 };
 
