@@ -44,6 +44,7 @@ const createTestCourse = (overrides: Record<string, unknown> = {}) => {
 		thumbnailUrl: "https://example.com/thumb.jpg",
 		price: 49900,
 		isPublished: true,
+		learningOutcomes: [],
 		...overrides,
 	});
 };

@@ -14,6 +14,8 @@ export interface CourseDocument {
 	price: number;
 	currency: string;
 	isPublished: boolean;
+	category?: string;
+	learningOutcomes: string[];
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -65,6 +67,14 @@ const courseSchema = new Schema<CourseDocument>(
 		isPublished: {
 			type: Boolean,
 			default: false,
+		},
+		category: {
+			type: String,
+			trim: true,
+		},
+		learningOutcomes: {
+			type: [String],
+			default: [],
 		},
 	},
 	{ strict: "throw", timestamps: true },

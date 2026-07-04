@@ -23,6 +23,8 @@ const createCourseSchema = z.object({
 		.min(0, "Price cannot be negative"),
 	currency: z.enum(["INR"]).optional(),
 	isPublished: z.boolean().optional(),
+	category: z.string().min(1).max(60).optional(),
+	learningOutcomes: z.array(z.string().min(1)).max(12).optional(),
 });
 
 const updateCourseSchema = createCourseSchema

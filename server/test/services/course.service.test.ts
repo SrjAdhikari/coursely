@@ -240,3 +240,36 @@ describe("course.service — admin reads", () => {
 		});
 	});
 });
+
+describe("course.service — category & learning outcomes", () => {
+	it("persists category and learningOutcomes on create", async () => {
+		const created = await createCourse({
+			...NEW_COURSE,
+			category: "Web Development",
+			learningOutcomes: ["Build a REST API", "Deploy to production"],
+		});
+		expect(created.category).toBe("Web Development");
+		expect(created.learningOutcomes).toEqual([
+			"Build a REST API",
+			"Deploy to production",
+		]);
+	});
+
+	it("defaults learningOutcomes to an empty array when omitted", async () => {
+		const created = await createCourse(NEW_COURSE);
+		expect(created.learningOutcomes).toEqual([]);
+	});
+
+	it("leaves category and learningOutcomes intact on a partial update that omits them", async () => {
+		const course = await createTestCourse({
+			category: "Design",
+			learningOutcomes: ["Grid systems"],
+		});
+		const updated = await updateCourse(course._id.toString(), {
+			title: "Renamed",
+		});
+		expect(updated.title).toBe("Renamed");
+		expect(updated.category).toBe("Design");
+		expect(updated.learningOutcomes).toEqual(["Grid systems"]);
+	});
+});
