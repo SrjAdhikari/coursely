@@ -15,6 +15,20 @@ const accountLinks = [
 	{ label: "My courses", to: ROUTES.MY_COURSES },
 ];
 
+const linkClass = "block text-muted-foreground hover:text-primary";
+
+// Hash targets need a native anchor to scroll; react-router <Link> wouldn't.
+const FooterLink = ({ to, label }: { to: string; label: string }) =>
+	to.startsWith("#") ? (
+		<a href={to} className={linkClass}>
+			{label}
+		</a>
+	) : (
+		<Link to={to} className={linkClass}>
+			{label}
+		</Link>
+	);
+
 const HomeFooter = () => {
 	return (
 		<footer className="border-t border-border bg-card/40">
@@ -33,13 +47,7 @@ const HomeFooter = () => {
 					</p>
 
 					{productLinks.map((link) => (
-						<Link
-							key={link.label}
-							to={link.to}
-							className="block text-muted-foreground hover:text-primary"
-						>
-							{link.label}
-						</Link>
+						<FooterLink key={link.label} to={link.to} label={link.label} />
 					))}
 				</nav>
 
@@ -49,13 +57,7 @@ const HomeFooter = () => {
 					</p>
 
 					{accountLinks.map((link) => (
-						<Link
-							key={link.label}
-							to={link.to}
-							className="block text-muted-foreground hover:text-primary"
-						>
-							{link.label}
-						</Link>
+						<FooterLink key={link.label} to={link.to} label={link.label} />
 					))}
 				</nav>
 			</div>
