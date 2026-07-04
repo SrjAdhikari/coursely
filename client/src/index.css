@@ -189,5 +189,8 @@
 	h4,
 	h5 {
 		@apply font-heading;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+		line-height: 1.1;
 	}
 }

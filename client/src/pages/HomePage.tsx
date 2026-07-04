@@ -1,14 +1,36 @@
 //* src/pages/HomePage.tsx
 
-/**
- * Public landing page — the Phase 1 placeholder home screen.
- */
+import { useListPublishedCourses } from "@/hooks/useCourses";
+
+import HeroSection from "@/components/home/HeroSection";
+import FeaturedCourses from "@/components/home/FeaturedCourses";
+import ValueProps from "@/components/home/ValueProps";
+import ProductShowcase from "@/components/home/ProductShowcase";
+import BuiltStrip from "@/components/home/BuiltStrip";
+import TechMarquee from "@/components/home/TechMarquee";
+import HowItWorks from "@/components/home/HowItWorks";
+import FounderNote from "@/components/home/FounderNote";
+import HomeFaq from "@/components/home/HomeFaq";
+import CtaBand from "@/components/home/CtaBand";
+
+/** Public marketing homepage — content sections rendered inside HomeLayout. */
 const HomePage = () => {
+	const { data } = useListPublishedCourses();
+	const courseCount = data?.data?.length;
+
 	return (
-		<main className="flex min-h-screen flex-col items-center justify-center gap-2">
-			<h1 className="text-3xl font-bold">Coursely</h1>
-			<p className="text-muted-foreground">Learn to build for the web.</p>
-		</main>
+		<>
+			<HeroSection courseCount={courseCount} />
+			<FeaturedCourses />
+			<ValueProps />
+			<ProductShowcase />
+			<BuiltStrip />
+			<TechMarquee />
+			<HowItWorks />
+			<FounderNote />
+			<HomeFaq />
+			<CtaBand />
+		</>
 	);
 };
 

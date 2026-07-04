@@ -9,6 +9,7 @@ import AdminRoute from "@/routes/AdminRoute";
 
 import AdminLayout from "@/components/layout/AdminLayout";
 import StoreLayout from "@/components/layout/store/StoreLayout";
+import HomeLayout from "@/components/layout/home/HomeLayout";
 
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
@@ -33,7 +34,9 @@ import EnrollmentsPage from "@/pages/admin/EnrollmentsPage";
 const AppRoutes = () => {
 	return (
 		<Routes>
-			<Route path={ROUTES.ROOT} element={<HomePage />} />
+			<Route element={<HomeLayout />}>
+				<Route path={ROUTES.ROOT} element={<HomePage />} />
+			</Route>
 
 			{/* Public storefront */}
 			<Route element={<StoreLayout />}>
