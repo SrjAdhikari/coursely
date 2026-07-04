@@ -27,7 +27,7 @@ const ShowcaseRow = ({
 	<div className="text-center">
 		<div className="mx-auto mb-8 max-w-2xl">
 			<p className="text-xs uppercase tracking-widest text-primary">{kicker}</p>
-			<h3 className="mt-3 text-3xl">{heading}</h3>
+			<h3 className="mt-3 text-4xl">{heading}</h3>
 			<p className="mx-auto mt-3 max-w-prose text-muted-foreground">{intro}</p>
 
 			<ul className="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2">
@@ -280,7 +280,7 @@ const ProductShowcase = () => (
 			<p className="text-xs uppercase tracking-widest text-primary">
 				inside coursely
 			</p>
-			<h2 className="mt-3 text-3xl">A calm place to learn</h2>
+			<h2 className="mt-3 text-4xl">A calm place to learn</h2>
 			<p className="mt-3 text-muted-foreground">
 				The whole app is built around one idea: get out of your way so you can
 				keep making progress.

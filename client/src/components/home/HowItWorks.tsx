@@ -25,7 +25,7 @@ const HowItWorks = () => (
 				how it works
 			</p>
 
-			<h2 className="mt-3 text-3xl">
+			<h2 className="mt-3 text-4xl">
 				From browsing to building in three steps
 			</h2>
 

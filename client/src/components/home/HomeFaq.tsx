@@ -46,7 +46,7 @@ const HomeFaq = () => (
 			<p className="text-xs uppercase tracking-widest text-primary">
 				questions, answered
 			</p>
-			<h2 className="mt-3 text-3xl">Everything before you buy</h2>
+			<h2 className="mt-3 text-4xl">Everything before you buy</h2>
 		</div>
 
 		<Accordion

@@ -12,7 +12,7 @@ import ThemeToggle from "@/components/theme/theme-toggle";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 	cn(
-		"rounded-md px-3 py-1.5 transition-colors",
+		"rounded-full px-3 py-1.5 transition-colors",
 		isActive
 			? "bg-primary text-primary-foreground"
 			: "text-muted-foreground hover:bg-muted hover:text-primary",
@@ -32,7 +32,7 @@ const HomeHeader = () => {
 					<AppLogo className="text-lg" />
 				</Link>
 
-				<nav className="hidden items-center gap-1 text-sm md:flex">
+				<nav className="hidden items-center gap-1 rounded-full border border-border bg-card/60 p-1 text-sm shadow-sm backdrop-blur md:flex">
 					<Link to={ROUTES.CATALOG} className={anchorClass}>
 						Courses
 					</Link>

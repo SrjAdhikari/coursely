@@ -24,7 +24,7 @@ const FeaturedCourses = () => {
 						featured
 					</p>
 
-					<h2 className="mt-2 font-heading text-3xl">Start with a course</h2>
+					<h2 className="mt-2 font-heading text-4xl">Start with a course</h2>
 					<p className="mt-2 max-w-md text-muted-foreground">
 						Hand-picked tracks to take you from an empty file to something you
 						can ship.

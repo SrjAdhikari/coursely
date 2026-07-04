@@ -30,7 +30,7 @@ const BuiltStrip = () => (
 				how it's built
 			</p>
 
-			<h2 className="mt-3 text-3xl">
+			<h2 className="mt-3 text-4xl">
 				Fast to watch, cheap to run, honest by design
 			</h2>
 

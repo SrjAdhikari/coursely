@@ -37,7 +37,7 @@ const ValueProps = () => (
 				why coursely
 			</p>
 
-			<h2 className="mt-3 text-3xl">
+			<h2 className="mt-3 text-4xl">
 				Built for people who want to actually ship
 			</h2>
 
