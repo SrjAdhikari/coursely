@@ -100,12 +100,12 @@ describe("PreviewPlayerPage", () => {
 		).toBeInTheDocument();
 	});
 
-	it("sends a guest's Enroll CTA to signup", () => {
+	it("sends a guest's Enroll CTA to signup with a redirect back to the course", () => {
 		mockUseGetCourseBySlug.mockReturnValue(courseWith(true));
 		renderAt("/courses/react-basics/preview/l1");
 		expect(screen.getByRole("link", { name: /enroll now/i })).toHaveAttribute(
 			"href",
-			"/signup",
+			"/signup?redirect=%2Fcourses%2Freact-basics",
 		);
 	});
 

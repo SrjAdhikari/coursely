@@ -44,9 +44,13 @@ const PreviewPlayerPage = () => {
 		return <Navigate to={ROUTES.COURSE_DETAIL(course.slug)} replace />;
 	}
 
+	// Guests: carry a redirect back to the course so signup returns them here
+	// (GuestRoute honours ?redirect after auth), matching PurchaseCard's loginHref.
 	const enrollTo = isLoggedIn
 		? ROUTES.COURSE_DETAIL(course.slug)
-		: ROUTES.REGISTER;
+		: `${ROUTES.REGISTER}?redirect=${encodeURIComponent(
+				ROUTES.COURSE_DETAIL(course.slug),
+			)}`;
 
 	return (
 		<div className="mx-auto max-w-4xl">
