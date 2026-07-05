@@ -109,6 +109,18 @@ describe("PreviewPlayerPage", () => {
 		);
 	});
 
+	it("sends a logged-in user's Enroll CTA to the course detail page", () => {
+		mockUseGetCourseBySlug.mockReturnValue(courseWith(true));
+		mockUseCurrentUser.mockReturnValue({
+			data: { data: { id: "u1", role: "student" } },
+		});
+		renderAt("/courses/react-basics/preview/l1");
+		expect(screen.getByRole("link", { name: /enroll now/i })).toHaveAttribute(
+			"href",
+			"/courses/react-basics",
+		);
+	});
+
 	it("redirects a non-preview lesson to the course detail page", () => {
 		mockUseGetCourseBySlug.mockReturnValue(courseWith(false));
 		renderAt("/courses/react-basics/preview/l1");

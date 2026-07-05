@@ -42,4 +42,15 @@ describe("HeroSection", () => {
 		expect(screen.getByText("9")).toBeInTheDocument();
 		expect(screen.getByText("hours")).toBeInTheDocument();
 	});
+
+	it("omits a stat when its value is 0 (no zero counts shown)", () => {
+		render(
+			<MemoryRouter initialEntries={["/"]}>
+				<HeroSection courseCount={3} lessonCount={0} hours={0} />
+			</MemoryRouter>,
+		);
+		expect(screen.getByText("3")).toBeInTheDocument();
+		expect(screen.queryByText("lessons")).not.toBeInTheDocument();
+		expect(screen.queryByText("hours")).not.toBeInTheDocument();
+	});
 });

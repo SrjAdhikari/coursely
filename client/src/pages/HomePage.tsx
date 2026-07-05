@@ -23,7 +23,8 @@ const HomePage = () => {
 		(total, course) => total + course.lessonCount,
 		0,
 	);
-	const hours = Math.round(
+
+	const hours = Math.floor(
 		courses.reduce((total, course) => total + course.totalDuration, 0) / 3600,
 	);
 
