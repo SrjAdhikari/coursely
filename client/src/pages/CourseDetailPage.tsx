@@ -135,14 +135,14 @@ const CourseDetailPage = () => {
 					{course.description}
 				</p>
 
-				{course.learningOutcomes.length > 0 && (
+				{(course.learningOutcomes ?? []).length > 0 && (
 					<section className="mt-8">
 						<h2 className="mb-3.5 font-heading text-xl font-semibold">
 							What you'll learn
 						</h2>
 
 						<ul className="grid gap-2.5 sm:grid-cols-2">
-							{course.learningOutcomes.map((outcome) => (
+							{(course.learningOutcomes ?? []).map((outcome) => (
 								<li
 									key={outcome}
 									className="flex items-start gap-2.5 text-sm text-foreground"
