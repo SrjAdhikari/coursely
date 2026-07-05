@@ -1,12 +1,12 @@
 ---
 status: approved
-version: 1.2
-date: 2026-06-23
+version: 1.3
+date: 2026-07-05
 ---
 
 # 07 — Implementation Plan
 
-Sequenced build order under the real constraints (`01`): small team, lean timeline. The set
+Sequenced build order (`01`). The set
 of decisions is frozen in `01`–`06`; this doc turns them into an order of operations and
 parks everything deferred.
 
@@ -14,10 +14,10 @@ parks everything deferred.
 
 **Deploy a thin slice end-to-end first, then thicken it.** Get an (almost empty)
 client + API + DB + R2 wired together and *live on the real domain* before building
-features. Rationale: the hard, demo-killing problems — CORS, the SameSite cookie across
+features. Rationale: the hard, launch-blocking problems — CORS, the SameSite cookie across
 subdomains, the Stripe webhook reaching a public URL — are *integration* problems that
 only appear once deployed. Discovering them early is cheap; discovering them at the end is
-expensive. Everything after M0 is layered onto a thing already proven to deploy. Mandatory
+expensive. Everything after M0 is layered onto a thing already proven to deploy. Core
 capabilities come before any optional extras.
 
 ## 2. Milestones
@@ -43,6 +43,8 @@ capabilities come before any optional extras.
   **course trailer** (ungated) (FR-21, FR-4, FR-3).
 - Seed 3 courses (HTML/CSS/JS), ≥5 lessons each, 2–3 preview each.
 - **Exit:** public can browse/search/preview; admin can manage the catalog and upload video.
+- **Status — delivered:** public homepage, course pages (curriculum, category, "What you'll
+  learn" outcomes), preview/lock flags, and the anonymous preview player are live.
 
 ### M2 — Payments + gating
 - Stripe Checkout session creation at the course's stored price, **stamping
@@ -56,16 +58,18 @@ capabilities come before any optional extras.
 
 ### M3 — Learning experience + hardening
 - Video player: keyboard shortcuts, fullscreen, seek (FR-14).
-- Progress: save `{lessonId, seconds}` ~10s, resume, ≥90% complete (FR-15/16).
+- Progress: save `positionSeconds` ~10–15s, resume, **≥95%** server-derived sticky complete (FR-15/16).
 - Student dashboard: My Courses, Continue Learning, progress %, recently watched (FR-18).
 - Security pass: Origin/Referer CSRF check on mutations, input-validation sweep,
   consistent error shape.
-- Responsive/mobile polish (NFR-8); a few tests (auth, webhook/payment, access control).
+- Responsive/mobile polish (NFR-7); a few tests (auth, webhook/payment, access control).
 - **Exit:** dashboard + resume work; security controls verifiably in place.
+- **Status — delivered:** progress tracking (save/resume + sticky auto-complete), the
+  LearnPage player, and the student dashboard are live.
 
-### M4 — Polish + buffer
-- Final live-demo smoke test of the whole flow.
-- Optional extras **only if time remains:** HLS/multi-quality, PiP/speed/subtitles, more
+### M4 — Polish
+- Final pre-launch smoke test of the whole flow.
+- Optional extras **for a later release:** HLS/multi-quality, PiP/speed/subtitles, more
   tests.
 
 ## 3. Deferred Backlog
@@ -79,8 +83,8 @@ reviews/ratings/certificates/coupons/refunds.
 
 - Exact keyboard-shortcut set; whether speed/PiP/subtitles make the cut (`02`).
 - Whether HLS/multi-quality is attempted as a stretch (`01`/`02`).
-- `courses.lessonCount` cached field vs computed (`04`).
+- **Resolved** — `courses.lessonCount` (+ `totalDuration`) are computed on read, not cached (`04`).
 - Pagination on admin lists (`05`).
-- `/me/dashboard` as one aggregate endpoint vs composed client-side (`05`).
+- **Resolved** — the learning dashboard ships as one aggregate endpoint, `GET /api/learning/overview` (`05`).
 
 All are implementation-time decisions; none blocks starting M0.

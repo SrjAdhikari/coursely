@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.1
-date: 2026-06-23
+version: 1.2
+date: 2026-07-05
 ---
 
 # 01 — Overview
@@ -13,7 +13,7 @@ publicly, pay once per course, and gain lifetime access to that course's video l
 with progress tracking and resume playback.
 
 The design priority is **defensible judgment over feature volume**: a small, secure,
-cost-efficient system whose every decision can be explained, rather than a large system
+focused system whose every decision is deliberate and documented, rather than a large system
 that cannot be justified.
 
 ## Problem & Context
@@ -44,10 +44,8 @@ access. No per-resource ownership checks are required.
    watch, entirely on the deployed site with no local setup.
 2. **Secure** — payment verification, access control, and content protection are
    demonstrably designed, not bolted on. (The top priority.)
-3. **Cost-efficient** — target operating cost ≈ ₹600/month, with the architecture's cost
-   trade-offs written down and justified.
-4. **Explainable** — every architectural, database, auth, payment, and storage decision
-   can be defended in a technical discussion.
+3. **Well-documented** — every architectural, database, auth, payment, and storage decision
+   is written down with its rationale and trade-offs.
 
 ## Scope
 
@@ -86,11 +84,9 @@ enrollments flow through Stripe Checkout — there is no separate free-enrollmen
 
 ## Key Constraints
 
-- **Time:** a lean delivery timeline drives mandatory-first sequencing and managed
-  services over self-managed infrastructure.
-- **Cost ceiling:** ≈ ₹600/month. Drives zero-egress video storage and free-tier
-  managed services.
-- **Small team:** every layer must be explainable by the people who built it.
+- **Operational simplicity:** managed services over self-managed infrastructure —
+  minimize undifferentiated ops and hardening work.
+- **Maintainability:** every layer is straightforward to reason about and operate.
 
 ## Audience
 
