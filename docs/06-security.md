@@ -54,10 +54,12 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
 - *Client elevates its own role / sets fields it shouldn't* (mass assignment). → Schema
   validation strips unknown fields; `role` is forced to `student` on signup and can only
   change via the admin route; never trusted from a request body (NFR-1, NFR-4).
-- *Client forges progress / self-declares completion.* → Completion is **derived
-  server-side** — the client posts only `{ positionSeconds }`; the server marks a lesson
-  complete at **≥95%** (sticky — never un-set) and ignores any client-supplied `completed`
-  flag, so progress/completion cannot be forged from the request body (NFR-4).
+- *Client sets a field it shouldn't (self-declared completion).* → The client **cannot set
+  `completed`** — it posts only `{ positionSeconds }`, and the server derives completion
+  itself (**≥95%**, sticky), ignoring any client-supplied `completed` flag (NFR-4).
+  Completion is inferred from the reported position, so an enrolled user could over-report
+  progress on **their own** lessons — this affects only their own progress display (no
+  access, payment, or cross-user impact), so it is accepted.
 - *Tampering in transit.* → TLS on every hop (static host, API host, R2, Stripe).
 - *NoSQL (operator) injection* — an attacker smuggles a query operator into a field,
   e.g. POSTing `{"email": {"$ne": null}}` to a login body to match any user. → Schema

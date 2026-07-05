@@ -154,9 +154,10 @@ on each login (session-fixation defense, `06`).
   check `enrollments.{userId, lesson.courseId}` exists → mint or 403. `courseId` on the
   lesson means no extra section/course lookup.
 - **Progress save** — upsert `progress.{userId, lessonId}` every ~10s.
-- **Dashboard** — `enrollments` by `userId` → courses; per-course % from `progress`
-  grouped by `courseId`; "continue" = lowest-`order` incomplete lesson; "recently watched"
-  = `progress` by `{userId, updatedAt desc}`.
+- **Dashboard** — `enrollments` by `userId` → courses; per-course % from the caller's
+  `progress` (loaded via `{userId, courseId}`); "continue" = lowest-`order` incomplete
+  lesson; "recently watched" = those same rows sorted by `updatedAt` **in memory** (bounded
+  per-user set) and capped.
 
 ## 6. Integrity & Lifecycle
 
