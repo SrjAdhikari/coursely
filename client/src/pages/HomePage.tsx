@@ -16,11 +16,25 @@ import CtaBand from "@/components/home/CtaBand";
 /** Public marketing homepage — content sections rendered inside HomeLayout. */
 const HomePage = () => {
 	const { data } = useListPublishedCourses();
-	const courseCount = data?.data?.length;
+	const courses = data?.data ?? [];
+
+	const courseCount = courses.length;
+	const lessonCount = courses.reduce(
+		(total, course) => total + course.lessonCount,
+		0,
+	);
+
+	const hours = Math.floor(
+		courses.reduce((total, course) => total + course.totalDuration, 0) / 3600,
+	);
 
 	return (
 		<>
-			<HeroSection courseCount={courseCount} />
+			<HeroSection
+				courseCount={courseCount}
+				lessonCount={lessonCount}
+				hours={hours}
+			/>
 			<FeaturedCourses />
 			<ValueProps />
 			<ProductShowcase />

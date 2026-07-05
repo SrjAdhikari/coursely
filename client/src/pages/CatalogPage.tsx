@@ -1,6 +1,7 @@
 //* src/pages/CatalogPage.tsx
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import { Search, BookOpen, SearchX } from "lucide-react";
 
 import ROUTES from "@/routes/paths";
@@ -11,24 +12,71 @@ import CourseCard from "@/components/common/CourseCard";
 import Loader from "@/components/Loader";
 import LoadFailed from "@/components/common/LoadFailed";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
+import { Button } from "@/components/ui/button";
 
-/** Public catalog — published courses with a client-side search. */
+const ALL_CATEGORIES = "All";
+
+/** Public catalog — published courses with a URL-synced search + category chips. */
 const CatalogPage = () => {
 	const { data, isLoading, isError, refetch } = useListPublishedCourses();
-	const [query, setQuery] = useState("");
+	const [searchParams, setSearchParams] = useSearchParams();
+	const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
+
+	// The URL is the source of truth for the query (so a shared /courses?q=… link
+	// lands pre-filtered); typing syncs back with replace so it doesn't stack history.
+	const query = searchParams.get("q") ?? "";
+
+	const setQuery = useCallback(
+		(value: string) => {
+			setSearchParams(
+				(params) => {
+					if (value) params.set("q", value);
+					else params.delete("q");
+					return params;
+				},
+				{ replace: true },
+			);
+		},
+		[setSearchParams],
+	);
 
 	const courses = useMemo(() => data?.data ?? [], [data]);
+
+	const categories = useMemo(() => {
+		const distinct = new Set(
+			courses
+				.map((course) => course.category)
+				.filter((category): category is string => Boolean(category)),
+		);
+
+		return [ALL_CATEGORIES, ...distinct];
+	}, [courses]);
+
 	const filteredCourses = useMemo(() => {
 		const searchTerm = query.trim().toLowerCase();
-		if (!searchTerm) return courses;
 
-		return courses.filter((course) =>
-			[course.title, course.instructorName, course.description]
-				.join(" ")
-				.toLowerCase()
-				.includes(searchTerm),
-		);
-	}, [courses, query]);
+		const filtered = courses.filter((course) => {
+			const matchesCategory =
+				selectedCategory === ALL_CATEGORIES ||
+				course.category === selectedCategory;
+
+			const searchableText =
+				`${course.title} ${course.instructorName} ${course.description}`.toLowerCase();
+
+			const matchesSearch =
+				searchTerm === "" || searchableText.includes(searchTerm);
+
+			const isMatch = matchesCategory && matchesSearch;
+			return isMatch;
+		});
+
+		return filtered;
+	}, [courses, query, selectedCategory]);
+
+	const clearSearch = useCallback(() => {
+		setQuery("");
+		setSelectedCategory(ALL_CATEGORIES);
+	}, [setQuery]);
 
 	if (isLoading) return <Loader className="min-h-[80vh]" />;
 	if (isError)
@@ -64,6 +112,22 @@ const CatalogPage = () => {
 				</div>
 			</div>
 
+			{categories.length > 1 && (
+				<div className="mb-6 flex flex-wrap gap-2">
+					{categories.map((category) => (
+						<Button
+							key={category}
+							type="button"
+							size="sm"
+							variant={selectedCategory === category ? "default" : "outline"}
+							onClick={() => setSelectedCategory(category)}
+						>
+							{category}
+						</Button>
+					))}
+				</div>
+			)}
+
 			{filteredCourses.length === 0 ? (
 				courses.length === 0 ? (
 					<EmptyStatePlaceholder
@@ -75,8 +139,12 @@ const CatalogPage = () => {
 					<EmptyStatePlaceholder
 						icon={SearchX}
 						title="No courses match your search"
-						description="Try a different term."
-					/>
+						description="Try a different term or clear your filters."
+					>
+						<Button variant="outline" onClick={clearSearch}>
+							Clear search
+						</Button>
+					</EmptyStatePlaceholder>
 				)
 			) : (
 				<div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -88,6 +156,8 @@ const CatalogPage = () => {
 							instructorName={course.instructorName}
 							thumbnailUrl={course.thumbnailUrl}
 							description={course.description}
+							category={course.category}
+							lessonCount={course.lessonCount}
 							meta={formatPrice(course.price)}
 						/>
 					))}

@@ -90,6 +90,9 @@ export interface PublicCoursePayload {
 	thumbnailUrl: string;
 	price: number;
 	currency: string;
+	category?: string;
+	lessonCount: number;
+	totalDuration: number;
 	isPublished: boolean;
 	createdAt: string;
 }
@@ -116,5 +119,6 @@ export interface PublicSectionPayload {
 
 /** A published course with its full public curriculum (no trailerKey/videoKey). */
 export interface PublicCourseDetailPayload extends PublicCoursePayload {
+	learningOutcomes: string[];
 	sections: PublicSectionPayload[];
 }

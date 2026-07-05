@@ -2,6 +2,7 @@
 
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import CurriculumAccordion from "@/components/course/CurriculumAccordion";
 import type { PublicSectionPayload } from "@/types/course.types";
 
@@ -72,9 +73,19 @@ const mixedSections: PublicSectionPayload[] = [
 	},
 ];
 
+const renderAccordion = (
+	sectionsData: PublicSectionPayload[],
+	slug = "react-basics",
+) =>
+	render(
+		<MemoryRouter>
+			<CurriculumAccordion sections={sectionsData} slug={slug} />
+		</MemoryRouter>,
+	);
+
 describe("CurriculumAccordion", () => {
 	it("renders sections and their lessons with durations", () => {
-		render(<CurriculumAccordion sections={sections} />);
+		renderAccordion(sections);
 		expect(screen.getByText("Getting Started")).toBeInTheDocument();
 		expect(screen.getByText("Welcome")).toBeInTheDocument();
 		expect(screen.getByText("Setup")).toBeInTheDocument();
@@ -83,23 +94,34 @@ describe("CurriculumAccordion", () => {
 	});
 
 	it("shows the lesson count and total time per section", () => {
-		render(<CurriculumAccordion sections={sections} />);
+		renderAccordion(sections);
 		// 372s + 843s = 1215s → "20m"
 		expect(screen.getByText(/2 lessons · 20m/i)).toBeInTheDocument();
 	});
 
 	it("marks free-preview lessons", () => {
-		render(<CurriculumAccordion sections={sections} />);
+		renderAccordion(sections);
 		expect(screen.getByText("Preview")).toBeInTheDocument();
 	});
 
 	it("labels locked lessons with an enroll-to-unlock tag", () => {
-		render(<CurriculumAccordion sections={sections} />);
+		renderAccordion(sections);
 		expect(screen.getByText(/enroll to unlock/i)).toBeInTheDocument();
 	});
 
+	it("links preview lessons to the preview route and leaves locked lessons unlinked", () => {
+		renderAccordion(sections);
+		expect(screen.getByRole("link", { name: /welcome/i })).toHaveAttribute(
+			"href",
+			"/courses/react-basics/preview/l1",
+		);
+		expect(
+			screen.queryByRole("link", { name: /setup/i }),
+		).not.toBeInTheDocument();
+	});
+
 	it("opens preview sections by default and collapses fully-locked ones", () => {
-		render(<CurriculumAccordion sections={mixedSections} />);
+		renderAccordion(mixedSections);
 		// Both section headers always render (accordion triggers).
 		expect(screen.getByText("Free Intro")).toBeInTheDocument();
 		expect(screen.getByText("Locked Deep Dive")).toBeInTheDocument();
@@ -110,7 +132,7 @@ describe("CurriculumAccordion", () => {
 	});
 
 	it("renders a fallback when there are no sections", () => {
-		render(<CurriculumAccordion sections={[]} />);
+		renderAccordion([]);
 		expect(screen.getByText(/curriculum coming soon/i)).toBeInTheDocument();
 	});
 });

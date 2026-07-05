@@ -30,4 +30,27 @@ describe("HeroSection", () => {
 		renderHeroSection();
 		expect(screen.getByText("12")).toBeInTheDocument();
 	});
+
+	it("shows the real lessons and hours stats when provided", () => {
+		render(
+			<MemoryRouter initialEntries={["/"]}>
+				<HeroSection courseCount={12} lessonCount={48} hours={9} />
+			</MemoryRouter>,
+		);
+		expect(screen.getByText("48")).toBeInTheDocument();
+		expect(screen.getByText("lessons")).toBeInTheDocument();
+		expect(screen.getByText("9")).toBeInTheDocument();
+		expect(screen.getByText("hours")).toBeInTheDocument();
+	});
+
+	it("omits a stat when its value is 0 (no zero counts shown)", () => {
+		render(
+			<MemoryRouter initialEntries={["/"]}>
+				<HeroSection courseCount={3} lessonCount={0} hours={0} />
+			</MemoryRouter>,
+		);
+		expect(screen.getByText("3")).toBeInTheDocument();
+		expect(screen.queryByText("lessons")).not.toBeInTheDocument();
+		expect(screen.queryByText("hours")).not.toBeInTheDocument();
+	});
 });

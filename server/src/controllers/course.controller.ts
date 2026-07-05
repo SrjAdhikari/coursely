@@ -72,6 +72,8 @@ const createCourseHandler: RequestHandler = async (req, res) => {
 		price,
 		currency,
 		isPublished,
+		category,
+		learningOutcomes,
 	} = req.body;
 
 	const course = await createCourse({
@@ -82,6 +84,8 @@ const createCourseHandler: RequestHandler = async (req, res) => {
 		price,
 		currency,
 		isPublished,
+		category,
+		learningOutcomes,
 	});
 
 	res.status(CREATED).json({
@@ -103,6 +107,8 @@ const updateCourseHandler: RequestHandler<{ id: string }> = async (
 		price,
 		currency,
 		isPublished,
+		category,
+		learningOutcomes,
 	} = req.body;
 
 	const course = await updateCourse(req.params.id, {
@@ -113,6 +119,8 @@ const updateCourseHandler: RequestHandler<{ id: string }> = async (
 		price,
 		currency,
 		isPublished,
+		category,
+		learningOutcomes,
 	});
 
 	res.status(OK).json({

@@ -4,7 +4,7 @@ import { useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { UserRound, Layers, Clock } from "lucide-react";
+import { UserRound, Layers, Clock, Check } from "lucide-react";
 
 import ROUTES from "@/routes/paths";
 
@@ -17,6 +17,7 @@ import CurriculumAccordion from "@/components/course/CurriculumAccordion";
 import PurchaseCard from "@/components/course/PurchaseCard";
 import Loader from "@/components/Loader";
 import LoadFailed from "@/components/common/LoadFailed";
+import { Badge } from "@/components/ui/badge";
 
 import { formatRuntime } from "@/lib/duration";
 import { redirectTo } from "@/lib/navigation";
@@ -62,6 +63,11 @@ const CourseDetailPage = () => {
 		[lessons],
 	);
 
+	const firstPreviewLesson = useMemo(
+		() => lessons.find((lesson) => lesson.isPreview),
+		[lessons],
+	);
+
 	const handleBuy = useCallback(() => {
 		if (!course || isCheckingAccess) return;
 		startCheckout(course._id, {
@@ -96,6 +102,12 @@ const CourseDetailPage = () => {
 	return (
 		<div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.7fr_0.9fr]">
 			<div>
+				{course.category && (
+					<Badge variant="accent" className="mb-3">
+						{course.category}
+					</Badge>
+				)}
+
 				<h1 className="font-heading text-3xl font-semibold leading-tight">
 					{course.title}
 				</h1>
@@ -111,29 +123,52 @@ const CourseDetailPage = () => {
 						{course.sections.length} sections · {lessonCount} lessons
 					</span>
 
-					<span className="flex items-center gap-1.5">
-						<Clock className="size-3.5" />
-						{formatRuntime(totalDuration)}
-					</span>
+					{totalDuration > 0 && (
+						<span className="flex items-center gap-1.5">
+							<Clock className="size-3.5" />
+							{formatRuntime(totalDuration)}
+						</span>
+					)}
 				</div>
 
 				<p className="mt-5 leading-relaxed text-foreground">
 					{course.description}
 				</p>
 
+				{(course.learningOutcomes ?? []).length > 0 && (
+					<section className="mt-8">
+						<h2 className="mb-3.5 font-heading text-xl font-semibold">
+							What you'll learn
+						</h2>
+
+						<ul className="grid gap-2.5 sm:grid-cols-2">
+							{(course.learningOutcomes ?? []).map((outcome) => (
+								<li
+									key={outcome}
+									className="flex items-start gap-2.5 text-sm text-foreground"
+								>
+									<Check className="mt-0.5 size-4 shrink-0 text-primary" />
+									{outcome}
+								</li>
+							))}
+						</ul>
+					</section>
+				)}
+
 				<h2 className="mb-3.5 mt-8 font-heading text-xl font-semibold">
 					Curriculum
 				</h2>
-				<CurriculumAccordion sections={course.sections} />
+				<CurriculumAccordion sections={course.sections} slug={course.slug} />
 			</div>
 
 			<div className="lg:sticky lg:top-24 lg:self-start">
-				<PurchaseCard	
+				<PurchaseCard
 					slug={course.slug}
 					price={course.price}
 					lessonCount={lessonCount}
 					totalDuration={totalDuration}
 					previewLessonCount={previewLessonCount}
+					firstPreviewLessonId={firstPreviewLesson?._id}
 					status={status}
 					onBuy={handleBuy}
 					isBuying={isPending}

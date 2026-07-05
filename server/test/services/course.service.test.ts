@@ -240,3 +240,69 @@ describe("course.service — admin reads", () => {
 		});
 	});
 });
+
+describe("course.service — category & learning outcomes", () => {
+	it("persists category and learningOutcomes on create", async () => {
+		const created = await createCourse({
+			...NEW_COURSE,
+			category: "Web Development",
+			learningOutcomes: ["Build a REST API", "Deploy to production"],
+		});
+		expect(created.category).toBe("Web Development");
+		expect(created.learningOutcomes).toEqual([
+			"Build a REST API",
+			"Deploy to production",
+		]);
+	});
+
+	it("defaults learningOutcomes to an empty array when omitted", async () => {
+		const created = await createCourse(NEW_COURSE);
+		expect(created.learningOutcomes).toEqual([]);
+	});
+
+	it("leaves category and learningOutcomes intact on a partial update that omits them", async () => {
+		const course = await createTestCourse({
+			category: "Design",
+			learningOutcomes: ["Grid systems"],
+		});
+		const updated = await updateCourse(course._id.toString(), {
+			title: "Renamed",
+		});
+		expect(updated.title).toBe("Renamed");
+		expect(updated.category).toBe("Design");
+		expect(updated.learningOutcomes).toEqual(["Grid systems"]);
+	});
+});
+
+describe("course.service — lesson stats aggregation", () => {
+	it("folds lessonCount and totalDuration into each listed course", async () => {
+		const withLessons = await createTestCourse({ slug: "with-lessons" });
+		const firstSection = await createTestSection(withLessons._id, { order: 0 });
+		const secondSection = await createTestSection(withLessons._id, { order: 1 });
+		await createTestLesson(firstSection._id, withLessons._id, { order: 0, duration: 60 });
+		await createTestLesson(firstSection._id, withLessons._id, { order: 1, duration: 120 });
+		// A video-less lesson contributes to the count but adds 0 seconds.
+		await createTestLesson(secondSection._id, withLessons._id, { order: 0, duration: 0 });
+		await createTestCourse({ slug: "no-lessons" });
+
+		const courses = await listPublishedCourses();
+		const enriched = courses.find((course) => course.slug === "with-lessons")!;
+		const empty = courses.find((course) => course.slug === "no-lessons")!;
+
+		expect(enriched.lessonCount).toBe(3);
+		expect(enriched.totalDuration).toBe(180);
+		expect(empty.lessonCount).toBe(0);
+		expect(empty.totalDuration).toBe(0);
+	});
+
+	it("totals lessonCount and totalDuration on the detail in memory", async () => {
+		const course = await createTestCourse({ slug: "detail-stats" });
+		const section = await createTestSection(course._id, { order: 0 });
+		await createTestLesson(section._id, course._id, { order: 0, duration: 90 });
+		await createTestLesson(section._id, course._id, { order: 1, duration: 30 });
+
+		const detail = await getCourseBySlug("detail-stats");
+		expect(detail.lessonCount).toBe(2);
+		expect(detail.totalDuration).toBe(120);
+	});
+});

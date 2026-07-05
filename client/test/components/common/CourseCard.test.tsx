@@ -44,4 +44,15 @@ describe("CourseCard", () => {
 		renderCard();
 		expect(screen.queryByText("View")).not.toBeInTheDocument();
 	});
+
+	it("renders the lesson count and category when provided", () => {
+		renderCard({ lessonCount: 12, category: "Web Development" });
+		expect(screen.getByText("12 lessons")).toBeInTheDocument();
+		expect(screen.getByText("Web Development")).toBeInTheDocument();
+	});
+
+	it("omits the lesson count and category when not provided", () => {
+		renderCard();
+		expect(screen.queryByText(/lessons?$/i)).not.toBeInTheDocument();
+	});
 });

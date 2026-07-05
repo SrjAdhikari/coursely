@@ -43,6 +43,10 @@ const courseData = {
 	currency: "INR",
 	isPublished: true,
 	createdAt: "2026-06-01T00:00:00.000Z",
+	category: "Frontend",
+	lessonCount: 1,
+	totalDuration: 300,
+	learningOutcomes: ["Build components", "Manage state"],
 	sections: [
 		{
 			_id: "s1",
@@ -157,6 +161,44 @@ describe("CourseDetailPage", () => {
 		});
 		renderPage();
 		expect(screen.getByText(/enrolled · full access/i)).toBeInTheDocument();
+	});
+
+	it("renders the What you'll learn outcomes", () => {
+		renderPage();
+		expect(screen.getByText(/what you'll learn/i)).toBeInTheDocument();
+		expect(screen.getByText("Build components")).toBeInTheDocument();
+		expect(screen.getByText("Manage state")).toBeInTheDocument();
+	});
+
+	it("links a Watch free preview entry to the preview route", () => {
+		renderPage();
+		expect(
+			screen.getByRole("link", { name: /watch free preview/i }),
+		).toHaveAttribute("href", "/courses/react-basics/preview/l1");
+	});
+
+	it("hides the runtime line when the total duration is 0", () => {
+		mockUseGetCourseBySlug.mockReturnValue({
+			data: {
+				data: {
+					...courseData,
+					totalDuration: 0,
+					sections: [
+						{
+							...courseData.sections[0],
+							lessons: [
+								{ ...courseData.sections[0].lessons[0], duration: 0 },
+							],
+						},
+					],
+				},
+			},
+			isLoading: false,
+			isError: false,
+			refetch: vi.fn(),
+		});
+		renderPage();
+		expect(screen.queryByText(/of content/i)).not.toBeInTheDocument();
 	});
 
 	it("shows not-found on error", () => {

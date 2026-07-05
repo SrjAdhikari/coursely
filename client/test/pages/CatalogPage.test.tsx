@@ -12,7 +12,12 @@ vi.mock("@/hooks/useCourses", () => ({
 
 import CatalogPage from "@/pages/CatalogPage";
 
-const course = (id: string, title: string, instructorName: string) => ({
+const course = (
+	id: string,
+	title: string,
+	instructorName: string,
+	category?: string,
+) => ({
 	_id: id,
 	title,
 	slug: title.toLowerCase().replace(/\s+/g, "-"),
@@ -23,6 +28,9 @@ const course = (id: string, title: string, instructorName: string) => ({
 	currency: "INR",
 	isPublished: true,
 	createdAt: "2026-06-01T00:00:00.000Z",
+	category,
+	lessonCount: 5,
+	totalDuration: 1800,
 });
 
 const ok = (data: unknown[]) => ({
@@ -35,6 +43,13 @@ const ok = (data: unknown[]) => ({
 const renderPage = () =>
 	render(
 		<MemoryRouter>
+			<CatalogPage />
+		</MemoryRouter>,
+	);
+
+const renderPageAt = (entry: string) =>
+	render(
+		<MemoryRouter initialEntries={[entry]}>
 			<CatalogPage />
 		</MemoryRouter>,
 	);
@@ -96,5 +111,32 @@ describe("CatalogPage", () => {
 		renderPage();
 		expect(screen.getByRole("alert")).toBeInTheDocument();
 		expect(screen.getByText(/couldn't load courses/i)).toBeInTheDocument();
+	});
+
+	it("seeds the search box from ?q= and pre-filters", () => {
+		renderPageAt("/courses?q=react");
+		expect(screen.getByLabelText(/search courses/i)).toHaveValue("react");
+		expect(screen.getByText("React Basics")).toBeInTheDocument();
+		expect(screen.queryByText("Node APIs")).not.toBeInTheDocument();
+	});
+
+	it("filters by a category chip", async () => {
+		mockUseListPublishedCourses.mockReturnValue(
+			ok([
+				course("1", "React Basics", "Aarav", "Frontend"),
+				course("2", "Node APIs", "Rohan", "Backend"),
+			]),
+		);
+		renderPageAt("/courses");
+		await userEvent.click(screen.getByRole("button", { name: "Backend" }));
+		expect(screen.queryByText("React Basics")).not.toBeInTheDocument();
+		expect(screen.getByText("Node APIs")).toBeInTheDocument();
+	});
+
+	it("clears the search from the no-results empty state", async () => {
+		renderPageAt("/courses?q=zzz");
+		expect(screen.getByText(/no courses match/i)).toBeInTheDocument();
+		await userEvent.click(screen.getByRole("button", { name: /clear search/i }));
+		expect(screen.getByText("React Basics")).toBeInTheDocument();
 	});
 });
