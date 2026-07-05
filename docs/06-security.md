@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.1
-date: 2026-06-23
+version: 1.2
+date: 2026-07-05
 ---
 
 # 06 — Security / Threat Model
@@ -54,6 +54,12 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
 - *Client elevates its own role / sets fields it shouldn't* (mass assignment). → Schema
   validation strips unknown fields; `role` is forced to `student` on signup and can only
   change via the admin route; never trusted from a request body (NFR-1, NFR-4).
+- *Client sets a field it shouldn't (self-declared completion).* → The client **cannot set
+  `completed`** — it posts only `{ positionSeconds }`, and the server derives completion
+  itself (**≥95%**, sticky), ignoring any client-supplied `completed` flag (NFR-4).
+  Completion is inferred from the reported position, so an enrolled user could over-report
+  progress on **their own** lessons — this affects only their own progress display (no
+  access, payment, or cross-user impact), so it is accepted.
 - *Tampering in transit.* → TLS on every hop (static host, API host, R2, Stripe).
 - *NoSQL (operator) injection* — an attacker smuggles a query operator into a field,
   e.g. POSTing `{"email": {"$ne": null}}` to a login body to match any user. → Schema
@@ -97,23 +103,28 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
   origin.
 - *Security headers.* → `helmet` sets standard headers (HSTS, no-sniff, frame options,
   CSP — see §3) (NFR-6).
-- *Residual:* single API instance, no WAF/HA in v1 — accepted at demo scale (`09` risks
+- *Residual:* single API instance, no WAF/HA in v1 — accepted at launch scale (`09` risks
   in `03`).
 
 ### E — Elevation of Privilege / Broken Access Control (authorization · OWASP A01)
 - *Student reaches admin routes.* → `requireAdmin` middleware on every management route;
   role checked server-side from the session, `403` on failure (FR-9, NFR-1). The RBAC
   matrix in `05 §4` is the audit of this.
-- *IDOR — reading another user's data* (progress, enrollments, dashboard). → Every
-  per-user query is scoped to `req.user._id` **from the session**, never a client-supplied
-  `userId`. No "fetch my data" endpoint accepts a user identifier from the client.
+- *IDOR — reading another user's data* (progress, enrollments, `learning/overview`). → Every
+  per-user query — including the `GET /api/learning/overview` aggregate — is scoped to
+  `req.user._id` **from the session**, never a client-supplied `userId`. No "fetch my data"
+  endpoint accepts a user identifier from the client.
 - *IDOR — reconciling another user's checkout* via `GET /api/checkout/:sessionId/status`.
   → The endpoint asserts the retrieved session's `metadata.userId` matches the session caller
   before returning any status; a mismatch is `403 UNAUTHORIZED_ACCESS`, so a guessed
   `sessionId` can't leak another buyer's purchase or trigger their enrollment.
-- *Watching a paid lesson without enrolling.* → `playback-url` mints a signed GET only
-  after confirming `isPreview` or an enrollment row for `{session user, lesson.courseId}`;
-  otherwise `403` (FR-17).
+- *Watching a paid lesson without enrolling.* → `playback-url` (`optionalAuth`) mints a
+  signed GET only after confirming `isPreview` or an enrollment row for
+  `{session user, lesson.courseId}`; a paid lesson without a session is `401`, without an
+  enrollment `403` (FR-17). **Anonymous preview is intentional** — a preview lesson on a
+  **published** course plays for a logged-out visitor, and admins bypass. A
+  **draft/unpublished** course returns `404` to non-admins, so gating leaks no course
+  existence.
 
 ## 3. Cross-Cutting Controls
 
@@ -135,7 +146,7 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
 - **Input validation:** schema validation at every route boundary; reject-on-failure (NFR-4).
 - **Transport:** HTTPS everywhere; `Secure` cookies; HSTS via helmet.
 
-### OWASP mapping (quick reference for the call)
+### OWASP mapping (quick reference)
 
 | Concern | Where handled |
 |---|---|
@@ -148,10 +159,10 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
 
 ## 4. Residual Risks (accepted for v1)
 
-- No HA / WAF / multi-region — single API instance; acceptable at demo scale.
+- No HA / WAF / multi-region — single API instance; acceptable at launch scale.
 - No 2FA / MFA — out of scope for v1; password + rate limiting only.
 - Bot protection limited to rate limiting (no CAPTCHA).
 - Audit logging is payment-focused, not exhaustive.
 
 Each is a conscious scope decision (`01`), not an oversight — revisit if the platform
-moves beyond demo scale.
+moves beyond launch scale.

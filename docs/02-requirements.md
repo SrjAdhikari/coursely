@@ -1,22 +1,24 @@
 ---
 status: approved
-version: 1.2
-date: 2026-06-23
+version: 1.3
+date: 2026-07-05
 ---
 
 # 02 — Requirements
 
 Each requirement is testable. **FR** = functional (what it does), **NFR** = non-functional
-(how well — performance, security, cost, and operability).
+(how well — performance, security, and operability).
 
 ## Functional Requirements
 
 ### Public / unauthenticated
 
 - **FR-1** Anyone can view the homepage without logging in: hero section, featured
-  courses, and a grid of course cards (thumbnail, title, instructor, price).
+  courses, and a grid of course cards (thumbnail, title, instructor, price, category,
+  lesson count, and total duration).
 - **FR-2** Anyone can search courses from the homepage; search matches course **title,
-  description, and instructor name** (Mongo text index). No lesson-level search.
+  description, and instructor name** (Mongo text index). No lesson-level search. Catalog
+  category chips and filtering are derived client-side from the loaded course list.
 - **FR-3** Anyone can open a course page without logging in and see: title, thumbnail,
   instructor, description, curriculum (sections + lesson list), lesson count, price,
   **preview lessons** (FR-4), and a distinct **trailer / introduction video**. The trailer
@@ -26,6 +28,8 @@ Each requirement is testable. **FR** = functional (what it does), **NFR** = non-
 
 - **FR-4** Lessons flagged `isPreview` are playable by anyone (no login, no enrollment).
   All other lessons are locked.
+- **FR-24** Each course carries a **category** and a list of **learning outcomes** ("What
+  you'll learn"); both are shown on the public course page.
 
 ### Authentication & authorization
 
@@ -49,12 +53,15 @@ Each requirement is testable. **FR** = functional (what it does), **NFR** = non-
 
 - **FR-14** Enrolled (or preview) lessons play in a modern player supporting: keyboard
   shortcuts, fullscreen, and seek.
-- **FR-15** Playback position is saved per lesson (`{lessonId, seconds}` posted ~every
-  10s); reopening a lesson resumes at the saved second.
-- **FR-16** A lesson auto-marks **complete at ≥90% watched**; course progress = completed
-  lessons ÷ total lessons.
+- **FR-15** Playback position is saved per lesson (`positionSeconds`, posted ~every
+  10–15s); reopening a lesson resumes at the saved second.
+- **FR-16** A lesson auto-marks **complete at ≥95% watched** — the completion is
+  **server-derived** and **sticky** (once complete it never un-completes); course progress =
+  completed lessons ÷ total lessons.
 - **FR-17** Video is served from a short-lived signed URL minted per request, gated on
   enrollment (preview lessons excepted).
+- **FR-25** A logged-out visitor can watch a course's free **preview lesson** in a dedicated
+  anonymous preview player at `/courses/:slug/preview/:lessonId` (no login, no enrollment).
 
 ### Student dashboard
 
@@ -93,26 +100,21 @@ Each requirement is testable. **FR** = functional (what it does), **NFR** = non-
 - **NFR-6** Standard hardening: rate limiting on auth endpoints, security headers (helmet),
   CORS locked to the known frontend origin.
 
-### Cost
-
-- **NFR-7** Total operating cost ≤ ~₹600/month at demo scale. Video egress cost = ₹0
-  (R2 zero-egress). All other services on free tiers except the paid (always-on) API host.
-
 ### Performance & availability
 
-- **NFR-8** The deployed site is usable with no local setup, on desktop and mobile
+- **NFR-7** The deployed site is usable with no local setup, on desktop and mobile
   (responsive).
-- **NFR-9** No cold-start delay on demo (paid always-on API host — does not sleep).
-- **NFR-10** Public pages render quickly (CDN-served frontend; course list is a single
+- **NFR-8** No cold-start delay in normal operation (the always-on API host does not sleep).
+- **NFR-9** Public pages render quickly (CDN-served frontend; course list is a single
   indexed query).
 
 ### Maintainability
 
-- **NFR-11** Clear separation of concerns (routes / controllers / services / models);
-  config via environment; documented in these spec docs so decisions are explainable.
+- **NFR-10** Clear separation of concerns (routes / controllers / services / models);
+  config via environment; documented in these spec docs so decisions are easy to reason about.
 
 ## Open Questions (deferred, tracked in 07-plan)
 
-- Exact keyboard-shortcut set and whether speed/PiP/subtitles (bonus FR-14 extras) make
-  the cut — decided during implementation based on remaining time.
+- Exact keyboard-shortcut set and whether speed/PiP/subtitles (optional FR-14 extras) make
+  the cut — decided during implementation.
 - Whether HLS/multi-quality (out of scope per Overview) is attempted as a stretch.

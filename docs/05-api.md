@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.4
-date: 2026-06-28
+version: 1.5
+date: 2026-07-05
 ---
 
 # 05 — API
@@ -14,8 +14,9 @@ primary evidence of access-control design (NFR-1).
 > below: **`POST /api/auth/register`** (not `/signup`); **admin catalog writes live under
 > `/api/admin/*`** (e.g. `POST /api/admin/courses`, `PATCH /api/admin/courses/:id`), not the flat
 > `/courses` paths in §2/§4; the auth guard is **`authenticate`** (not `requireAuth`). The
-> **Progress** endpoints and the aggregate **`GET /api/me/dashboard`** are the only sections still
-> planned for a later release; **Media**, **Payments**, and **Enrollment** are live. The shipped
+> **Progress** endpoints are live, and the aggregate dashboard shipped as
+> **`GET /api/learning/overview`** (not `/api/me/dashboard`); **Media**, **Payments**, and
+> **Enrollment** are live too. The shipped
 > auth + catalog + admin surface is documented in
 > [`authentication/auth-and-sessions.md`](./authentication/auth-and-sessions.md),
 > [`authorization/rbac.md`](./authorization/rbac.md), and
@@ -47,10 +48,12 @@ primary evidence of access-control design (NFR-1).
 - `GET  /api/auth/me` — current user `{ id, name, email, role }`.
 
 ### Catalog (public reads, admin writes)
-- `GET  /api/courses` — list published courses; `?q=` runs text search (FR-2).
+- `GET  /api/courses` — list published courses; each item carries `category`, `lessonCount`, and
+  `totalDuration` (tallied from the lessons). `?q=` runs a Mongo `$text` relevance search over
+  title / description / instructor; a whitespace-only `q` skips search (newest-first) (FR-2).
 - `GET  /api/courses/:slug` — course detail + curriculum (sections + lessons with
-  `isPreview`/locked flags). **`videoKey` / `trailerKey` are never returned** (the trailer is
-  fetched via its own signed-URL route below).
+  `isPreview`/locked flags), plus `learningOutcomes`. **`videoKey` / `trailerKey` are never
+  returned** (the trailer is fetched via its own signed-URL route below).
 - `POST /api/courses` — create course.
 - `PATCH /api/courses/:id` — edit course.
 - `DELETE /api/courses/:id` — delete course; **`409` if any enrollment exists** (unpublish
@@ -63,9 +66,12 @@ primary evidence of access-control design (NFR-1).
   `lessons/{id}/source.mp4`. API never receives video bytes (FR-21, AD-4).
 - `PATCH /api/lessons/:id/video` — admin; store the `videoKey` after the browser's direct
   PUT to R2 succeeds.
-- `GET  /api/lessons/:id/playback-url` — mint presigned **GET** (~1 h TTL, per request) **iff** the
-  lesson `isPreview` (anyone) **or** the requester is authenticated and enrolled in the
-  lesson's course; otherwise `403` (FR-17, NFR-3).
+- `GET  /api/lessons/:id/playback-url` — **`optionalAuth`**; mint presigned **GET** (~1 h TTL, per
+  request). A **preview** lesson on a **published** course is playable by anyone, including
+  anonymous callers; a **paid** lesson requires auth + enrollment (`401 UNAUTHORIZED_ACCESS` if
+  anonymous, then `403 NOT_ENROLLED`). A **draft/unpublished** course returns `404` for non-admins
+  (no existence leak); **admins bypass** the gate. `videoKey` existence is checked only **after**
+  the gate (FR-17, NFR-3).
 - `POST /api/courses/:id/trailer-url` — **admin**; mint presigned **PUT** for
   `courses/{id}/trailer.mp4`; store `trailerKey` via `PATCH /api/courses/:id` after the
   browser's direct PUT to R2 succeeds.
@@ -101,14 +107,20 @@ primary evidence of access-control design (NFR-1).
   (FR-23). Paginated: `page` (default `1`) and `limit` (default `10`, **max `100`**), newest-first.
   Returns `{ items, pagination { page, limit, total, totalPages } }`, each item's `userId`
   populated `{ name, email }` and `courseId` `{ title }`.
-- `GET /api/me/dashboard` — **student**; aggregated: enrolled courses, per-course progress %,
-  "continue learning" (next incomplete lesson), recently watched (FR-18). *(Planned — not yet
-  built.)*
+- `GET /api/learning/overview` — **student** (`authenticate`, caller-scoped); one aggregate for the
+  learning dashboard. Returns `{ stats, courses, recentLessons }` — `stats` (enrolled, inProgress,
+  completed, lessonsCompleted, totalLessons, overallPercent); `courses[]` (per-course
+  completedLessons / percentComplete / `state` + `nextLesson` "continue learning");
+  `recentLessons[]` (newest-first, capped 4) (FR-18).
 
 ### Progress
-- `PUT /api/progress/:lessonId` — student; upsert `{ seconds, completed }`. Allowed only
-  if enrolled in the lesson's course (or lesson is preview). Idempotent upsert (FR-15/16).
-- `GET /api/progress/course/:courseId` — student; progress map for a course's player UI.
+All authenticated; `userId` is always taken from the session (IDOR-safe).
+- `PUT /api/progress/:lessonId` — **student**; body is `{ positionSeconds }` **only** — the client
+  **cannot** set `completed`; the server derives it. Enrollment-gated (`403 NOT_ENROLLED`,
+  `404 LESSON_NOT_FOUND`). Atomic upsert (FR-15/16).
+- `GET /api/progress/course/:courseId` — **student**; enrollment-gated, strictly
+  `{userId, courseId}`-scoped; returns an array of `{ lessonId, positionSeconds, completed }` for
+  the player UI.
 
 ### Admin — student management
 - `GET   /api/admin/students` — list students.
@@ -159,7 +171,7 @@ checkout.session.completed` replays events for the idempotency/amount tests.
 | `POST /auth/logout`, `GET /auth/me` | ✗ | ✓ | ✓ |
 | `POST /checkout` | ✗ | ✓ | ✓ |
 | `GET /checkout/:sessionId/status` | ✗ | ✓ (own session) | ✓ |
-| `PUT /progress/:lessonId`, `GET /me/dashboard`, `GET /enrollments/me` | ✗ | ✓ | ✓ |
+| `PUT /progress/:lessonId`, `GET /progress/course/:courseId` (own data), `GET /learning/overview`, `GET /enrollments/me` | ✗ | ✓ | ✓ |
 | `POST/PATCH/DELETE /courses`, `/sections`, `/lessons` | ✗ | ✗ | ✓ |
 | `POST /lessons/:id/upload-url`, `PATCH /lessons/:id/video` | ✗ | ✗ | ✓ |
 | `GET /admin/enrollments`, `/admin/students*` | ✗ | ✗ | ✓ |
@@ -168,7 +180,7 @@ checkout.session.completed` replays events for the idempotency/amount tests.
 ## 5. Open Questions (tracked in 07-plan)
 
 - Pagination on admin lists: **`/admin/enrollments` now ships `?page&limit`** (default `10`,
-  max `100`); `/admin/students` pagination is still deferred — trivial dataset at demo scale,
+  max `100`); `/admin/students` pagination is still deferred — trivial dataset at launch scale,
   add only if the list grows.
-- Whether `/me/dashboard` is one aggregate endpoint or composed client-side from smaller
-  reads — decided during implementation by what keeps the dashboard query simple.
+- **Resolved.** The learning dashboard ships as **one aggregate endpoint**,
+  `GET /api/learning/overview`, rather than being composed client-side from smaller reads.

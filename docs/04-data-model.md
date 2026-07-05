@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.3
-date: 2026-06-28
+version: 1.4
+date: 2026-07-05
 ---
 
 # 04 — Data Model
@@ -10,10 +10,10 @@ Conceptual → logical → physical for MongoDB (Atlas). Seven collections, **re
 (not embedded), chosen so lessons are first-class documents that progress and signed-URL
 playback can address by `_id`.
 
-> **Implementation note.** Two clarifications on the running system: **`sessions._id` is a Mongo
-> `ObjectId`** (the cookie carries its `.toString()`), not a custom string; and the **`progress`**
-> collection is planned for a later release and is not built yet. The live `users` / `sessions` /
-> `courses` / `sections` / `lessons` / `enrollments` shapes match the Mongoose models documented in
+> **Implementation note.** One clarification on the running system: **`sessions._id` is a Mongo
+> `ObjectId`** (the cookie carries its `.toString()`), not a custom string. The live `users` /
+> `sessions` / `courses` / `sections` / `lessons` / `enrollments` / `progress` shapes match the
+> Mongoose models documented in
 > [`architecture/database-schema.md`](./architecture/database-schema.md).
 
 ## 1. Modeling Approach
@@ -60,6 +60,8 @@ on each login (session-fixation defense, `06`).
 | `title` | string | |
 | `slug` | string | **unique**; `slugify(title)` + short collision suffix; used in public course URL |
 | `description` | string | |
+| `category` | string? | optional free-text label (≤60 chars); no fixed enum |
+| `learningOutcomes` | string[] | "what you'll learn" bullets; default `[]` |
 | `instructorName` | string | display string only — no instructor *role* exists |
 | `thumbnailUrl` | string | image URL |
 | `trailerKey` | string? | R2 object key `courses/{_id}/trailer.mp4` for the intro/trailer (FR-3); private — served via an **ungated** signed GET, never a public URL |
@@ -67,6 +69,9 @@ on each login (session-fixation defense, `06`).
 | `currency` | string | `INR` |
 | `isPublished` | boolean | drafts hidden from public listing |
 | `createdAt` / `updatedAt` | Date | |
+
+> **Computed on read.** `lessonCount` / `totalDuration` are **not stored** on the course — they're
+> tallied from the `lessons` collection at read time.
 
 ### sections
 
@@ -88,7 +93,7 @@ on each login (session-fixation defense, `06`).
 | `order` | int | sort within section |
 | `isPreview` | boolean | `true` → playable without enrollment (FR-4) |
 | `videoKey` | string | R2 object key `lessons/{_id}/source.mp4`; never a public URL |
-| `duration` | int | seconds; denominator for ≥90%-complete calc (FR-16) |
+| `duration` | int | seconds; denominator for the ≥95%-complete calc (FR-16) |
 
 ### enrollments
 
@@ -116,10 +121,11 @@ on each login (session-fixation defense, `06`).
 | `_id` | ObjectId | |
 | `userId` | ObjectId → users | |
 | `lessonId` | ObjectId → lessons | |
-| `courseId` | ObjectId → courses | **denormalized** — dashboard aggregates progress per course in one query |
-| `seconds` | int | last playback position; resume point (FR-15) |
-| `completed` | boolean | set `true` at ≥90% watched (FR-16) |
-| `updatedAt` | Date | powers "recently watched" sort (FR-18) |
+| `courseId` | ObjectId → courses | **denormalized, server-set** — never client-supplied; lets the learning overview aggregate progress per course in one query |
+| `positionSeconds` | int | last playback position; resume point (FR-15); default `0`, min `0` |
+| `completed` | boolean | **server-derived**, never client-set; `true` at **≥95%** watched (`positionSeconds / lesson.duration >= 0.95`); **sticky** — once `true` it never un-completes (FR-16) |
+| `completedAt` | Date? | stamped **once**, on the first `false`→`true` transition |
+| `createdAt` / `updatedAt` | Date | `updatedAt` powers "recently watched" sort (FR-18) |
 
 ## 3. Relationships
 
@@ -137,20 +143,21 @@ on each login (session-fixation defense, `06`).
 - `sections.courseId`; `lessons.courseId`; `lessons.sectionId` — curriculum & playback reads.
 - `enrollments.{userId, courseId}` — **unique compound** → duplicate enrollment is
   physically impossible; makes the Stripe webhook **idempotent** on retries (FR-13, NFR-2).
-- `progress.{userId, lessonId}` — **unique compound**; progress writes are upserts.
-- `progress.{userId, updatedAt}` — "recently watched" query.
+- `progress.{userId, lessonId}` — **unique compound** (the upsert target); progress writes are upserts.
+- `progress.{userId, courseId}` — non-unique; per-course progress reads.
 
 ## 5. Access Patterns (what justifies the shape)
 
-- **Homepage / search** — `courses.find({isPublished:true})` + text search; single indexed query (NFR-10).
+- **Homepage / search** — `courses.find({isPublished:true})` + text search; single indexed query (NFR-9).
 - **Course page** — one `course` + its `sections` + `lessons` by `courseId`; preview flags drive lock icons.
 - **Playback auth** — given `lessonId`: load lesson → if `isPreview` mint signed GET; else
   check `enrollments.{userId, lesson.courseId}` exists → mint or 403. `courseId` on the
   lesson means no extra section/course lookup.
 - **Progress save** — upsert `progress.{userId, lessonId}` every ~10s.
-- **Dashboard** — `enrollments` by `userId` → courses; per-course % from `progress`
-  grouped by `courseId`; "continue" = lowest-`order` incomplete lesson; "recently watched"
-  = `progress` by `{userId, updatedAt desc}`.
+- **Dashboard** — `enrollments` by `userId` → courses; per-course % from the caller's
+  `progress` (loaded via `{userId, courseId}`); "continue" = lowest-`order` incomplete
+  lesson; "recently watched" = those same rows sorted by `updatedAt` **in memory** (bounded
+  per-user set) and capped.
 
 ## 6. Integrity & Lifecycle
 
@@ -166,5 +173,5 @@ on each login (session-fixation defense, `06`).
 
 ## 7. Open Questions (tracked in 07-plan)
 
-- Whether to add a `courses.lessonCount` cached field vs computing it — deferred; cheap to
-  compute at demo scale, revisit only if the course page shows N+1 behavior.
+- **Resolved.** `courses.lessonCount` (and `totalDuration`) are **computed on read** from the
+  `lessons` collection, not cached on the course document.
