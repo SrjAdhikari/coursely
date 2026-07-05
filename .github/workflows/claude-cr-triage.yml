@@ -28,6 +28,9 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # CodeRabbit (a bot) triggers this workflow by design; opt in so the action's
+          # non-human-actor guard allows it. The job's `if:` already limits it to CR.
+          allowed_bots: "*"
           prompt: |
             CodeRabbit reviewed ${{ github.repository }} PR #${{ github.event.pull_request.number }}.
             Fetch its unresolved inline review comments, verify EACH against the current code

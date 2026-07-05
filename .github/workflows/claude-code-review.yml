@@ -13,6 +13,9 @@ permissions:
 
 jobs:
   review:
+    # Skip runs triggered by a GITHUB_TOKEN/bot push (e.g. @claude committing a fix):
+    # the PR was already reviewed on open, and the non-human-actor guard would fail it.
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       # Required: the action restores trusted config from origin/<base> before
