@@ -17,6 +17,7 @@ import RegisterPage from "@/pages/RegisterPage";
 import DashboardPage from "@/pages/DashboardPage";
 import CatalogPage from "@/pages/CatalogPage";
 import CourseDetailPage from "@/pages/CourseDetailPage";
+import PreviewPlayerPage from "@/pages/PreviewPlayerPage";
 import CheckoutSuccessPage from "@/pages/CheckoutSuccessPage";
 import CheckoutCancelPage from "@/pages/CheckoutCancelPage";
 import MyCoursesPage from "@/pages/MyCoursesPage";
@@ -42,6 +43,10 @@ const AppRoutes = () => {
 			<Route element={<StoreLayout />}>
 				<Route path={ROUTES.CATALOG} element={<CatalogPage />} />
 				<Route path="/courses/:slug" element={<CourseDetailPage />} />
+				<Route
+					path="/courses/:slug/preview/:lessonId"
+					element={<PreviewPlayerPage />}
+				/>
 			</Route>
 
 			{/* Logged-out only */}
