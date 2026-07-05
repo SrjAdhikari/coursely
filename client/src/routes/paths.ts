@@ -11,6 +11,8 @@ const ROUTES = {
 	REGISTER: "/signup",
 	CATALOG: "/courses",
 	COURSE_DETAIL: (slug: string) => `/courses/${slug}`,
+	COURSE_PREVIEW: (slug: string, lessonId: string) =>
+		`/courses/${slug}/preview/${lessonId}`,
 
 	// Authenticated
 	DASHBOARD: "/dashboard",

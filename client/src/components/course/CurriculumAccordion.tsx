@@ -1,5 +1,6 @@
 //* src/components/course/CurriculumAccordion.tsx
 
+import { Link } from "react-router";
 import { Lock, PlayCircle } from "lucide-react";
 
 import {
@@ -9,15 +10,19 @@ import {
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+
+import ROUTES from "@/routes/paths";
 import { formatLessonDuration, formatRuntime } from "@/lib/duration";
 import type { PublicSectionPayload } from "@/types/course.types";
 
 interface CurriculumAccordionProps {
 	sections: PublicSectionPayload[];
+	slug: string;
 }
 
-/** Read-only curriculum: sections collapse to reveal preview/locked lessons. */
-const CurriculumAccordion = ({ sections }: CurriculumAccordionProps) => {
+/** Read-only curriculum: sections collapse to reveal preview/locked lessons.
+ *  Preview lessons link to the anonymous preview player; locked lessons don't. */
+const CurriculumAccordion = ({ sections, slug }: CurriculumAccordionProps) => {
 	if (sections.length === 0) {
 		return (
 			<p className="text-sm text-muted-foreground">
@@ -65,31 +70,53 @@ const CurriculumAccordion = ({ sections }: CurriculumAccordionProps) => {
 
 						<AccordionContent>
 							<ul className="divide-y divide-border">
-								{section.lessons.map((lesson) => (
-									<li key={lesson._id} className="flex items-center gap-3 py-2.5">
-										{lesson.isPreview ? (
-											<PlayCircle aria-hidden className="size-4 text-primary" />
-										) : (
-											<Lock
-												aria-hidden
-												className="size-4 text-muted-foreground"
-											/>
-										)}
+								{section.lessons.map((lesson) => {
+									const rowContent = (
+										<>
+											{lesson.isPreview ? (
+												<PlayCircle
+													aria-hidden
+													className="size-4 text-primary"
+												/>
+											) : (
+												<Lock
+													aria-hidden
+													className="size-4 text-muted-foreground"
+												/>
+											)}
 
-										<span className="flex-1 text-sm">{lesson.title}</span>
-										{lesson.isPreview ? (
-											<Badge variant="accent">Preview</Badge>
-										) : (
+											<span className="flex-1 text-sm">{lesson.title}</span>
+											{lesson.isPreview ? (
+												<Badge variant="accent">Preview</Badge>
+											) : (
+												<span className="text-xs text-muted-foreground">
+													Enroll to unlock
+												</span>
+											)}
+
 											<span className="text-xs text-muted-foreground">
-												Enroll to unlock
+												{formatLessonDuration(lesson.duration)}
 											</span>
-										)}
+										</>
+									);
 
-										<span className="text-xs text-muted-foreground">
-											{formatLessonDuration(lesson.duration)}
-										</span>
-									</li>
-								))}
+									return (
+										<li key={lesson._id}>
+											{lesson.isPreview ? (
+												<Link
+													to={ROUTES.COURSE_PREVIEW(slug, lesson._id)}
+													className="flex items-center gap-3 py-2.5 transition-colors hover:text-primary"
+												>
+													{rowContent}
+												</Link>
+											) : (
+												<div className="flex items-center gap-3 py-2.5">
+													{rowContent}
+												</div>
+											)}
+										</li>
+									);
+								})}
 							</ul>
 						</AccordionContent>
 					</AccordionItem>

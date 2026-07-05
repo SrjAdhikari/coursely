@@ -1,7 +1,7 @@
 //* src/components/course/PurchaseCard.tsx
 
 import { Link } from "react-router";
-import { Check, CircleCheck } from "lucide-react";
+import { Check, CircleCheck, PlayCircle } from "lucide-react";
 
 import ROUTES from "@/routes/paths";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ interface PurchaseCardProps {
 	lessonCount: number;
 	totalDuration: number;
 	previewLessonCount: number;
+	firstPreviewLessonId?: string;
 	status: PurchaseStatus;
 	onBuy: () => void;
 	isBuying: boolean;
@@ -37,6 +38,7 @@ const PurchaseCard = ({
 	lessonCount,
 	totalDuration,
 	previewLessonCount,
+	firstPreviewLessonId,
 	status,
 	onBuy,
 	isBuying,
@@ -52,6 +54,7 @@ const PurchaseCard = ({
 	const priceAmount = formattedPrice.slice(1);
 
 	const showPreviewLine = status !== "enrolled" && previewLessonCount > 0;
+	const showPreviewLink = status !== "enrolled" && !!firstPreviewLessonId;
 
 	return (
 		<aside className="overflow-hidden rounded-xl border border-input bg-card">
@@ -76,7 +79,7 @@ const PurchaseCard = ({
 				)}
 			</div>
 
-			<div className="px-5 pb-4">
+			<div className="space-y-3 px-5 pb-4">
 				{status === "guest" && (
 					<Button asChild className="w-full">
 						<Link to={loginHref}>Log in to enroll</Link>
@@ -94,14 +97,23 @@ const PurchaseCard = ({
 				)}
 
 				{status === "enrolled" && (
-					<div className="space-y-3">
+					<>
 						<div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5 text-sm text-primary">
 							<CircleCheck className="size-4" /> Enrolled · full access unlocked
 						</div>
 						<Button asChild variant="outline" className="w-full">
 							<Link to={ROUTES.MY_COURSES}>Go to My Courses</Link>
 						</Button>
-					</div>
+					</>
+				)}
+
+				{showPreviewLink && (
+					<Button asChild variant="outline" className="w-full">
+						<Link to={ROUTES.COURSE_PREVIEW(slug, firstPreviewLessonId!)}>
+							<PlayCircle className="size-4" />
+							Watch free preview
+						</Link>
+					</Button>
 				)}
 			</div>
 
@@ -111,10 +123,12 @@ const PurchaseCard = ({
 					{lessonCount} video lessons
 				</li>
 
-				<li className="flex items-center gap-2.5">
-					<Check className="size-4 text-primary" />
-					{formatRuntime(totalDuration)} of content
-				</li>
+				{totalDuration > 0 && (
+					<li className="flex items-center gap-2.5">
+						<Check className="size-4 text-primary" />
+						{formatRuntime(totalDuration)} of content
+					</li>
+				)}
 
 				<li className="flex items-center gap-2.5">
 					<Check className="size-4 text-primary" />
