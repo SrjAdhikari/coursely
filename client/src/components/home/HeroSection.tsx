@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 
 interface HeroSectionProps {
 	courseCount?: number;
+	lessonCount?: number;
+	hours?: number;
 }
 
-const HeroSection = ({ courseCount }: HeroSectionProps) => {
+const HeroSection = ({ courseCount, lessonCount, hours }: HeroSectionProps) => {
 	const navigate = useNavigate();
 	const [query, setQuery] = useState("");
 
@@ -37,7 +39,8 @@ const HeroSection = ({ courseCount }: HeroSectionProps) => {
 			</h1>
 
 			<p className="mx-auto mt-5 max-w-3xl text-lg text-muted-foreground">
-				Project-driven courses in web development. Buy a course once, own it forever, and pick up exactly where you left off on any device.
+				Project-driven courses in web development. Buy a course once, own it
+				forever, and pick up exactly where you left off on any device.
 			</p>
 
 			<form
@@ -59,18 +62,43 @@ const HeroSection = ({ courseCount }: HeroSectionProps) => {
 				</Button>
 			</form>
 
-			{courseCount ? (
+			{courseCount || lessonCount || hours ? (
 				<dl className="mx-auto mt-8 flex justify-center gap-10">
-					<div>
-						<dt className="sr-only">Courses</dt>
-						<dd className="font-heading text-3xl text-primary">
-							{courseCount}
-						</dd>
+					{courseCount ? (
+						<div>
+							<dt className="sr-only">Courses</dt>
+							<dd className="font-heading text-3xl text-primary">
+								{courseCount}
+							</dd>
 
-						<p className="text-xs uppercase tracking-wider text-muted-foreground">
-							courses
-						</p>
-					</div>
+							<p className="text-xs uppercase tracking-wider text-muted-foreground">
+								courses
+							</p>
+						</div>
+					) : null}
+
+					{lessonCount ? (
+						<div>
+							<dt className="sr-only">Lessons</dt>
+							<dd className="font-heading text-3xl text-primary">
+								{lessonCount}
+							</dd>
+
+							<p className="text-xs uppercase tracking-wider text-muted-foreground">
+								lessons
+							</p>
+						</div>
+					) : null}
+
+					{hours ? (
+						<div>
+							<dt className="sr-only">Hours</dt>
+							<dd className="font-heading text-3xl text-primary">{hours}</dd>
+							<p className="text-xs uppercase tracking-wider text-muted-foreground">
+								hours
+							</p>
+						</div>
+					) : null}
 				</dl>
 			) : null}
 		</section>
