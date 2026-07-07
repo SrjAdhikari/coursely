@@ -4,6 +4,7 @@ import { describe, it, expect } from "vitest";
 import {
 	courseFormSchema,
 	parseLearningOutcomes,
+	buildCoursePayload,
 } from "@/schemas/course.schema";
 
 const valid = {
@@ -115,5 +116,38 @@ describe("parseLearningOutcomes", () => {
 
 	it("returns an empty array for a blank textarea", () => {
 		expect(parseLearningOutcomes("   \n  \n")).toEqual([]);
+	});
+});
+
+describe("buildCoursePayload", () => {
+	const formValues = {
+		title: "React from Scratch",
+		description: "Hooks and state.",
+		instructorName: "Asha Rai",
+		thumbnailUrl: "https://cdn.coursely.app/r.png",
+		priceRupees: "999",
+		isPublished: false,
+		category: "Web Development",
+		learningOutcomesText: "Build components\nManage state",
+	};
+
+	it("maps rupees to paise, parses outcomes, and keeps a category", () => {
+		const payload = buildCoursePayload(formValues);
+		expect(payload.price).toBe(99900);
+		expect(payload.learningOutcomes).toEqual([
+			"Build components",
+			"Manage state",
+		]);
+		expect(payload.category).toBe("Web Development");
+	});
+
+	it("always sends an outcomes array and omits a blank category", () => {
+		const payload = buildCoursePayload({
+			...formValues,
+			category: "  ",
+			learningOutcomesText: "",
+		});
+		expect(payload.learningOutcomes).toEqual([]);
+		expect(payload).not.toHaveProperty("category");
 	});
 });

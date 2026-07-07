@@ -1,11 +1,6 @@
 //* src/pages/admin/CourseFormPage.tsx
 
-import { useEffect, useRef } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, useParams, Link } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { Link, useNavigate, useParams } from "react-router";
 
 import VideoUploadField from "@/components/admin/VideoUploadField";
 import FormField from "@/components/form/FormField";
@@ -15,28 +10,8 @@ import LoadFailed from "@/components/common/LoadFailed";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/Loader";
 
-import {
-	useGetCourse,
-	useCreateCourse,
-	useUpdateCourse,
-} from "@/hooks/useCourses";
-import { useVideoUpload } from "@/hooks/useVideoUpload";
-
+import useCourseForm from "@/hooks/useCourseForm";
 import ROUTES from "@/routes/paths";
-import type { CreateCoursePayload } from "@/types/course.types";
-import {
-	courseFormSchema,
-	parseLearningOutcomes,
-	type CourseFormData,
-} from "@/schemas/course.schema";
-
-import { rupeesToPaise, paiseToRupees } from "@/lib/currency";
-import { COURSES_KEY, courseKey } from "@/lib/queryKeys";
-
-import {
-	createCourseTrailerUploadUrl,
-	setCourseTrailer,
-} from "@/api/media.api";
 
 /** Mirror of the server's slug rule — preview only; the server is the source of truth. */
 const slugify = (value: string) =>
@@ -48,83 +23,28 @@ const slugify = (value: string) =>
 		.replace(/-+/g, "-");
 
 const CourseFormPage = () => {
-	const { id } = useParams();
-	const isEdit = !!id;
-
 	const navigate = useNavigate();
-	const queryClient = useQueryClient();
+	const { id } = useParams();
 
 	const {
-		data: existing,
-		isLoading: courseLoading,
-		isError: courseLoadError,
+		isEdit,
+		isLoading,
+		isError,
 		refetch,
-	} = useGetCourse(id ?? "");
-
-	const { mutate: create, isPending: creating } = useCreateCourse();
-	const { mutate: update, isPending: updating } = useUpdateCourse();
-
-	// Trailer upload (edit mode only — a course id must exist to mint an upload URL).
-	const trailerUpload = useVideoUpload({
-		mint: () => createCourseTrailerUploadUrl(id ?? "").then((res) => res.data),
-		confirm: () => setCourseTrailer(id ?? ""),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: courseKey(id ?? "") });
-			toast.success("Trailer uploaded");
-		},
-		onError: (message) => toast.error(message),
-	});
-
-	const {
 		register,
-		handleSubmit,
-		control,
-		setValue,
-		reset,
-		trigger,
-		formState: { errors, isValid },
-	} = useForm<CourseFormData>({
-		mode: "onChange",
-		resolver: zodResolver(courseFormSchema),
-		defaultValues: {
-			title: "",
-			description: "",
-			instructorName: "",
-			thumbnailUrl: "",
-			priceRupees: "",
-			isPublished: false,
-			category: "",
-			learningOutcomesText: "",
-		},
-	});
+		errors,
+		isValid,
+		title,
+		isPublished,
+		setPublished,
+		trailerUpload,
+		hasTrailer,
+		pending,
+		submitForm,
+	} = useCourseForm(id);
 
-	// Prefill once per loaded course — keyed by id (not a one-shot flag) so
-	// switching the :id param re-hydrates the form, while a refetch of the same
-	// course never clobbers in-progress edits.
-	const prefilledId = useRef<string | null>(null);
-	useEffect(() => {
-		const course = existing?.data;
-		if (!course || prefilledId.current === course._id) return;
-		prefilledId.current = course._id;
-
-		reset({
-			title: course.title,
-			description: course.description,
-			instructorName: course.instructorName,
-			thumbnailUrl: course.thumbnailUrl,
-			priceRupees: String(paiseToRupees(course.price)),
-			isPublished: course.isPublished,
-			category: course.category ?? "",
-			learningOutcomesText: (course.learningOutcomes ?? []).join("\n"),
-		});
-		void trigger(); // revalidate so isValid reflects the prefilled course
-	}, [existing, reset, trigger]);
-
-	const title = useWatch({ control, name: "title" });
-	const isPublished = useWatch({ control, name: "isPublished" });
-
-	if (isEdit && courseLoading) return <Loader className="min-h-[60vh]" />;
-	if (isEdit && courseLoadError)
+	if (isLoading) return <Loader className="min-h-[60vh]" />;
+	if (isError)
 		return (
 			<LoadFailed
 				title="Couldn't load this course"
@@ -134,52 +54,6 @@ const CourseFormPage = () => {
 				backLabel="Back to courses"
 			/>
 		);
-
-	const onSubmit = (values: CourseFormData) => {
-		// Outcomes always sent (empty [] clears); category omitted when blank (server rejects "").
-		const learningOutcomes = parseLearningOutcomes(
-			values.learningOutcomesText ?? "",
-		);
-
-		const category = values.category?.trim();
-
-		const payload: CreateCoursePayload = {
-			title: values.title,
-			description: values.description,
-			instructorName: values.instructorName,
-			thumbnailUrl: values.thumbnailUrl,
-			price: rupeesToPaise(Number(values.priceRupees)),
-			isPublished: values.isPublished,
-			learningOutcomes,
-			...(category ? { category } : {}),
-		};
-
-		if (isEdit && id) {
-			update(
-				{ id, payload },
-				{
-					onSuccess: () => {
-						queryClient.invalidateQueries({ queryKey: COURSES_KEY });
-						queryClient.invalidateQueries({ queryKey: courseKey(id) });
-						toast.success("Course updated");
-						navigate(ROUTES.ADMIN_COURSES);
-					},
-					onError: (err) => toast.error(err.message),
-				},
-			);
-		} else {
-			create(payload, {
-				onSuccess: (res) => {
-					queryClient.invalidateQueries({ queryKey: COURSES_KEY });
-					toast.success("Course created");
-					navigate(ROUTES.adminCourseEdit(res.data._id));
-				},
-				onError: (err) => toast.error(err.message),
-			});
-		}
-	};
-
-	const pending = creating || updating;
 
 	return (
 		<section>
@@ -195,7 +69,7 @@ const CourseFormPage = () => {
 			</h1>
 
 			<form
-				onSubmit={handleSubmit(onSubmit)}
+				onSubmit={submitForm}
 				noValidate
 				className="max-w-3xl rounded-xl border border-border bg-card p-7"
 			>
@@ -275,22 +149,17 @@ const CourseFormPage = () => {
 						/>
 					</div>
 
-					{isEdit && id && (
+					{isEdit && (
 						<div className="sm:col-span-2">
 							<VideoUploadField
 								label="Trailer"
 								state={trailerUpload}
-								hasVideo={!!existing?.data.trailerKey}
+								hasVideo={hasTrailer}
 							/>
 						</div>
 					)}
 
-					<StatusSegment
-						value={isPublished}
-						onChange={(value) =>
-							setValue("isPublished", value, { shouldValidate: true })
-						}
-					/>
+					<StatusSegment value={isPublished} onChange={setPublished} />
 				</div>
 
 				<div className="mt-6 flex justify-end gap-3 border-t border-border pt-5">
@@ -315,13 +184,13 @@ const CourseFormPage = () => {
 				</div>
 			</form>
 
-			{isEdit && id && (
+			{isEdit && (
 				<div className="mt-3.5 max-w-3xl">
 					<Button
 						variant="outline"
 						size="lg"
 						className="font-mono"
-						onClick={() => navigate(ROUTES.adminCourseCurriculum(id))}
+						onClick={() => id && navigate(ROUTES.adminCourseCurriculum(id))}
 					>
 						Edit curriculum →
 					</Button>

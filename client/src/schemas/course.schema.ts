@@ -2,6 +2,9 @@
 
 import { z } from "zod";
 
+import { rupeesToPaise } from "@/lib/currency";
+import type { CreateCoursePayload } from "@/types/course.types";
+
 // Cap mirrors the server validator (it also rejects >12).
 const MAX_LEARNING_OUTCOMES = 12;
 
@@ -56,5 +59,23 @@ const courseFormSchema = z.object({
 /** Inferred type from the schema — use this as the form type. */
 type CourseFormData = z.infer<typeof courseFormSchema>;
 
+// Map validated form values to the API payload: rupees → paise, outcomes → array
+// (always sent, empty clears), category dropped when blank (server rejects "").
+const buildCoursePayload = (values: CourseFormData): CreateCoursePayload => {
+	const learningOutcomes = parseLearningOutcomes(values.learningOutcomesText ?? "");
+	const category = values.category?.trim();
+
+	return {
+		title: values.title,
+		description: values.description,
+		instructorName: values.instructorName,
+		thumbnailUrl: values.thumbnailUrl,
+		price: rupeesToPaise(Number(values.priceRupees)),
+		isPublished: values.isPublished,
+		learningOutcomes,
+		...(category ? { category } : {}),
+	};
+};
+
 export type { CourseFormData };
-export { courseFormSchema, parseLearningOutcomes };
+export { courseFormSchema, parseLearningOutcomes, buildCoursePayload };
