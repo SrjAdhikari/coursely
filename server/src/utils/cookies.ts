@@ -11,7 +11,7 @@ const SESSION_COOKIE_NAME = "sid";
 const baseOptions: CookieOptions = {
 	httpOnly: true,
 	signed: true,
-	sameSite: "lax",
+	sameSite: isProd ? "none" : "lax",
 	secure: isProd,
 	path: "/",
 };

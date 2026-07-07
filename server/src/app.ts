@@ -12,6 +12,7 @@ import appErrorCode from "./constants/appErrorCode";
 import AppError from "./errors/AppError";
 import globalErrorHandler from "./middlewares/error.middleware";
 import { globalLimiter } from "./middlewares/rateLimit.middleware";
+import verifyRequestOrigin from "./middlewares/csrf.middleware";
 
 import routes from "./routes/index";
 import { stripeWebhookRouter } from "./routes/payment.routes";
@@ -73,8 +74,9 @@ app.get("/health", (_req, res) => {
 /**
  * API Routes
  * - All routes are prefixed with /api
+ * - verifyRequestOrigin guards cookie-authed mutations against CSRF attacks.
  */
-app.use("/api", routes);
+app.use("/api", verifyRequestOrigin, routes);
 
 /**
  * 404 + Global Error Handler

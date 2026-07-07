@@ -1,6 +1,6 @@
 //* test/utils/cookies.test.ts
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import type { Response } from "express";
 import {
 	SESSION_COOKIE_NAME,
@@ -12,6 +12,11 @@ const mockRes = () =>
 	({ cookie: vi.fn(), clearCookie: vi.fn() }) as unknown as Response;
 
 describe("cookie util", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+		vi.resetModules();
+	});
+
 	it("sets a signed, httpOnly, Lax session cookie with a 7-day maxAge", () => {
 		const res = mockRes();
 		setSessionCookie(res, "session-id-123");
@@ -45,5 +50,22 @@ describe("cookie util", () => {
 				sameSite: "lax",
 			}),
 		);
+	});
+
+	// Cross-site prod hosts won't send a Lax cookie on XHR → require SameSite=None;
+	// None mandates Secure. Module reads NODE_ENV at load, so re-import under prod.
+	it("uses SameSite=None + Secure in production (cross-site hosts)", async () => {
+		vi.stubEnv("NODE_ENV", "production");
+		vi.resetModules();
+		const { setSessionCookie: setProdSessionCookie } = await import(
+			"../../src/utils/cookies"
+		);
+
+		const res = mockRes();
+		setProdSessionCookie(res, "session-id-123");
+
+		const opts = (res.cookie as ReturnType<typeof vi.fn>).mock.calls[0]![2];
+		expect(opts.sameSite).toBe("none");
+		expect(opts.secure).toBe(true);
 	});
 });
