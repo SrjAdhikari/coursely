@@ -12,6 +12,8 @@ export interface CoursePayload {
 	price: number;
 	currency: string;
 	isPublished: boolean;
+	category?: string;
+	learningOutcomes?: string[];
 	createdAt: string;
 	updatedAt: string;
 }
@@ -55,6 +57,8 @@ export interface CreateCoursePayload {
 	price: number;
 	currency?: string;
 	isPublished?: boolean;
+	category?: string;
+	learningOutcomes?: string[];
 }
 
 /** Fields for updating a course (all optional). */

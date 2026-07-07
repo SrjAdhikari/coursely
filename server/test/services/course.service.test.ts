@@ -132,6 +132,7 @@ const NEW_COURSE = {
 	price: 49900,
 	currency: "INR" as const,
 	isPublished: false,
+	category: "Web Development",
 };
 
 describe("course.service — admin course CRUD", () => {

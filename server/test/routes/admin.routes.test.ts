@@ -44,6 +44,7 @@ const COURSE_BODY = {
 	instructorName: "Asha",
 	thumbnailUrl: "https://example.com/a.jpg",
 	price: 49900,
+	category: "Web Development",
 };
 
 describe("admin authz", () => {
