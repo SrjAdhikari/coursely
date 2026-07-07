@@ -2,9 +2,19 @@
 
 import { z } from "zod";
 
+// Cap mirrors the server validator (it also rejects >12).
+const MAX_LEARNING_OUTCOMES = 12;
+
+// One outcome per line → trimmed string[], blanks dropped; shared by the cap + submit.
+const parseLearningOutcomes = (raw: string): string[] =>
+	raw
+		.split("\n")
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0);
+
 /**
- * Course create/edit form. `priceRupees` is a required whole-rupee digit string
- * (converted to integer paise on submit). `isPublished` drives the Draft/Live segment.
+ * Course create/edit form. `priceRupees` is a whole-rupee digit string (→ paise on
+ * submit); `learningOutcomesText` is one outcome per line (→ string[] on submit).
  */
 const courseFormSchema = z.object({
 	title: z
@@ -27,10 +37,24 @@ const courseFormSchema = z.object({
 		.regex(/^\d+$/, "Enter the price in whole rupees"),
 
 	isPublished: z.boolean(),
+
+	category: z
+		.string()
+		.trim()
+		.max(60, "Category must be at most 60 characters")
+		.optional(),
+
+	learningOutcomesText: z
+		.string()
+		.refine(
+			(raw) => parseLearningOutcomes(raw).length <= MAX_LEARNING_OUTCOMES,
+			`Add at most ${MAX_LEARNING_OUTCOMES} learning outcomes`,
+		)
+		.optional(),
 });
 
 /** Inferred type from the schema — use this as the form type. */
 type CourseFormData = z.infer<typeof courseFormSchema>;
 
 export type { CourseFormData };
-export { courseFormSchema };
+export { courseFormSchema, parseLearningOutcomes };

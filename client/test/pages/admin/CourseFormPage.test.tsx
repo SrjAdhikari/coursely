@@ -72,6 +72,8 @@ const loadedCourse = {
 			price: 49900,
 			currency: "INR",
 			isPublished: true,
+			category: "Frontend",
+			learningOutcomes: ["Understand JSX", "Use hooks"],
 			createdAt: "",
 			updatedAt: "",
 		},
@@ -131,6 +133,40 @@ describe("CourseFormPage (create)", () => {
 		const payload = mockCreate.mock.calls[0][0];
 		expect(payload).not.toHaveProperty("slug");
 		expect(payload).not.toHaveProperty("currency");
+	});
+
+	it("submits category and parsed learning outcomes in the create payload", async () => {
+		const user = userEvent.setup();
+		renderAt("/admin/courses/new");
+		await fillCreateForm(user);
+		await user.type(screen.getByLabelText(/category/i), "Web Development");
+		await user.type(
+			screen.getByLabelText(/learning outcomes/i),
+			"Build components{enter}Manage state",
+		);
+		await user.click(screen.getByRole("button", { name: /create course/i }));
+
+		await waitFor(() =>
+			expect(mockCreate).toHaveBeenCalledWith(
+				expect.objectContaining({
+					category: "Web Development",
+					learningOutcomes: ["Build components", "Manage state"],
+				}),
+				expect.any(Object),
+			),
+		);
+	});
+
+	it("always sends a learningOutcomes array (empty) and omits an empty category", async () => {
+		const user = userEvent.setup();
+		renderAt("/admin/courses/new");
+		await fillCreateForm(user);
+		await user.click(screen.getByRole("button", { name: /create course/i }));
+
+		await waitFor(() => expect(mockCreate).toHaveBeenCalled());
+		const payload = mockCreate.mock.calls[0][0];
+		expect(payload.learningOutcomes).toEqual([]);
+		expect(payload).not.toHaveProperty("category");
 	});
 
 	it("invalidates the courses list and toasts on a successful create", async () => {
@@ -206,6 +242,30 @@ describe("CourseFormPage (edit)", () => {
 				expect.any(Object),
 			),
 		);
+	});
+
+	it("prefills category and learning outcomes in edit mode", async () => {
+		renderAt("/admin/courses/c1/edit");
+
+		expect(await screen.findByDisplayValue("Frontend")).toBeInTheDocument();
+		// The outcomes textarea joins the array one-per-line; assert its exact
+		// value (getByDisplayValue would collapse the newline via normalization).
+		expect(screen.getByLabelText(/learning outcomes/i)).toHaveValue(
+			"Understand JSX\nUse hooks",
+		);
+	});
+
+	it("clears learning outcomes to an empty array on update", async () => {
+		const user = userEvent.setup();
+		renderAt("/admin/courses/c1/edit");
+
+		const outcomes = await screen.findByLabelText(/learning outcomes/i);
+		await user.clear(outcomes);
+		await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+		await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+		const { payload } = mockUpdate.mock.calls[0][0];
+		expect(payload.learningOutcomes).toEqual([]);
 	});
 
 	it("invalidates the course detail and list and toasts on a successful update", async () => {

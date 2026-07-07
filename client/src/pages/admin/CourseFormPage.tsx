@@ -24,7 +24,11 @@ import { useVideoUpload } from "@/hooks/useVideoUpload";
 
 import ROUTES from "@/routes/paths";
 import type { CreateCoursePayload } from "@/types/course.types";
-import { courseFormSchema, type CourseFormData } from "@/schemas/course.schema";
+import {
+	courseFormSchema,
+	parseLearningOutcomes,
+	type CourseFormData,
+} from "@/schemas/course.schema";
 
 import { rupeesToPaise, paiseToRupees } from "@/lib/currency";
 import { COURSES_KEY, courseKey } from "@/lib/queryKeys";
@@ -89,6 +93,8 @@ const CourseFormPage = () => {
 			thumbnailUrl: "",
 			priceRupees: "",
 			isPublished: false,
+			category: "",
+			learningOutcomesText: "",
 		},
 	});
 
@@ -108,6 +114,8 @@ const CourseFormPage = () => {
 			thumbnailUrl: course.thumbnailUrl,
 			priceRupees: String(paiseToRupees(course.price)),
 			isPublished: course.isPublished,
+			category: course.category ?? "",
+			learningOutcomesText: (course.learningOutcomes ?? []).join("\n"),
 		});
 		void trigger(); // revalidate so isValid reflects the prefilled course
 	}, [existing, reset, trigger]);
@@ -128,6 +136,13 @@ const CourseFormPage = () => {
 		);
 
 	const onSubmit = (values: CourseFormData) => {
+		// Outcomes always sent (empty [] clears); category omitted when blank (server rejects "").
+		const learningOutcomes = parseLearningOutcomes(
+			values.learningOutcomesText ?? "",
+		);
+
+		const category = values.category?.trim();
+
 		const payload: CreateCoursePayload = {
 			title: values.title,
 			description: values.description,
@@ -135,6 +150,8 @@ const CourseFormPage = () => {
 			thumbnailUrl: values.thumbnailUrl,
 			price: rupeesToPaise(Number(values.priceRupees)),
 			isPublished: values.isPublished,
+			learningOutcomes,
+			...(category ? { category } : {}),
 		};
 
 		if (isEdit && id) {
@@ -203,6 +220,28 @@ const CourseFormPage = () => {
 							placeholder="What will students learn?"
 							error={errors.description?.message}
 							{...register("description")}
+						/>
+					</div>
+
+					<div className="sm:col-span-2">
+						<FormField
+							label="Category"
+							id="category"
+							placeholder="e.g. Web Development"
+							hint="Optional — up to 60 characters"
+							error={errors.category?.message}
+							{...register("category")}
+						/>
+					</div>
+
+					<div className="sm:col-span-2">
+						<FormTextarea
+							label="Learning outcomes"
+							id="learningOutcomesText"
+							placeholder="What will students be able to do?"
+							hint="One outcome per line, up to 12"
+							error={errors.learningOutcomesText?.message}
+							{...register("learningOutcomesText")}
 						/>
 					</div>
 
