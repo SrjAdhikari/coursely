@@ -14,6 +14,7 @@ const valid = {
 	thumbnailUrl: "https://cdn.coursely.app/react.png",
 	priceRupees: "999",
 	isPublished: false,
+	category: "Web Development",
 };
 
 describe("courseFormSchema", () => {
@@ -75,13 +76,29 @@ describe("courseFormSchema", () => {
 		}
 	});
 
-	it("accepts an empty category and empty outcomes", () => {
+	it("accepts empty outcomes when a category is present", () => {
 		const r = courseFormSchema.safeParse({
 			...valid,
-			category: "",
 			learningOutcomesText: "",
 		});
 		expect(r.success).toBe(true);
+	});
+
+	it("rejects a blank category (required)", () => {
+		const r = courseFormSchema.safeParse({ ...valid, category: "   " });
+		expect(r.success).toBe(false);
+	});
+
+	it("rejects a missing category (required)", () => {
+		const withoutCategory = {
+			title: "React from Scratch",
+			description: "Hooks and state.",
+			instructorName: "Asha Rai",
+			thumbnailUrl: "https://cdn.coursely.app/react.png",
+			priceRupees: "999",
+			isPublished: false,
+		};
+		expect(courseFormSchema.safeParse(withoutCategory).success).toBe(false);
 	});
 
 	it("rejects a category longer than 60 characters", () => {
@@ -131,7 +148,7 @@ describe("buildCoursePayload", () => {
 		learningOutcomesText: "Build components\nManage state",
 	};
 
-	it("maps rupees to paise, parses outcomes, and keeps a category", () => {
+	it("maps rupees to paise, parses outcomes, and keeps the category", () => {
 		const payload = buildCoursePayload(formValues);
 		expect(payload.price).toBe(99900);
 		expect(payload.learningOutcomes).toEqual([
@@ -141,13 +158,12 @@ describe("buildCoursePayload", () => {
 		expect(payload.category).toBe("Web Development");
 	});
 
-	it("always sends an outcomes array and omits a blank category", () => {
+	it("always sends the category and an empty outcomes array when none entered", () => {
 		const payload = buildCoursePayload({
 			...formValues,
-			category: "  ",
 			learningOutcomesText: "",
 		});
 		expect(payload.learningOutcomes).toEqual([]);
-		expect(payload).not.toHaveProperty("category");
+		expect(payload.category).toBe("Web Development");
 	});
 });

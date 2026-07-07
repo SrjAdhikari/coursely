@@ -58,6 +58,7 @@ const fillCreateForm = async (user: ReturnType<typeof userEvent.setup>) => {
 		"https://cdn.coursely.app/r.png",
 	);
 	await user.type(screen.getByLabelText(/price/i), "999");
+	await user.type(screen.getByLabelText(/category/i), "Web Development");
 };
 
 const loadedCourse = {
@@ -139,7 +140,6 @@ describe("CourseFormPage (create)", () => {
 		const user = userEvent.setup();
 		renderAt("/admin/courses/new");
 		await fillCreateForm(user);
-		await user.type(screen.getByLabelText(/category/i), "Web Development");
 		await user.type(
 			screen.getByLabelText(/learning outcomes/i),
 			"Build components{enter}Manage state",
@@ -157,7 +157,7 @@ describe("CourseFormPage (create)", () => {
 		);
 	});
 
-	it("always sends a learningOutcomes array (empty) and omits an empty category", async () => {
+	it("sends the category and an empty learningOutcomes array when none entered", async () => {
 		const user = userEvent.setup();
 		renderAt("/admin/courses/new");
 		await fillCreateForm(user);
@@ -165,8 +165,25 @@ describe("CourseFormPage (create)", () => {
 
 		await waitFor(() => expect(mockCreate).toHaveBeenCalled());
 		const payload = mockCreate.mock.calls[0][0];
+		expect(payload.category).toBe("Web Development");
 		expect(payload.learningOutcomes).toEqual([]);
-		expect(payload).not.toHaveProperty("category");
+	});
+
+	it("requires a category (submit stays disabled without one)", async () => {
+		const user = userEvent.setup();
+		renderAt("/admin/courses/new");
+		await user.type(screen.getByLabelText(/title/i), "React from Scratch");
+		await user.type(screen.getByLabelText(/description/i), "Hooks and state.");
+		await user.type(screen.getByLabelText(/instructor/i), "Asha Rai");
+		await user.type(
+			screen.getByLabelText(/thumbnail/i),
+			"https://cdn.coursely.app/r.png",
+		);
+		await user.type(screen.getByLabelText(/price/i), "999");
+		// category left blank
+		expect(
+			screen.getByRole("button", { name: /create course/i }),
+		).toBeDisabled();
 	});
 
 	it("invalidates the courses list and toasts on a successful create", async () => {

@@ -7,8 +7,8 @@ import FormField from "@/components/form/FormField";
 import FormTextarea from "@/components/form/FormTextarea";
 import StatusSegment from "@/components/StatusSegment";
 import LoadFailed from "@/components/common/LoadFailed";
-import { Button } from "@/components/ui/button";
 import Loader from "@/components/Loader";
+import { Button } from "@/components/ui/button";
 
 import useCourseForm from "@/hooks/useCourseForm";
 import ROUTES from "@/routes/paths";
@@ -102,7 +102,7 @@ const CourseFormPage = () => {
 							label="Category"
 							id="category"
 							placeholder="e.g. Web Development"
-							hint="Optional — up to 60 characters"
+							hint="Required - up to 60 characters"
 							error={errors.category?.message}
 							{...register("category")}
 						/>

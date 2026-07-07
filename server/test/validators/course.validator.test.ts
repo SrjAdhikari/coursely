@@ -18,10 +18,22 @@ describe("course validators", () => {
 			instructorName: "Asha",
 			thumbnailUrl: "https://example.com/a.jpg",
 			price: 49900,
+			category: "Web Development",
 		});
 		// Defaults live on the model, not the schema, so they're absent here.
 		expect(parsed.currency).toBeUndefined();
 		expect(parsed.isPublished).toBeUndefined();
+	});
+
+	it("rejects a course without a category (required)", () => {
+		const withoutCategory = {
+			title: "Intro",
+			description: "desc",
+			instructorName: "Asha",
+			thumbnailUrl: "https://example.com/a.jpg",
+			price: 49900,
+		};
+		expect(createCourseSchema.safeParse(withoutCategory).success).toBe(false);
 	});
 
 	it("rejects a negative or non-integer price", () => {
@@ -30,6 +42,7 @@ describe("course validators", () => {
 			description: "desc",
 			instructorName: "Asha",
 			thumbnailUrl: "https://example.com/a.jpg",
+			category: "Web Development",
 		};
 		expect(createCourseSchema.safeParse({ ...base, price: -1 }).success).toBe(
 			false,
@@ -45,6 +58,7 @@ describe("course validators", () => {
 			description: "desc",
 			instructorName: "Asha",
 			price: 49900,
+			category: "Web Development",
 		};
 		expect(
 			createCourseSchema.safeParse({

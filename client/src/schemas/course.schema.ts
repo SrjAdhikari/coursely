@@ -40,12 +40,11 @@ const courseFormSchema = z.object({
 		.regex(/^\d+$/, "Enter the price in whole rupees"),
 
 	isPublished: z.boolean(),
-
 	category: z
 		.string()
 		.trim()
-		.max(60, "Category must be at most 60 characters")
-		.optional(),
+		.min(1, "Category is required")
+		.max(60, "Category must be at most 60 characters"),
 
 	learningOutcomesText: z
 		.string()
@@ -60,10 +59,9 @@ const courseFormSchema = z.object({
 type CourseFormData = z.infer<typeof courseFormSchema>;
 
 // Map validated form values to the API payload: rupees → paise, outcomes → array
-// (always sent, empty clears), category dropped when blank (server rejects "").
+// (always sent, empty clears). Category is required, so it is always present.
 const buildCoursePayload = (values: CourseFormData): CreateCoursePayload => {
 	const learningOutcomes = parseLearningOutcomes(values.learningOutcomesText ?? "");
-	const category = values.category?.trim();
 
 	return {
 		title: values.title,
@@ -72,8 +70,8 @@ const buildCoursePayload = (values: CourseFormData): CreateCoursePayload => {
 		thumbnailUrl: values.thumbnailUrl,
 		price: rupeesToPaise(Number(values.priceRupees)),
 		isPublished: values.isPublished,
+		category: values.category,
 		learningOutcomes,
-		...(category ? { category } : {}),
 	};
 };
 
