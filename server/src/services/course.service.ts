@@ -39,6 +39,7 @@ export interface CourseDetail extends Omit<CourseDocument, "trailerKey"> {
 	})[];
 	lessonCount: number;
 	totalDuration: number;
+	hasTrailer: boolean;
 }
 
 interface CourseDetailFull extends CourseDocument {
@@ -115,14 +116,16 @@ const listPublishedCourses = async (q?: string) => {
  * @throws {AppError} 404 COURSE_NOT_FOUND if the course does not exist.
  */
 const getCourseBySlug = async (slug: string): Promise<CourseDetail> => {
-	const course = await Course.findOne(
-		{ slug, isPublished: true },
-		{ trailerKey: 0 },
-	).lean();
+	const course = await Course.findOne({ slug, isPublished: true }).lean();
 
 	if (!course) {
 		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
 	}
+
+	// Load trailerKey only to derive hasTrailer, then strip it — the key must
+	// never reach the client.
+	const { trailerKey, ...publicCourse } = course;
+	const hasTrailer = !!trailerKey;
 
 	const [sections, lessons] = await Promise.all([
 		Section.find({ courseId: course._id }).sort({ order: 1 }).lean(),
@@ -150,7 +153,8 @@ const getCourseBySlug = async (slug: string): Promise<CourseDetail> => {
 	);
 
 	return {
-		...course,
+		...publicCourse,
+		hasTrailer,
 		sections: sections.map((section) => ({
 			...section,
 			lessons: lessonsBySection.get(section._id.toString()) ?? [],

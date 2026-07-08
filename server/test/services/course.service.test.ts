@@ -114,6 +114,26 @@ describe("course.service — public reads", () => {
 			expect((lesson as unknown as Record<string, unknown>).videoKey).toBeUndefined();
 		});
 
+		it("flags hasTrailer true and never leaks the trailerKey when a trailer exists", async () => {
+			await createTestCourse({
+				slug: "with-trailer",
+				trailerKey: "courses/with-trailer/trailer.mp4",
+			});
+
+			const detail = await getCourseBySlug("with-trailer");
+			expect(detail.hasTrailer).toBe(true);
+			expect(
+				(detail as unknown as Record<string, unknown>).trailerKey,
+			).toBeUndefined();
+		});
+
+		it("flags hasTrailer false when the course has no trailer", async () => {
+			await createTestCourse({ slug: "no-trailer" });
+
+			const detail = await getCourseBySlug("no-trailer");
+			expect(detail.hasTrailer).toBe(false);
+		});
+
 		it("404s for an unknown or unpublished slug", async () => {
 			await createTestCourse({ slug: "hidden", isPublished: false });
 			await expect(getCourseBySlug("hidden")).rejects.toMatchObject({
