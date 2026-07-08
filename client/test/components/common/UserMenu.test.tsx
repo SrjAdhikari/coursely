@@ -17,8 +17,11 @@ vi.mock("react-router", async (importOriginal) => {
 	return { ...actual, useNavigate: () => mockNavigate };
 });
 
+vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
+
 import UserMenu from "@/components/common/UserMenu";
 import { CURRENT_USER_KEY } from "@/lib/queryKeys";
+import { toast } from "sonner";
 
 const user = {
 	id: "u1",
@@ -84,5 +87,22 @@ describe("UserMenu", () => {
 		options.onSuccess();
 		expect(removeQueries).toHaveBeenCalledWith({ queryKey: CURRENT_USER_KEY });
 		expect(mockNavigate).toHaveBeenCalledWith("/login", { replace: true });
+	});
+
+	it("shows an error toast and stays put when logout fails", async () => {
+		renderMenu();
+		await userEvent.click(
+			screen.getByRole("button", { name: /account menu/i }),
+		);
+		const logoutItem = await screen.findByRole("menuitem", {
+			name: /log out/i,
+		});
+		await userEvent.click(logoutItem);
+
+		// Fire the error callback the component handed the mutation.
+		const options = mockMutate.mock.calls[0][1];
+		options.onError(new Error("network"));
+		expect(toast.error).toHaveBeenCalled();
+		expect(mockNavigate).not.toHaveBeenCalled();
 	});
 });

@@ -2,10 +2,10 @@
 
 /**
  * Returns up to two uppercase initials from a user's name.
- * e.g., "Suraj Adhikari" → "SA", "suraj" → "SU"
+ * e.g., "Suraj Adhikari" → "SA", "suraj" → "SU"; missing/empty → "".
  */
-const getInitials = (name: string) => {
-	const trimmed = name.trim();
+const getInitials = (name?: string) => {
+	const trimmed = (name ?? "").trim();
 	const words = trimmed.split(/\s+/);
 
 	const initials =

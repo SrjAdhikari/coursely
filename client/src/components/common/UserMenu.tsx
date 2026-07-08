@@ -3,6 +3,7 @@
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
+import { toast } from "sonner";
 
 import getInitials from "@/lib/getInitials";
 import { useLogout } from "@/hooks/useAuth";
@@ -38,6 +39,9 @@ const UserMenu = ({ user }: UserMenuProps) => {
 			onSuccess: () => {
 				queryClient.removeQueries({ queryKey: CURRENT_USER_KEY });
 				navigate(ROUTES.LOGIN, { replace: true });
+			},
+			onError: () => {
+				toast.error("Couldn't log out. Please try again.");
 			},
 		});
 	};

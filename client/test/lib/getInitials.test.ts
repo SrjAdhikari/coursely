@@ -32,4 +32,8 @@ describe("getInitials", () => {
 		expect(getInitials("")).toBe("");
 		expect(getInitials("   ")).toBe("");
 	});
+
+	it("returns an empty string for a missing name (undefined)", () => {
+		expect(getInitials(undefined)).toBe("");
+	});
 });
