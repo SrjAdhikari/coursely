@@ -20,6 +20,10 @@ export const studentKey = (id: string) => ["students", id] as const;
 /** Per-lesson signed playback URL (short-lived; never persisted). */
 export const lessonPlaybackKey = (id: string) => ["lessonPlayback", id] as const;
 
+/** Per-course signed trailer URL (short-lived; never persisted). */
+export const courseTrailerKey = (slug: string) =>
+	["courseTrailer", slug] as const;
+
 /** Public catalog list + per-slug detail. */
 export const CATALOG_KEY = ["catalog"] as const;
 export const courseSlugKey = (slug: string) =>

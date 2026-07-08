@@ -2,15 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { getLessonPlaybackUrl } from "@/api/media.api";
-import { lessonPlaybackKey } from "@/lib/queryKeys";
+import { getLessonPlaybackUrl, getCourseTrailerUrl } from "@/api/media.api";
+import { lessonPlaybackKey, courseTrailerKey } from "@/lib/queryKeys";
 
-/**
- * Fetch a fresh signed playback URL for a lesson. The signed URL is short-lived
- * (~1h) and meant per-open, so we never cache it (gcTime 0) and always refetch
- * on mount — a stale cached URL would 403 once it expires. Reconnect refetch is
- * off so a network blip can't swap the URL and restart playback mid-watch
- * (window-focus refetch is already disabled globally in the query client).
+/** Fresh signed playback URL, minted per mount
+ * and never cached (URLs are short-lived, ~1h).
  */
 const useLessonPlaybackUrl = (lessonId: string) =>
 	useQuery({
@@ -23,4 +19,18 @@ const useLessonPlaybackUrl = (lessonId: string) =>
 		refetchOnReconnect: false,
 	});
 
-export { useLessonPlaybackUrl };
+/** Fresh signed trailer URL, gated by `enabled` so
+ * it stays idle until the visitor opens the trailer.
+ */
+const useCourseTrailerUrl = (slug: string, enabled: boolean) =>
+	useQuery({
+		queryKey: courseTrailerKey(slug),
+		queryFn: () => getCourseTrailerUrl(slug),
+		enabled: enabled && !!slug,
+		gcTime: 0,
+		staleTime: 0,
+		refetchOnMount: "always",
+		refetchOnReconnect: false,
+	});
+
+export { useLessonPlaybackUrl, useCourseTrailerUrl };

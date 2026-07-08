@@ -38,6 +38,14 @@ const getLessonPlaybackUrl = async (lessonId: string) => {
 	return data;
 };
 
+/** Fetch a fresh signed URL for a published course's promo trailer. */
+const getCourseTrailerUrl = async (slug: string) => {
+	const { data } = await axiosClient.get<ApiSuccessResponse<PlaybackUrl>>(
+		`/courses/${slug}/trailer-url`,
+	);
+	return data;
+};
+
 /** Admin: mint a presigned PUT for a course trailer. */
 const createCourseTrailerUploadUrl = async (courseId: string) => {
 	const { data } = await axiosClient.post<ApiSuccessResponse<TrailerUploadUrl>>(
@@ -83,6 +91,7 @@ export {
 	createLessonUploadUrl,
 	setLessonVideo,
 	getLessonPlaybackUrl,
+	getCourseTrailerUrl,
 	createCourseTrailerUploadUrl,
 	setCourseTrailer,
 	uploadToR2,

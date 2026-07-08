@@ -5,6 +5,7 @@ import { Check, CircleCheck, PlayCircle } from "lucide-react";
 
 import ROUTES from "@/routes/paths";
 import { Button } from "@/components/ui/button";
+import CourseTrailerMedia from "@/components/course/CourseTrailerMedia";
 
 import { formatPrice } from "@/lib/currency";
 import { formatRuntime } from "@/lib/duration";
@@ -13,6 +14,9 @@ type PurchaseStatus = "guest" | "buyable" | "enrolled";
 
 interface PurchaseCardProps {
 	slug: string;
+	title: string;
+	thumbnailUrl: string;
+	hasTrailer: boolean;
 	price: number;
 	lessonCount: number;
 	totalDuration: number;
@@ -34,6 +38,9 @@ const STATUS_NOTES: Record<PurchaseStatus, string> = {
 /** The sticky buy box on the course detail page; three ownership states. */
 const PurchaseCard = ({
 	slug,
+	title,
+	thumbnailUrl,
+	hasTrailer,
 	price,
 	lessonCount,
 	totalDuration,
@@ -58,6 +65,13 @@ const PurchaseCard = ({
 
 	return (
 		<aside className="overflow-hidden rounded-xl border border-input bg-card">
+			<CourseTrailerMedia
+				thumbnailUrl={thumbnailUrl}
+				hasTrailer={hasTrailer}
+				slug={slug}
+				title={title}
+			/>
+
 			<div className="p-5">
 				{status === "enrolled" ? (
 					<div className="flex items-center gap-2 font-heading text-xl font-bold text-primary">

@@ -164,6 +164,9 @@ const CourseDetailPage = () => {
 			<div className="lg:sticky lg:top-24 lg:self-start">
 				<PurchaseCard
 					slug={course.slug}
+					title={course.title}
+					thumbnailUrl={course.thumbnailUrl}
+					hasTrailer={course.hasTrailer}
 					price={course.price}
 					lessonCount={lessonCount}
 					totalDuration={totalDuration}

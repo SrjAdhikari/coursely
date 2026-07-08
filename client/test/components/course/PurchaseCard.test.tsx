@@ -4,10 +4,14 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PurchaseCard from "@/components/course/PurchaseCard";
 
 const base = {
 	slug: "react",
+	title: "Mastering React",
+	thumbnailUrl: "https://cdn/thumb.jpg",
+	hasTrailer: false,
 	price: 149900,
 	lessonCount: 18,
 	totalDuration: 20520,
@@ -16,14 +20,21 @@ const base = {
 	isBuying: false,
 };
 
+// The media block mounts a useQuery hook, so a QueryClient must be in scope.
 const renderCard = (
 	props: Partial<React.ComponentProps<typeof PurchaseCard>>,
-) =>
-	render(
-		<MemoryRouter>
-			<PurchaseCard {...base} status="buyable" {...props} />
-		</MemoryRouter>,
+) => {
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	return render(
+		<QueryClientProvider client={queryClient}>
+			<MemoryRouter>
+				<PurchaseCard {...base} status="buyable" {...props} />
+			</MemoryRouter>
+		</QueryClientProvider>,
 	);
+};
 
 describe("PurchaseCard", () => {
 	it("shows the price and what's included", () => {
@@ -33,6 +44,26 @@ describe("PurchaseCard", () => {
 		expect(screen.getByText("1,499")).toBeInTheDocument();
 		expect(screen.getByText(/18 video lessons/i)).toBeInTheDocument();
 		expect(screen.getByText(/5h 42m of content/i)).toBeInTheDocument();
+	});
+
+	it("always renders the course thumbnail as the media poster", () => {
+		renderCard({ hasTrailer: false });
+		expect(screen.getByAltText("Mastering React")).toHaveAttribute(
+			"src",
+			"https://cdn/thumb.jpg",
+		);
+	});
+
+	it("shows the Watch trailer play control only when the course has a trailer", () => {
+		renderCard({ hasTrailer: false });
+		expect(
+			screen.queryByRole("button", { name: /play trailer/i }),
+		).not.toBeInTheDocument();
+
+		renderCard({ hasTrailer: true });
+		expect(
+			screen.getByRole("button", { name: /play trailer/i }),
+		).toBeInTheDocument();
 	});
 
 	it("guest: links to login with a return-to redirect", () => {

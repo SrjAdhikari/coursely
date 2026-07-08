@@ -125,4 +125,5 @@ export interface PublicSectionPayload {
 export interface PublicCourseDetailPayload extends PublicCoursePayload {
 	learningOutcomes: string[];
 	sections: PublicSectionPayload[];
+	hasTrailer: boolean;
 }
