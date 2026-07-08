@@ -3,24 +3,35 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const mockUseCurrentUser = vi.fn();
 vi.mock("@/hooks/useAuth", () => ({
 	useCurrentUser: () => mockUseCurrentUser(),
+	useLogout: () => ({ mutate: vi.fn() }),
 }));
 
 import StoreHeader from "@/components/layout/store/StoreHeader";
 
 const renderHeaderAt = (initialPath = "/") =>
 	render(
-		<MemoryRouter initialEntries={[initialPath]}>
-			<StoreHeader />
-		</MemoryRouter>,
+		<QueryClientProvider client={new QueryClient()}>
+			<MemoryRouter initialEntries={[initialPath]}>
+				<StoreHeader />
+			</MemoryRouter>
+		</QueryClientProvider>,
 	);
 
 const loggedIn = () =>
 	mockUseCurrentUser.mockReturnValue({
-		data: { data: { name: "Suraj", role: "student" } },
+		data: {
+			data: {
+				id: "u1",
+				name: "Suraj",
+				email: "suraj@example.com",
+				role: "student",
+			},
+		},
 	});
 
 describe("StoreHeader", () => {
@@ -36,14 +47,16 @@ describe("StoreHeader", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("shows the Library link and the user's name when logged in", () => {
+	it("shows the Library link and the account menu when logged in", () => {
 		loggedIn();
 		renderHeaderAt();
 		expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute(
 			"href",
 			"/my-courses",
 		);
-		expect(screen.getByText("Suraj")).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /account menu/i }),
+		).toBeInTheDocument();
 		expect(
 			screen.queryByRole("link", { name: /sign up/i }),
 		).not.toBeInTheDocument();

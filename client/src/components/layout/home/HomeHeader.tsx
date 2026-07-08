@@ -8,6 +8,7 @@ import ROUTES from "@/routes/paths";
 
 import { Button } from "@/components/ui/button";
 import AppLogo from "@/components/common/AppLogo";
+import UserMenu from "@/components/common/UserMenu";
 import ThemeToggle from "@/components/theme/theme-toggle";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -61,9 +62,9 @@ const HomeHeader = () => {
 								Library
 							</NavLink>
 
-							<span className="ml-1 border-l border-border pl-3 text-foreground">
-								{user.name}
-							</span>
+							<div className="ml-1 border-l border-border pl-3">
+								<UserMenu user={user} />
+							</div>
 						</nav>
 					) : (
 						<div className="hidden items-center gap-2 sm:flex">

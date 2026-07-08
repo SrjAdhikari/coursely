@@ -1,19 +1,23 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const mockUseCurrentUser = vi.fn();
 vi.mock("@/hooks/useAuth", () => ({
 	useCurrentUser: () => mockUseCurrentUser(),
+	useLogout: () => ({ mutate: vi.fn() }),
 }));
 
 import HomeHeader from "@/components/layout/home/HomeHeader";
 
 const renderHeader = () =>
 	render(
-		<MemoryRouter>
-			<HomeHeader />
-		</MemoryRouter>,
+		<QueryClientProvider client={new QueryClient()}>
+			<MemoryRouter>
+				<HomeHeader />
+			</MemoryRouter>
+		</QueryClientProvider>,
 	);
 
 describe("HomeHeader", () => {
@@ -24,12 +28,23 @@ describe("HomeHeader", () => {
 		expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute("href", "/signup");
 	});
 
-	it("shows Dashboard and Library when logged in", () => {
-		mockUseCurrentUser.mockReturnValue({ data: { data: { name: "Suraj", role: "student" } } });
+	it("shows Dashboard, Library, and the account menu when logged in", () => {
+		mockUseCurrentUser.mockReturnValue({
+			data: {
+				data: {
+					id: "u1",
+					name: "Suraj",
+					email: "suraj@example.com",
+					role: "student",
+				},
+			},
+		});
 		renderHeader();
 		expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute("href", "/dashboard");
 		expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute("href", "/my-courses");
-		expect(screen.getByText("Suraj")).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /account menu/i }),
+		).toBeInTheDocument();
 	});
 
 	it("links Courses to the catalog", () => {

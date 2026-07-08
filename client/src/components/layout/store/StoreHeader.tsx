@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import AppLogo from "@/components/common/AppLogo";
+import UserMenu from "@/components/common/UserMenu";
 import ThemeToggle from "@/components/theme/theme-toggle";
 import ROUTES from "@/routes/paths";
 
@@ -46,9 +47,9 @@ const StoreHeader = () => {
 									Library
 								</NavLink>
 
-								<span className="ml-1 border-l border-border pl-3 text-foreground">
-									{user.name}
-								</span>
+								<div className="ml-1 border-l border-border pl-3">
+									<UserMenu user={user} />
+								</div>
 							</>
 						) : (
 							<>
