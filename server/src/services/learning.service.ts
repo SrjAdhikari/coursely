@@ -27,8 +27,9 @@ type CourseLean = {
 
 /**
  * The caller's aggregated learning overview: stats, per-enrolled-course progress
- * (with the next incomplete lesson in curriculum order), and recently-watched
- * lessons. All server-derived and strictly scoped to `userId` (no client ids).
+ * (with the resume lesson — the most-recently-watched incomplete lesson, else the
+ * first in curriculum order), and recently-watched lessons. All server-derived and
+ * strictly scoped to `userId` (no client ids).
  */
 const getLearningOverview = async (userId: string) => {
 	const enrollments = await Enrollment.find({ userId })
@@ -87,9 +88,13 @@ const getLearningOverview = async (userId: string) => {
 			.map((row) => row.lessonId.toString()),
 	);
 
-	// Index last activity by course for quick lookup.
+	// Index last activity by course, and each lesson's last-progress timestamp
+	// (used to pick the resume lesson — where the student actually left off).
 	const lastActivityByCourse = new Map<string, Date>();
+	const progressUpdatedByLesson = new Map<string, Date>();
+
 	for (const row of progressRows) {
+		progressUpdatedByLesson.set(row.lessonId.toString(), row.updatedAt);
 		const key = row.courseId.toString();
 		const current = lastActivityByCourse.get(key);
 		if (!current || row.updatedAt > current)
@@ -129,11 +134,29 @@ const getLearningOverview = async (userId: string) => {
 				? Math.round((completedLessons / totalLessons) * 100)
 				: 0;
 
-		const nextIncompleteIndex = ordered.findIndex(
+		// Resume target = the most-recently-watched incomplete lesson (where the
+		// student left off); fall back to the first incomplete lesson in
+		// curriculum order when nothing mid-course has been started yet.
+		const incompleteLessons = ordered.filter(
 			(lesson) => !completedLessonIds.has(lesson._id.toString()),
 		);
-		const nextIncomplete =
-			nextIncompleteIndex >= 0 ? ordered[nextIncompleteIndex] : undefined;
+
+		let resumeLesson: LessonLean | undefined;
+		let resumeUpdatedAt: Date | undefined;
+		for (const lesson of incompleteLessons) {
+			const updatedAt = progressUpdatedByLesson.get(lesson._id.toString());
+			if (updatedAt && (!resumeUpdatedAt || updatedAt > resumeUpdatedAt)) {
+				resumeUpdatedAt = updatedAt;
+				resumeLesson = lesson;
+			}
+		}
+
+		const nextIncomplete = resumeLesson ?? incompleteLessons[0];
+		const nextIncompleteIndex = nextIncomplete
+			? ordered.findIndex(
+					(lesson) => lesson._id.toString() === nextIncomplete._id.toString(),
+				)
+			: -1;
 
 		const lastActivityAt = lastActivityByCourse.get(courseId) ?? null;
 		const state =

@@ -78,6 +78,43 @@ describe("learning.service · getLearningOverview", () => {
     });
   });
 
+  it("resumes the most-recently-watched incomplete lesson, not the first untouched one", async () => {
+    const user = await createTestUser();
+    const { course, lessons } = await seedCourse({ lessonCount: 3 });
+    await createTestEnrollment(user._id, course._id);
+    // lesson 0 untouched; lesson 2 started (older); lesson 1 completed *later* —
+    // the newest activity overall is a completed lesson, which must NOT be resumed.
+    const started = await createTestProgress(user._id, lessons[2]!._id, course._id, { positionSeconds: 20 });
+    const completed = await createTestProgress(user._id, lessons[1]!._id, course._id, { completed: true });
+    await Progress.collection.updateOne({ _id: started._id }, { $set: { updatedAt: new Date(2026, 6, 8, 0, 22) } });
+    await Progress.collection.updateOne({ _id: completed._id }, { $set: { updatedAt: new Date(2026, 6, 8, 0, 30) } });
+
+    const overview = await getLearningOverview(user._id.toString());
+    expect(overview.courses[0]!.nextLesson).toMatchObject({
+      lessonId: lessons[2]!._id.toString(),
+      title: "Lesson 2",
+      lessonNumber: 3,
+      sectionTitle: "Test Section",
+    });
+  });
+
+  it("picks the newest in-progress lesson when several are partially watched", async () => {
+    const user = await createTestUser();
+    const { course, lessons } = await seedCourse({ lessonCount: 3 });
+    await createTestEnrollment(user._id, course._id);
+    // lessons 0 and 2 both started (incomplete); lesson 2 is the newer touch.
+    const older = await createTestProgress(user._id, lessons[0]!._id, course._id, { positionSeconds: 10 });
+    const newer = await createTestProgress(user._id, lessons[2]!._id, course._id, { positionSeconds: 15 });
+    await Progress.collection.updateOne({ _id: older._id }, { $set: { updatedAt: new Date(2026, 6, 8, 0, 10) } });
+    await Progress.collection.updateOne({ _id: newer._id }, { $set: { updatedAt: new Date(2026, 6, 8, 0, 40) } });
+
+    const overview = await getLearningOverview(user._id.toString());
+    expect(overview.courses[0]!.nextLesson).toMatchObject({
+      lessonId: lessons[2]!._id.toString(),
+      lessonNumber: 3,
+    });
+  });
+
   it("marks an enrolled course with no progress as not_started (next = first lesson)", async () => {
     const user = await createTestUser();
     const { course, lessons } = await seedCourse({ lessonCount: 3 });
