@@ -5,70 +5,22 @@ import { useNavigate } from "react-router";
 
 import { useListCourses } from "@/hooks/useCourses";
 import { useListStudents } from "@/hooks/useStudents";
+import { useListEnrollments } from "@/hooks/useEnrollments";
+
+import ROUTES from "@/routes/paths";
 import { formatPrice } from "@/lib/currency";
+import { formatDate } from "@/lib/date";
+
 import Loader from "@/components/Loader";
 import { Badge } from "@/components/ui/badge";
 import StatCard from "@/components/admin/StatCard";
 import DataTable, { type Column } from "@/components/common/DataTable";
 import LoadFailed from "@/components/common/LoadFailed";
-import ROUTES from "@/routes/paths";
+
 import type { CoursePayload } from "@/types/course.types";
+import type { AdminEnrollmentPayload } from "@/types/enrollment.types";
 
-interface SampleEnrollment {
-	id: string;
-	student: string;
-	course: string;
-	amount: number;
-	purchased: string;
-}
-
-// Phase 5 placeholder — sample platform enrollments shown until the
-// payments/enrollment feature lands. The Enrollments + Revenue tiles and the
-// "Recent enrollments" table all derive from this, so the page stays internally
-// consistent; swap for the real enrollments API then.
-const sampleEnrollments: SampleEnrollment[] = [
-	{
-		id: "e1",
-		student: "Rahul Verma",
-		course: "React from Scratch",
-		amount: 89900,
-		purchased: "Jun 23",
-	},
-	{
-		id: "e2",
-		student: "Karan Mehta",
-		course: "JavaScript Essentials",
-		amount: 69900,
-		purchased: "Jun 21",
-	},
-	{
-		id: "e3",
-		student: "Priya Nair",
-		course: "TS Deep Dive",
-		amount: 129900,
-		purchased: "Jun 18",
-	},
-	{
-		id: "e4",
-		student: "Ananya Iyer",
-		course: "HTML Foundations",
-		amount: 49900,
-		purchased: "May 30",
-	},
-	{
-		id: "e5",
-		student: "Vikram Shah",
-		course: "Node.js & Express APIs",
-		amount: 99900,
-		purchased: "May 22",
-	},
-];
-
-const sampleRevenue = sampleEnrollments.reduce(
-	(total, enrollment) => total + enrollment.amount,
-	0,
-);
-
+const ENROLLMENTS_FETCH_LIMIT = 100;
 const viewAllLink =
 	"cursor-pointer font-mono text-xs text-muted-foreground transition-colors hover:text-primary";
 
@@ -104,26 +56,38 @@ const recentCourseColumns: Column<CoursePayload>[] = [
 	},
 ];
 
-const enrollmentColumns: Column<SampleEnrollment>[] = [
+// Mirrors the columns on the full Enrollments page.
+const enrollmentColumns: Column<AdminEnrollmentPayload>[] = [
 	{
 		header: "Student",
-		cellClassName: "font-medium",
-		cell: (enrollment) => enrollment.student,
+		cell: (enrollment) => (
+			<>
+				<div className="font-semibold">{enrollment.userId.name}</div>
+				<div className="text-xs text-muted-foreground">
+					{enrollment.userId.email}
+				</div>
+			</>
+		),
 	},
 	{
 		header: "Course",
 		cellClassName: "text-muted-foreground",
-		cell: (enrollment) => enrollment.course,
+		cell: (enrollment) => enrollment.courseId.title,
 	},
 	{
 		header: "Amount",
-		cellClassName: "font-mono font-bold",
-		cell: (enrollment) => formatPrice(enrollment.amount),
+		align: "right",
+		cellClassName: "font-semibold",
+		cell: (enrollment) =>
+			enrollment.amountPaid === undefined
+				? "—"
+				: formatPrice(enrollment.amountPaid),
 	},
 	{
-		header: "Purchased",
-		cellClassName: "font-mono text-muted-foreground",
-		cell: (enrollment) => enrollment.purchased,
+		header: "Enrolled",
+		align: "right",
+		cellClassName: "text-muted-foreground",
+		cell: (enrollment) => formatDate(enrollment.createdAt),
 	},
 ];
 
@@ -144,9 +108,37 @@ const OverviewPage = () => {
 		refetch: refetchStudents,
 	} = useListStudents();
 
+	const {
+		data: enrollmentsData,
+		isLoading: enrollmentsLoading,
+		isError: enrollmentsError,
+		refetch: refetchEnrollments,
+	} = useListEnrollments(1, ENROLLMENTS_FETCH_LIMIT);
+
 	const courses = useMemo(() => coursesData?.data ?? [], [coursesData]);
 	const studentCount = studentsData?.data?.length ?? 0;
 	const liveCount = courses.filter((course) => course.isPublished).length;
+
+	const enrollmentsResult = enrollmentsData?.data;
+	const enrollments = useMemo(
+		() => enrollmentsResult?.items ?? [],
+		[enrollmentsResult],
+	);
+	const enrollmentCount = enrollmentsResult?.pagination.total ?? 0;
+
+	// Sum the fetched page; a server aggregate is the scale-up past the fetch limit.
+	const totalRevenue = useMemo(
+		() =>
+			enrollments.reduce(
+				(runningTotal, enrollment) =>
+					runningTotal + (enrollment.amountPaid ?? 0),
+				0,
+			),
+		[enrollments],
+	);
+
+	// Enrollments arrive newest-first, so the first 5 are the most recent.
+	const recentEnrollments = useMemo(() => enrollments.slice(0, 5), [enrollments]);
 
 	// "Recently added" — newest first, regardless of the list endpoint's order.
 	const recentCourses = useMemo(
@@ -161,10 +153,10 @@ const OverviewPage = () => {
 		[courses],
 	);
 
-	if (coursesLoading || studentsLoading)
+	if (coursesLoading || studentsLoading || enrollmentsLoading)
 		return <Loader className="min-h-[80vh]" />;
 
-	if (coursesError || studentsError)
+	if (coursesError || studentsError || enrollmentsError)
 		return (
 			<LoadFailed
 				title="Couldn't load the overview"
@@ -172,6 +164,7 @@ const OverviewPage = () => {
 				onRetry={() => {
 					refetchCourses();
 					refetchStudents();
+					refetchEnrollments();
 				}}
 			/>
 		);
@@ -198,12 +191,12 @@ const OverviewPage = () => {
 				/>
 				<StatCard
 					label="Enrollments"
-					value={sampleEnrollments.length}
+					value={enrollmentCount}
 					sub="Across all courses"
 				/>
 				<StatCard
 					label="Revenue"
-					value={formatPrice(sampleRevenue)}
+					value={formatPrice(totalRevenue)}
 					sub="Gross sales"
 				/>
 			</div>
@@ -259,12 +252,18 @@ const OverviewPage = () => {
 						</button>
 					</div>
 
-					<DataTable
-						columns={enrollmentColumns}
-						rows={sampleEnrollments}
-						getRowKey={(enrollment) => enrollment.id}
-						ariaLabelledby="recent-enrollments-heading"
-					/>
+					{recentEnrollments.length === 0 ? (
+						<p className="p-10 text-center font-mono text-sm text-muted-foreground">
+							No enrollments yet.
+						</p>
+					) : (
+						<DataTable
+							columns={enrollmentColumns}
+							rows={recentEnrollments}
+							getRowKey={(enrollment) => enrollment._id}
+							ariaLabelledby="recent-enrollments-heading"
+						/>
+					)}
 				</div>
 			</div>
 		</section>

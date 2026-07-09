@@ -7,14 +7,19 @@ import { MemoryRouter, Routes, Route } from "react-router";
 
 const mockRefetchCourses = vi.fn();
 const mockRefetchStudents = vi.fn();
+const mockRefetchEnrollments = vi.fn();
 const mockUseListCourses = vi.fn();
 const mockUseListStudents = vi.fn();
+const mockUseListEnrollments = vi.fn();
 
 vi.mock("@/hooks/useCourses", () => ({
 	useListCourses: () => mockUseListCourses(),
 }));
 vi.mock("@/hooks/useStudents", () => ({
 	useListStudents: () => mockUseListStudents(),
+}));
+vi.mock("@/hooks/useEnrollments", () => ({
+	useListEnrollments: () => mockUseListEnrollments(),
 }));
 
 import OverviewPage from "@/pages/admin/OverviewPage";
@@ -55,6 +60,56 @@ const studentsResult = {
 	refetch: mockRefetchStudents,
 };
 
+// `total` (7) intentionally exceeds the 3 fetched items, so the Enrollments tile
+// asserts on pagination.total rather than items.length. One item omits
+// `amountPaid` to exercise the "treat missing as 0" path in the revenue sum.
+const enrollmentsResult = {
+	data: {
+		data: {
+			items: [
+				{
+					_id: "en1",
+					userId: {
+						_id: "u1",
+						name: "Meera Krishnan",
+						email: "meera@example.com",
+					},
+					courseId: { _id: "1", title: "React from Scratch" },
+					amountPaid: 49900,
+					currency: "INR",
+					createdAt: "2026-06-25T00:00:00.000Z",
+				},
+				{
+					_id: "en2",
+					userId: {
+						_id: "u2",
+						name: "Arjun Reddy",
+						email: "arjun@example.com",
+					},
+					courseId: { _id: "2", title: "TS Deep Dive" },
+					amountPaid: 79900,
+					currency: "INR",
+					createdAt: "2026-06-22T00:00:00.000Z",
+				},
+				{
+					_id: "en3",
+					userId: {
+						_id: "u3",
+						name: "Nisha Rao",
+						email: "nisha@example.com",
+					},
+					courseId: { _id: "3", title: "Node Basics" },
+					createdAt: "2026-06-20T00:00:00.000Z",
+				},
+			],
+			pagination: { page: 1, limit: 100, total: 7, totalPages: 1 },
+		},
+	},
+	isLoading: false,
+	isError: false,
+	refetch: mockRefetchEnrollments,
+};
+
 const renderPage = () =>
 	render(
 		<MemoryRouter initialEntries={["/admin"]}>
@@ -74,6 +129,7 @@ describe("OverviewPage", () => {
 		vi.resetAllMocks();
 		mockUseListCourses.mockReturnValue(coursesResult);
 		mockUseListStudents.mockReturnValue(studentsResult);
+		mockUseListEnrollments.mockReturnValue(enrollmentsResult);
 	});
 
 	it("shows derived student and course counts with the live/draft split", () => {
@@ -83,10 +139,12 @@ describe("OverviewPage", () => {
 		expect(screen.getByText(/1 live · 1 draft/i)).toBeInTheDocument();
 	});
 
-	it("shows the enrollments count and revenue derived from enrollment data", () => {
+	it("shows the enrollments total and revenue derived from the real API", () => {
 		renderPage();
-		expect(screen.getByText("5")).toBeInTheDocument(); // enrollments count
-		expect(screen.getByText("₹4,395")).toBeInTheDocument(); // summed revenue
+		// pagination.total, independent of the fetched page size
+		expect(screen.getByText("7")).toBeInTheDocument();
+		// 49900 + 79900 + 0 (missing) = 129800 paise → ₹1,298
+		expect(screen.getByText("₹1,298")).toBeInTheDocument();
 	});
 
 	it("lists recently added courses, newest first", () => {
@@ -101,18 +159,33 @@ describe("OverviewPage", () => {
 		expect(rows[2]).toHaveTextContent("TS Deep Dive");
 	});
 
-	it("lists recent enrollments", () => {
+	it("lists real recent enrollments and drops the placeholder sample data", () => {
 		renderPage();
 		const enrollmentsTable = screen.getByRole("table", {
 			name: /recent enrollments/i,
 		});
 		expect(
-			within(enrollmentsTable).getByText("Rahul Verma"),
+			within(enrollmentsTable).getByText("Meera Krishnan"),
 		).toBeInTheDocument();
-		// header row + at least one enrollment row
 		expect(
-			within(enrollmentsTable).getAllByRole("row").length,
-		).toBeGreaterThan(1);
+			within(enrollmentsTable).getByText("meera@example.com"),
+		).toBeInTheDocument();
+		// The old hardcoded sample name must be gone.
+		expect(screen.queryByText("Rahul Verma")).not.toBeInTheDocument();
+	});
+
+	it("shows an empty state when there are no enrollments", () => {
+		mockUseListEnrollments.mockReturnValue({
+			...enrollmentsResult,
+			data: {
+				data: {
+					items: [],
+					pagination: { page: 1, limit: 100, total: 0, totalPages: 1 },
+				},
+			},
+		});
+		renderPage();
+		expect(screen.getByText("No enrollments yet.")).toBeInTheDocument();
 	});
 
 	it("navigates to the full courses list", async () => {
@@ -141,7 +214,7 @@ describe("OverviewPage", () => {
 		expect(screen.getByRole("status")).toBeInTheDocument();
 	});
 
-	it("shows the load-failed state and retries both queries on click", async () => {
+	it("shows the load-failed state and retries every query on click", async () => {
 		const user = userEvent.setup();
 		mockUseListCourses.mockReturnValue({
 			...coursesResult,
@@ -154,5 +227,6 @@ describe("OverviewPage", () => {
 		await user.click(screen.getByRole("button", { name: /try again/i }));
 		expect(mockRefetchCourses).toHaveBeenCalledOnce();
 		expect(mockRefetchStudents).toHaveBeenCalledOnce();
+		expect(mockRefetchEnrollments).toHaveBeenCalledOnce();
 	});
 });
