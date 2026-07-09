@@ -1,10 +1,10 @@
 ---
 status: approved
-version: 1.5
-date: 2026-07-05
+version: 1.7
+date: 2026-07-09
 ---
 
-# 05 — API
+# 05 - API
 
 Plain **REST/JSON over HTTPS**, resource-oriented, mounted under `/api`. The contract
 between the Vite client and the Express server. The per-route **RBAC matrix** (§4) is the
@@ -25,11 +25,11 @@ primary evidence of access-control design (NFR-1).
 ## 1. Conventions
 
 - **Format:** JSON in/out. Success returns the resource or `{ data }`; errors return a
-  consistent shape `{ error: { code, message } }` — **never** stack traces or
+  consistent shape `{ error: { code, message } }` - **never** stack traces or
   secret-bearing text (NFR-4).
-- **Auth transport:** session-id cookie (httpOnly + Secure + SameSite=Lax), sent
-  automatically by the browser on same-site requests to `api.coursely.app`. No tokens in
-  headers.
+- **Auth transport:** session-id cookie (httpOnly + Secure + SameSite=None, host-only), sent
+  automatically by the browser on cross-origin requests to the API. Mutations are additionally
+  guarded by an `Origin`/`Referer` check (CSRF; `06 §3`). No tokens in headers.
 - **Validation:** every request body/param is schema-validated at the route boundary
   before use; invalid input → `400` with a field-level message (NFR-4).
 - **Guards:** `requireAuth` (valid session) and `requireAdmin` (`role === admin`)
@@ -42,90 +42,91 @@ primary evidence of access-control design (NFR-1).
 ## 2. Resource Routes
 
 ### Auth
-- `POST /api/auth/signup` — create student account, start session.
-- `POST /api/auth/login` — verify bcrypt, start session (rate-limited).
-- `POST /api/auth/logout` — destroy session server-side.
-- `GET  /api/auth/me` — current user `{ id, name, email, role }`.
+- `POST /api/auth/signup` - create student account, start session.
+- `POST /api/auth/login` - verify bcrypt, start session (rate-limited).
+- `POST /api/auth/logout` - destroy session server-side.
+- `GET  /api/auth/me` - current user `{ id, name, email, role }`.
 
 ### Catalog (public reads, admin writes)
-- `GET  /api/courses` — list published courses; each item carries `category`, `lessonCount`, and
+- `GET  /api/courses` - list published courses; each item carries `category`, `lessonCount`, and
   `totalDuration` (tallied from the lessons). `?q=` runs a Mongo `$text` relevance search over
   title / description / instructor; a whitespace-only `q` skips search (newest-first) (FR-2).
-- `GET  /api/courses/:slug` — course detail + curriculum (sections + lessons with
-  `isPreview`/locked flags), plus `learningOutcomes`. **`videoKey` / `trailerKey` are never
-  returned** (the trailer is fetched via its own signed-URL route below).
-- `POST /api/courses` — create course.
-- `PATCH /api/courses/:id` — edit course.
-- `DELETE /api/courses/:id` — delete course; **`409` if any enrollment exists** (unpublish
-  instead — see `04 §6`); otherwise cascades sections, lessons, R2 objects, orphan progress.
+- `GET  /api/courses/:slug` - course detail + curriculum (sections + lessons with
+  `isPreview`/locked flags), plus `learningOutcomes` and a computed `hasTrailer` boolean.
+  **`videoKey` / `trailerKey` are never returned** - the trailer's existence is surfaced only
+  as `hasTrailer`; the trailer itself is fetched via its own signed-URL route below.
+- `POST /api/courses` - create course.
+- `PATCH /api/courses/:id` - edit course.
+- `DELETE /api/courses/:id` - delete course; **`409` if any enrollment exists** (unpublish
+  instead - see `04 §6`); otherwise cascades sections, lessons, R2 objects, orphan progress.
 - `POST /api/courses/:courseId/sections` · `PATCH /api/sections/:id` · `DELETE /api/sections/:id`
 - `POST /api/sections/:sectionId/lessons` · `PATCH /api/lessons/:id` · `DELETE /api/lessons/:id`
 
 ### Media
-- `POST /api/lessons/:id/upload-url` — admin; mint presigned **PUT** for
+- `POST /api/lessons/:id/upload-url` - admin; mint presigned **PUT** for
   `lessons/{id}/source.mp4`. API never receives video bytes (FR-21, AD-4).
-- `PATCH /api/lessons/:id/video` — admin; store the `videoKey` after the browser's direct
+- `PATCH /api/lessons/:id/video` - admin; store the `videoKey` after the browser's direct
   PUT to R2 succeeds.
-- `GET  /api/lessons/:id/playback-url` — **`optionalAuth`**; mint presigned **GET** (~1 h TTL, per
+- `GET  /api/lessons/:id/playback-url` - **`optionalAuth`**; mint presigned **GET** (~1 h TTL, per
   request). A **preview** lesson on a **published** course is playable by anyone, including
   anonymous callers; a **paid** lesson requires auth + enrollment (`401 UNAUTHORIZED_ACCESS` if
   anonymous, then `403 NOT_ENROLLED`). A **draft/unpublished** course returns `404` for non-admins
   (no existence leak); **admins bypass** the gate. `videoKey` existence is checked only **after**
   the gate (FR-17, NFR-3).
-- `POST /api/courses/:id/trailer-url` — **admin**; mint presigned **PUT** for
+- `POST /api/courses/:id/trailer-url` - **admin**; mint presigned **PUT** for
   `courses/{id}/trailer.mp4`; store `trailerKey` via `PATCH /api/courses/:id` after the
   browser's direct PUT to R2 succeeds.
-- `GET  /api/courses/:slug/trailer-url` — **public, ungated**; mint a short-lived presigned
-  **GET** for the course trailer (no auth, no enrollment — it is marketing); `404` if the
+- `GET  /api/courses/:slug/trailer-url` - **public, ungated**; mint a short-lived presigned
+  **GET** for the course trailer (no auth, no enrollment - it is marketing); `404` if the
   course has no `trailerKey`. Distinct from preview lessons (FR-3).
 
 ### Payments
-- `POST /api/checkout` — **student** (`authenticate`); body `{ courseId }` (validated). Creates a
+- `POST /api/checkout` - **student** (`authenticate`); body `{ courseId }` (validated). Creates a
   Stripe hosted-Checkout Session for the **published** course at its stored price and returns
   `{ url }` (the hosted Checkout URL to redirect to). Errors: `404 COURSE_NOT_FOUND` (missing **or
-  a draft** — a draft never leaks), `409 ALREADY_ENROLLED`. **Stamps
-  `{ userId, courseId, expectedAmount, expectedCurrency }` into the Session `metadata`** — the sole
+  a draft** - a draft never leaks), `409 ALREADY_ENROLLED`. **Stamps
+  `{ userId, courseId, expectedAmount, expectedCurrency }` into the Session `metadata`** - the sole
   link the (sessionless) webhook and the reconciliation endpoint use to know who/what to enroll,
   plus the price snapshot they validate against. Sets `success_url` / `cancel_url`. Prices are
   integer paise passed **1:1** as Stripe `unit_amount` (no ×100).
-- `POST /api/webhooks/stripe` — **see §3**; signature-verified (no session); records the
+- `POST /api/webhooks/stripe` - **see §3**; signature-verified (no session); records the
   enrollment. Returns a bare `{ received: true }` `200`.
-- `GET /api/checkout/:sessionId/status` — **student, own session**; **reconciliation fallback** —
+- `GET /api/checkout/:sessionId/status` - **student, own session**; **reconciliation fallback** -
   the server independently retrieves the Checkout Session from Stripe, **asserts
-  `session.metadata.userId === req.user.id`** (a student cannot act on another user's `sessionId` —
+  `session.metadata.userId === req.user.id`** (a student cannot act on another user's `sessionId` -
   IDOR, `06 §2-E`), and if `payment_status === 'paid'` confirms/creates the enrollment (idempotent,
-  via the shared recorder). Returns `{ enrolled, status, course? { slug, title } }` — `course` is
+  via the shared recorder). Returns `{ enrolled, status, course? { slug, title } }` - `course` is
   present only when paid + enrolled; a pending session returns `{ enrolled: false, status }`.
   Errors: `404 CHECKOUT_SESSION_NOT_FOUND`, `403 UNAUTHORIZED_ACCESS`. Backstop for a
   delayed/failed webhook (see §3).
 
 ### Enrollment & dashboard
-- `GET /api/enrollments/me` — **student**; the caller's enrollments → "My Courses", newest-first,
+- `GET /api/enrollments/me` - **student**; the caller's enrollments → "My Courses", newest-first,
   each with its course summary populated (`title`, `slug`, `thumbnailUrl`, `instructorName`,
   `price`, `currency`).
-- `GET /api/admin/enrollments?page&limit` — **admin**; every enrollment — who bought what + when
+- `GET /api/admin/enrollments?page&limit` - **admin**; every enrollment - who bought what + when
   (FR-23). Paginated: `page` (default `1`) and `limit` (default `10`, **max `100`**), newest-first.
   Returns `{ items, pagination { page, limit, total, totalPages } }`, each item's `userId`
   populated `{ name, email }` and `courseId` `{ title }`.
-- `GET /api/learning/overview` — **student** (`authenticate`, caller-scoped); one aggregate for the
-  learning dashboard. Returns `{ stats, courses, recentLessons }` — `stats` (enrolled, inProgress,
+- `GET /api/learning/overview` - **student** (`authenticate`, caller-scoped); one aggregate for the
+  learning dashboard. Returns `{ stats, courses, recentLessons }` - `stats` (enrolled, inProgress,
   completed, lessonsCompleted, totalLessons, overallPercent); `courses[]` (per-course
   completedLessons / percentComplete / `state` + `nextLesson` "continue learning");
   `recentLessons[]` (newest-first, capped 4) (FR-18).
 
 ### Progress
 All authenticated; `userId` is always taken from the session (IDOR-safe).
-- `PUT /api/progress/:lessonId` — **student**; body is `{ positionSeconds }` **only** — the client
+- `PUT /api/progress/:lessonId` - **student**; body is `{ positionSeconds }` **only** - the client
   **cannot** set `completed`; the server derives it. Enrollment-gated (`403 NOT_ENROLLED`,
   `404 LESSON_NOT_FOUND`). Atomic upsert (FR-15/16).
-- `GET /api/progress/course/:courseId` — **student**; enrollment-gated, strictly
+- `GET /api/progress/course/:courseId` - **student**; enrollment-gated, strictly
   `{userId, courseId}`-scoped; returns an array of `{ lessonId, positionSeconds, completed }` for
   the player UI.
 
-### Admin — student management
-- `GET   /api/admin/students` — list students.
-- `GET   /api/admin/students/:id` — student detail + their enrollments.
-- `PATCH /api/admin/students/:id` — toggle `role`, toggle `isActive`. **Cannot** set
+### Admin - student management
+- `GET   /api/admin/students` - list students.
+- `GET   /api/admin/students/:id` - student detail + their enrollments.
+- `PATCH /api/admin/students/:id` - toggle `role`, toggle `isActive`. **Cannot** set
   passwords or create enrollments (FR-22).
 
 ## 3. The Stripe Webhook (deliberate exception)
@@ -133,14 +134,14 @@ All authenticated; `userId` is always taken from the session (IDOR-safe).
 `POST /api/webhooks/stripe` is the **only** unauthenticated endpoint that writes to the
 database. Its authenticity comes from the **Stripe signature**, not a session:
 
-- Mounted with a **raw-body** parser **before** the global JSON parser — Stripe's
+- Mounted with a **raw-body** parser **before** the global JSON parser - Stripe's
   signature is computed over the exact bytes; the JSON parser would mutate them and break
   verification.
 - Handler verifies `Stripe-Signature` against the webhook secret. On
   `checkout.session.completed`: read `{ userId, courseId }` from the session **`metadata`**
   (stamped at `POST /api/checkout`), validate `amount_total`/`currency` against the
-  **`expectedAmount`/`expectedCurrency` snapshot in that same `metadata`** — **not the live course
-  record**, so a mid-checkout admin price change can't fail a buyer who has already paid — then
+  **`expectedAmount`/`expectedCurrency` snapshot in that same `metadata`** - **not the live course
+  record**, so a mid-checkout admin price change can't fail a buyer who has already paid - then
   upsert the enrollment for that user+course. A mismatch is **logged (`PAYMENT_AMOUNT_MISMATCH`)
   and skipped, never thrown**, so the webhook still acknowledges `200` and Stripe stops retrying.
   The unique `{userId, courseId}` index makes the handler safe under Stripe's at-least-once retries
@@ -151,7 +152,7 @@ database. Its authenticity comes from the **Stripe signature**, not a session:
 backstop, the client success page (which holds the `session_id`) calls
 `GET /api/checkout/:sessionId/status`; the server **independently** fetches that Checkout
 Session from Stripe and, if `payment_status === 'paid'`, confirms the enrollment. This is
-still server-verified (the server asks Stripe directly — it does not trust the browser's
+still server-verified (the server asks Stripe directly - it does not trust the browser's
 "I paid"), and the unique index keeps it idempotent against the webhook, so a student is
 never left charged-without-access by a late webhook.
 
@@ -167,7 +168,7 @@ checkout.session.completed` replays events for the idempotency/amount tests.
 | `GET /courses`, `GET /courses/:slug` | ✓ | ✓ | ✓ |
 | `GET /lessons/:id/playback-url` (preview lesson) | ✓ | ✓ | ✓ |
 | `GET /lessons/:id/playback-url` (paid lesson) | ✗ | ✓ if enrolled | ✓ |
-| `POST /auth/signup`, `POST /auth/login` | ✓ | — | — |
+| `POST /auth/signup`, `POST /auth/login` | ✓ | - | - |
 | `POST /auth/logout`, `GET /auth/me` | ✗ | ✓ | ✓ |
 | `POST /checkout` | ✗ | ✓ | ✓ |
 | `GET /checkout/:sessionId/status` | ✗ | ✓ (own session) | ✓ |
@@ -180,7 +181,31 @@ checkout.session.completed` replays events for the idempotency/amount tests.
 ## 5. Open Questions (tracked in 07-plan)
 
 - Pagination on admin lists: **`/admin/enrollments` now ships `?page&limit`** (default `10`,
-  max `100`); `/admin/students` pagination is still deferred — trivial dataset at launch scale,
+  max `100`); `/admin/students` pagination is still deferred - trivial dataset at launch scale,
   add only if the list grows.
 - **Resolved.** The learning dashboard ships as **one aggregate endpoint**,
   `GET /api/learning/overview`, rather than being composed client-side from smaller reads.
+
+## 6. Design Rationale - key decisions & why
+
+Each decision below shows **what we chose, why we chose it, and the option we turned down.**
+
+### Delete responses include a short message, not an empty reply
+- **Choice.** When something is deleted, the API replies with a short success message, rather than the "empty" no-content reply that REST often uses.
+- **Why.** The app shows that message to the user. An empty reply carries nothing, so the app would have to invent the feedback itself.
+- **Alternative rejected.** The empty "no content" reply - technically tidy, but it leaves the app with nothing to show.
+
+### Store prices in the smallest unit (paise), exactly as Stripe expects
+- **Choice.** Prices are kept and sent in paise - the smallest rupee unit - which is exactly the number Stripe wants.
+- **Why.** Stripe already works in the smallest unit. If we stored rupees and multiplied by 100 somewhere, a slip would charge people **100 times** too much.
+- **Alternative rejected.** Storing rupees and multiplying at checkout - a 100× overcharge waiting to happen.
+
+### Check the payment against the price captured at checkout, not the current price
+- **Choice.** When Stripe confirms a payment, we compare the amount paid against the price we recorded *at the moment checkout started*, not whatever the course costs now.
+- **Why.** If an admin changes a course's price while someone is mid-purchase, the buyer who already paid the old price shouldn't be blocked. Comparing against the captured price still rejects a payment that was tampered with or underpaid.
+- **Alternative rejected.** Comparing against the course's current price - it would wrongly reject a genuine buyer if the price changed mid-checkout.
+
+### Put the admin-only check in one place, not on each route
+- **Choice.** The "must be a logged-in admin" check is applied once, where all admin routes are grouped, instead of repeated on each one.
+- **Why.** One gate means no admin route can accidentally ship without it.
+- **Alternative rejected.** Adding the check to every route by hand - easy to forget one and leave an admin action exposed.

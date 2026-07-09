@@ -6,6 +6,7 @@ import AppError from "../errors/AppError";
 import envConfig from "../constants/env";
 import httpStatus from "../constants/httpStatus";
 import appErrorCode from "../constants/appErrorCode";
+import { SESSION_COOKIE_NAME } from "../utils/cookies";
 
 const { APP_ORIGIN } = envConfig;
 const { FORBIDDEN } = httpStatus;
@@ -24,8 +25,8 @@ const refererOrigin = (referer: string | undefined): string | undefined => {
 	}
 };
 
-// CSRF guard for mutations: the request Origin (or Referer origin) must match
-// APP_ORIGIN. Absent both is allowed (non-browser request, carries no cookie).
+// CSRF guard for mutations: Origin/Referer must equal APP_ORIGIN. With neither
+// header, fail closed when the request is authenticated (carries a session cookie).
 const verifyRequestOrigin: RequestHandler = (req, _res, next) => {
 	if (SAFE_METHODS.has(req.method)) {
 		next();
@@ -33,8 +34,14 @@ const verifyRequestOrigin: RequestHandler = (req, _res, next) => {
 	}
 
 	const requestOrigin = req.get("origin") ?? refererOrigin(req.get("referer"));
+	const hasSession = Boolean(req.signedCookies?.[SESSION_COOKIE_NAME]);
 
-	if (requestOrigin !== undefined && requestOrigin !== APP_ORIGIN) {
+	const originMismatch =
+		requestOrigin !== undefined && requestOrigin !== APP_ORIGIN;
+	const missingOriginOnAuthedRequest =
+		requestOrigin === undefined && hasSession;
+
+	if (originMismatch || missingOriginOnAuthedRequest) {
 		throw new AppError(
 			"Request origin not allowed",
 			FORBIDDEN,

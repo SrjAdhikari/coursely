@@ -1,13 +1,13 @@
 ---
 status: approved
-version: 1.3
-date: 2026-07-05
+version: 1.5
+date: 2026-07-09
 ---
 
-# 02 — Requirements
+# 02 - Requirements
 
 Each requirement is testable. **FR** = functional (what it does), **NFR** = non-functional
-(how well — performance, security, and operability).
+(how well - performance, security, and operability).
 
 ## Functional Requirements
 
@@ -23,7 +23,7 @@ Each requirement is testable. **FR** = functional (what it does), **NFR** = non-
   instructor, description, curriculum (sections + lesson list), lesson count, price,
   **preview lessons** (FR-4), and a distinct **trailer / introduction video**. The trailer
   is a short course-level clip self-hosted in R2 (`courses.trailerKey`), served **ungated**
-  via a short-lived signed URL (no enrollment needed — it is marketing). If a course has no
+  via a short-lived signed URL (no enrollment needed - it is marketing). If a course has no
   trailer, the page falls back to the thumbnail.
 
 - **FR-4** Lessons flagged `isPreview` are playable by anyone (no login, no enrollment).
@@ -45,7 +45,7 @@ Each requirement is testable. **FR** = functional (what it does), **NFR** = non-
 - **FR-10** A logged-in student can purchase a single course via Stripe Checkout (test
   mode), one-time payment at the course's own price.
 - **FR-11** Enrollment is created **only** on a signature-verified Stripe webhook
-  (`checkout.session.completed`) — never on the client success redirect.
+  (`checkout.session.completed`) - never on the client success redirect.
 - **FR-12** An enrollment grants lifetime access to that course's non-preview lessons.
 - **FR-13** Duplicate purchase of an already-enrolled course is prevented.
 
@@ -54,8 +54,8 @@ Each requirement is testable. **FR** = functional (what it does), **NFR** = non-
 - **FR-14** Enrolled (or preview) lessons play in a modern player supporting: keyboard
   shortcuts, fullscreen, and seek.
 - **FR-15** Playback position is saved per lesson (`positionSeconds`, posted ~every
-  10–15s); reopening a lesson resumes at the saved second.
-- **FR-16** A lesson auto-marks **complete at ≥95% watched** — the completion is
+  10-15s); reopening a lesson resumes at the saved second.
+- **FR-16** A lesson auto-marks **complete at ≥95% watched** - the completion is
   **server-derived** and **sticky** (once complete it never un-completes); course progress =
   completed lessons ÷ total lessons.
 - **FR-17** Video is served from a short-lived signed URL minted per request, gated on
@@ -66,7 +66,8 @@ Each requirement is testable. **FR** = functional (what it does), **NFR** = non-
 ### Student dashboard
 
 - **FR-18** Shows enrolled courses ("My Courses"), a "Continue Learning" entry pointing
-  to the next incomplete lesson, per-course progress %, and recently watched lessons.
+  to the lesson to resume (the most-recently-watched incomplete lesson, else the first
+  incomplete lesson in curriculum order), per-course progress %, and recently watched lessons.
 
 ### Admin dashboard
 
@@ -90,7 +91,7 @@ Each requirement is testable. **FR** = functional (what it does), **NFR** = non-
 - **NFR-2** Payment integrity: enrollment cannot be forged client-side; webhook signature
   is verified; Stripe amount/currency are validated against the course record.
 - **NFR-3** Content protection: no paid video has a public, guessable, or long-lived URL;
-  signed URLs are minted per request and expire (**~1 h TTL** — long enough to watch a lesson
+  signed URLs are minted per request and expire (**~1 h TTL** - long enough to watch a lesson
   without a mid-playback expiry on a native `<video>` player, which keeps issuing range requests
   as it buffers/seeks; the per-request enrollment check at mint time is the real access control).
 - **NFR-4** All request input is validated/sanitized server-side (schema validation) before
@@ -116,5 +117,24 @@ Each requirement is testable. **FR** = functional (what it does), **NFR** = non-
 ## Open Questions (deferred, tracked in 07-plan)
 
 - Exact keyboard-shortcut set and whether speed/PiP/subtitles (optional FR-14 extras) make
-  the cut — decided during implementation.
+  the cut - decided during implementation.
 - Whether HLS/multi-quality (out of scope per Overview) is attempted as a stretch.
+
+## Design Rationale - key decisions & why
+
+Each decision below shows **what we chose, why we chose it, and the option we turned down.**
+
+### Access is granted only after Stripe confirms payment (FR-11)
+- **Choice.** When someone pays, the "thank you" page they land on only *shows* the result - it never grants access. The access record is created only when Stripe itself sends us a confirmed, signed payment message.
+- **Why.** We can't trust the person's browser - anyone could open the "thank you" page without paying. Only Stripe's signed message proves a real payment happened.
+- **Alternative rejected.** Granting access as soon as someone reaches the "thank you" page - that's trivial to fake.
+
+### The server decides when a lesson is "complete", and it stays complete (FR-16)
+- **Choice.** The video player only reports how far someone has watched (in seconds). The server decides whether that counts as finished (95% or more), and once a lesson is marked finished it never flips back.
+- **Why.** If the browser could declare a lesson "complete", anyone could fake it. Letting the server decide - and making it stick - keeps progress honest and stops a lesson bouncing back to unfinished if the viewer scrubs backward.
+- **Alternative rejected.** Trusting a "completed" flag sent by the browser - easy to fake (it would only affect that person's own progress, but it's needless trust).
+
+### The admin can't set passwords or hand out course access (FR-22)
+- **Choice.** The admin can manage accounts (roles, enable/disable) and the catalogue, but cannot set someone's password or manually give them a course.
+- **Why.** It keeps every course access tied to a real Stripe payment we can point to later. If the admin could hand out access by hand, that link to a real payment would be broken.
+- **Alternative rejected.** Letting the admin grant access or reset passwords - a manual back door around the "you only get in by paying" rule.
