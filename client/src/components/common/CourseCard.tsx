@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import pluralize from "@/lib/pluralize";
 
 interface CourseCardProps {
 	to: string;
@@ -69,9 +70,7 @@ const CourseCard = ({
 					)}
 
 					{typeof lessonCount === "number" && (
-						<span>
-							{lessonCount} {lessonCount === 1 ? "lesson" : "lessons"}
-						</span>
+						<span>{pluralize(lessonCount, "lesson")}</span>
 					)}
 				</div>
 			)}

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 
 import ROUTES from "@/routes/paths";
 import { formatLessonDuration, formatRuntime } from "@/lib/duration";
+import pluralize from "@/lib/pluralize";
 import type { PublicSectionPayload } from "@/types/course.types";
 
 interface CurriculumAccordionProps {
@@ -62,7 +63,7 @@ const CurriculumAccordion = ({ sections, slug }: CurriculumAccordionProps) => {
 							<span className="flex flex-1 items-center justify-between gap-3 pr-3">
 								<span className="font-medium">{section.title}</span>
 								<span className="text-xs text-muted-foreground">
-									{lessonCount} {lessonCount === 1 ? "lesson" : "lessons"} ·{" "}
+									{pluralize(lessonCount, "lesson")} ·{" "}
 									{formatRuntime(sectionSeconds)}
 								</span>
 							</span>

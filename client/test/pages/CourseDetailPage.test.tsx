@@ -201,6 +201,37 @@ describe("CourseDetailPage", () => {
 		expect(screen.queryByText(/of content/i)).not.toBeInTheDocument();
 	});
 
+	it("shows singular section/lesson labels when there is exactly one of each", () => {
+		renderPage();
+		expect(screen.getByText("1 section · 1 lesson")).toBeInTheDocument();
+	});
+
+	it("shows plural section/lesson labels when there is more than one of each", () => {
+		mockUseGetCourseBySlug.mockReturnValue({
+			data: {
+				data: {
+					...courseData,
+					sections: [
+						courseData.sections[0],
+						{
+							...courseData.sections[0],
+							_id: "s2",
+							title: "Advanced",
+							lessons: [
+								{ ...courseData.sections[0].lessons[0], _id: "l2", sectionId: "s2" },
+							],
+						},
+					],
+				},
+			},
+			isLoading: false,
+			isError: false,
+			refetch: vi.fn(),
+		});
+		renderPage();
+		expect(screen.getByText("2 sections · 2 lessons")).toBeInTheDocument();
+	});
+
 	it("shows not-found on error", () => {
 		mockUseGetCourseBySlug.mockReturnValue({
 			data: undefined,
