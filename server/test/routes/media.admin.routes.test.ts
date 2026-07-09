@@ -14,6 +14,7 @@ vi.mock("../../src/lib/r2", async (importOriginal) => {
 });
 
 import app from "../../src/app";
+import envConfig from "../../src/constants/env";
 import {
 	createTestUser,
 	createTestCourse,
@@ -21,8 +22,10 @@ import {
 	createTestLesson,
 } from "../helpers/factories";
 
+const { APP_ORIGIN } = envConfig;
+
 const adminAgent = async () => {
-	const agent = request.agent(app);
+	const agent = request.agent(app).set("Origin", APP_ORIGIN);
 	await createTestUser({
 		email: "admin@example.com",
 		password: "Password@123",
@@ -49,7 +52,7 @@ describe("admin media routes — authz", () => {
 			password: "Password@123",
 			role: "student",
 		});
-		const studentAgent = request.agent(app);
+		const studentAgent = request.agent(app).set("Origin", APP_ORIGIN);
 		await studentAgent
 			.post("/api/auth/login")
 			.send({ email: "student@example.com", password: "Password@123" });

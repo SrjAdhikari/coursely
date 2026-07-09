@@ -9,12 +9,12 @@ import envConfig from "../../src/constants/env";
 import Enrollment from "../../src/models/enrollment.model";
 import { createTestUser, createTestCourse } from "../helpers/factories";
 
-const { STRIPE_WEBHOOK_SECRET } = envConfig;
+const { STRIPE_WEBHOOK_SECRET, APP_ORIGIN } = envConfig;
 const PASSWORD = "Password@123";
 
 // Log a student in via the real auth flow; returns the agent + the user doc.
 const studentAgent = async () => {
-	const agent = request.agent(app);
+	const agent = request.agent(app).set("Origin", APP_ORIGIN);
 	const user = await createTestUser({
 		email: `buyer-${Date.now()}@example.com`,
 		password: PASSWORD,

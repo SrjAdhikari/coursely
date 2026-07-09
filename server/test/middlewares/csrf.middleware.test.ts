@@ -6,13 +6,16 @@ import type { Request, Response } from "express";
 import verifyRequestOrigin from "../../src/middlewares/csrf.middleware";
 import AppError from "../../src/errors/AppError";
 import envConfig from "../../src/constants/env";
+import { SESSION_COOKIE_NAME } from "../../src/utils/cookies";
 
 const { APP_ORIGIN } = envConfig; // http://localhost:5173 in the test env
 
-// Minimal request stub with a case-insensitive header getter.
+// Minimal request stub with a case-insensitive header getter and optional
+// signed session cookie (set `session: true` to simulate a logged-in caller).
 const reqWith = (
 	method: string,
 	headers: { origin?: string; referer?: string } = {},
+	options: { session?: boolean } = {},
 ) =>
 	({
 		method,
@@ -22,6 +25,9 @@ const reqWith = (
 				: name.toLowerCase() === "referer"
 					? headers.referer
 					: undefined,
+		signedCookies: options.session
+			? { [SESSION_COOKIE_NAME]: "a-session-id" }
+			: {},
 	}) as unknown as Request;
 
 const expectForbidden = (call: () => void) => {
@@ -82,9 +88,19 @@ describe("verifyRequestOrigin (CSRF guard)", () => {
 		);
 	});
 
-	it("allows when neither Origin nor Referer is present (non-browser client)", () => {
+	it("allows neither Origin nor Referer when there is no session cookie (non-browser client)", () => {
 		const next = vi.fn();
 		verifyRequestOrigin(reqWith("POST"), {} as Response, next);
 		expect(next).toHaveBeenCalledWith();
+	});
+
+	it("rejects an unsafe method with neither header when a session cookie is present (fail closed)", () => {
+		expectForbidden(() =>
+			verifyRequestOrigin(
+				reqWith("POST", {}, { session: true }),
+				{} as Response,
+				vi.fn(),
+			),
+		);
 	});
 });

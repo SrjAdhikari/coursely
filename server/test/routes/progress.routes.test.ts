@@ -5,6 +5,7 @@ import { Types } from "mongoose";
 import request from "supertest";
 
 import app from "../../src/app";
+import envConfig from "../../src/constants/env";
 import Progress from "../../src/models/progress.model";
 import {
 	createTestUser,
@@ -12,12 +13,15 @@ import {
 	createTestEnrollment,
 } from "../helpers/factories";
 
+const { APP_ORIGIN } = envConfig;
 const PASSWORD = "Password@123";
 
 // Established route-test convention: a supertest agent that carries the auth
-// cookie set by a real POST /api/auth/login (no hand-signed cookies).
+// cookie set by a real POST /api/auth/login (no hand-signed cookies). The agent
+// also sends a matching Origin on every request, like a real browser, so the CSRF
+// guard (which fails closed on an authenticated request with no Origin) is satisfied.
 const loginStudent = async (email: string) => {
-	const agent = request.agent(app);
+	const agent = request.agent(app).set("Origin", APP_ORIGIN);
 	const user = await createTestUser({ email, password: PASSWORD, role: "student" });
 	await agent.post("/api/auth/login").send({ email, password: PASSWORD });
 	return { agent, user };

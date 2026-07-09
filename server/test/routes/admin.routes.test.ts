@@ -4,6 +4,7 @@ import { describe, it, expect } from "vitest";
 import request from "supertest";
 
 import app from "../../src/app";
+import envConfig from "../../src/constants/env";
 import {
 	createTestUser,
 	createTestCourse,
@@ -11,9 +12,11 @@ import {
 	createTestLesson,
 } from "../helpers/factories";
 
+const { APP_ORIGIN } = envConfig;
+
 // Log a user in via the real auth flow and return an authenticated agent.
 const adminAgent = async () => {
-	const agent = request.agent(app);
+	const agent = request.agent(app).set("Origin", APP_ORIGIN);
 	await createTestUser({
 		email: "admin@example.com",
 		password: "Password@123",
@@ -26,7 +29,7 @@ const adminAgent = async () => {
 };
 
 const studentAgent = async () => {
-	const agent = request.agent(app);
+	const agent = request.agent(app).set("Origin", APP_ORIGIN);
 	await createTestUser({
 		email: "student@example.com",
 		password: "Password@123",

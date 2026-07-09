@@ -4,7 +4,10 @@ import { describe, it, expect } from "vitest";
 import request from "supertest";
 
 import app from "../../src/app";
+import envConfig from "../../src/constants/env";
 import { createTestUser } from "../helpers/factories";
+
+const { APP_ORIGIN } = envConfig;
 
 const VALID = {
 	name: "Asha Rai",
@@ -14,7 +17,7 @@ const VALID = {
 
 describe("auth routes", () => {
 	it("register sets a session cookie and GET /me returns the user", async () => {
-		const agent = request.agent(app);
+		const agent = request.agent(app).set("Origin", APP_ORIGIN);
 
 		const register = await agent.post("/api/auth/register").send(VALID);
 		expect(register.status).toBe(201);
@@ -48,7 +51,7 @@ describe("auth routes", () => {
 	});
 
 	it("logout deletes the session server-side (subsequent /me → 401)", async () => {
-		const agent = request.agent(app);
+		const agent = request.agent(app).set("Origin", APP_ORIGIN);
 		await agent
 			.post("/api/auth/register")
 			.send({ ...VALID, email: "bye@example.com" });
