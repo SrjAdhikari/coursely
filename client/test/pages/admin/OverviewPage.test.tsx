@@ -147,6 +147,27 @@ describe("OverviewPage", () => {
 		expect(screen.getByText("₹1,298")).toBeInTheDocument();
 	});
 
+	it("flags the revenue tile as a partial sum when the fetched page is truncated", () => {
+		renderPage(); // default mock: total 7 exceeds the 3 fetched
+		expect(
+			screen.getByText(/gross sales \(latest 3 of 7\)/i),
+		).toBeInTheDocument();
+	});
+
+	it("labels the revenue tile plainly when the whole set is fetched", () => {
+		mockUseListEnrollments.mockReturnValue({
+			...enrollmentsResult,
+			data: {
+				data: {
+					items: enrollmentsResult.data.data.items,
+					pagination: { page: 1, limit: 100, total: 3, totalPages: 1 },
+				},
+			},
+		});
+		renderPage();
+		expect(screen.getByText("Gross sales")).toBeInTheDocument();
+	});
+
 	it("lists recently added courses, newest first", () => {
 		renderPage();
 		const coursesTable = screen.getByRole("table", {

@@ -197,7 +197,11 @@ const OverviewPage = () => {
 				<StatCard
 					label="Revenue"
 					value={formatPrice(totalRevenue)}
-					sub="Gross sales"
+					sub={
+						enrollmentCount > enrollments.length
+							? `Gross sales (latest ${enrollments.length} of ${enrollmentCount})`
+							: "Gross sales"
+					}
 				/>
 			</div>
 
