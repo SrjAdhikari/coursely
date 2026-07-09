@@ -46,6 +46,11 @@ describe("PurchaseCard", () => {
 		expect(screen.getByText(/5h 42m of content/i)).toBeInTheDocument();
 	});
 
+	it("shows a singular video lesson label when there is exactly one lesson", () => {
+		renderCard({ lessonCount: 1 });
+		expect(screen.getByText("1 video lesson")).toBeInTheDocument();
+	});
+
 	it("always renders the course thumbnail as the media poster", () => {
 		renderCard({ hasTrailer: false });
 		expect(screen.getByAltText("Mastering React")).toHaveAttribute(

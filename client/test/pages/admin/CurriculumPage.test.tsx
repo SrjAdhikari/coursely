@@ -177,6 +177,12 @@ describe("CurriculumPage", () => {
 		expect(screen.getByLabelText(/has video/i)).toBeInTheDocument();
 	});
 
+	it("shows singular section/lesson counts in the summary and section header", () => {
+		renderPage();
+		expect(screen.getByText("1 section · 1 lesson")).toBeInTheDocument();
+		expect(screen.getByText("1 lesson")).toBeInTheDocument();
+	});
+
 	it("shows the load-failed state when the course fails to load", () => {
 		mockGetCourse.mockReturnValue({
 			data: undefined,

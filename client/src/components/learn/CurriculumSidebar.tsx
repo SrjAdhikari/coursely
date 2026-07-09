@@ -2,6 +2,7 @@
 
 import { Progress } from "@/components/ui/progress";
 import CurriculumLessonRow from "@/components/learn/CurriculumLessonRow";
+import pluralize from "@/lib/pluralize";
 
 import type { PublicSectionPayload } from "@/types/course.types";
 import type { ProgressPayload } from "@/types/progress.types";
@@ -42,7 +43,7 @@ const CurriculumSidebar = ({
 						<Progress value={overallPercent} />
 						<div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
 							<span>
-								{completedCount} of {totalLessons} lessons
+								{completedCount} of {pluralize(totalLessons, "lesson")}
 							</span>
 
 							<span className="font-medium text-primary">

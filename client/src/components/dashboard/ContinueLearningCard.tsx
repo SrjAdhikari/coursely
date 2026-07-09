@@ -8,6 +8,7 @@ import type { LearningCoursePayload } from "@/types/learning.types";
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import pluralize from "@/lib/pluralize";
 
 interface ContinueLearningCardProps {
 	courses: LearningCoursePayload[];
@@ -80,7 +81,8 @@ const ContinueLearningCard = ({ courses }: ContinueLearningCardProps) => {
 
 						<span className="text-xs text-muted-foreground">
 							{course.percentComplete}% · {course.title} ·{" "}
-							{course.completedLessons} / {course.totalLessons} lessons
+							{course.completedLessons} /{" "}
+							{pluralize(course.totalLessons, "lesson")}
 						</span>
 					</div>
 				</div>

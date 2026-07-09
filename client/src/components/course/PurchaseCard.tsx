@@ -9,6 +9,7 @@ import CourseTrailerMedia from "@/components/course/CourseTrailerMedia";
 
 import { formatPrice } from "@/lib/currency";
 import { formatRuntime } from "@/lib/duration";
+import pluralize from "@/lib/pluralize";
 
 type PurchaseStatus = "guest" | "buyable" | "enrolled";
 
@@ -134,7 +135,7 @@ const PurchaseCard = ({
 			<ul className="space-y-2.5 border-t border-border p-5 text-sm text-muted-foreground">
 				<li className="flex items-center gap-2.5">
 					<Check className="size-4 text-primary" />
-					{lessonCount} video lessons
+					{pluralize(lessonCount, "video lesson")}
 				</li>
 
 				{totalDuration > 0 && (
@@ -152,8 +153,7 @@ const PurchaseCard = ({
 				{showPreviewLine && (
 					<li className="flex items-center gap-2.5">
 						<Check className="size-4 text-primary" />
-						{previewLessonCount} free preview{" "}
-						{previewLessonCount === 1 ? "lesson" : "lessons"}
+						{pluralize(previewLessonCount, "free preview lesson")}
 					</li>
 				)}
 			</ul>

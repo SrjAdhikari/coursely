@@ -9,6 +9,7 @@ import ROUTES from "@/routes/paths";
 import { Button } from "@/components/ui/button";
 import AppLogo from "@/components/common/AppLogo";
 import UserMenu from "@/components/common/UserMenu";
+import HomeMobileMenu from "@/components/layout/home/HomeMobileMenu";
 import ThemeToggle from "@/components/theme/theme-toggle";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -79,6 +80,7 @@ const HomeHeader = () => {
 					)}
 
 					<ThemeToggle />
+					<HomeMobileMenu user={user} />
 				</div>
 			</div>
 		</header>

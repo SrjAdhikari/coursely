@@ -9,6 +9,7 @@ import { Search, Plus, LibraryBig, SearchX } from "lucide-react";
 import { useListCourses, useDeleteCourse } from "@/hooks/useCourses";
 import { formatPrice } from "@/lib/currency";
 import { COURSES_KEY } from "@/lib/queryKeys";
+import pluralize from "@/lib/pluralize";
 
 import Loader from "@/components/Loader";
 import { Badge } from "@/components/ui/badge";
@@ -156,7 +157,7 @@ const CoursesPage = () => {
 					</div>
 
 					<span className="font-mono text-xs text-muted-foreground">
-						{courses.length} {courses.length === 1 ? "course" : "courses"}
+						{pluralize(courses.length, "course")}
 					</span>
 				</div>
 

@@ -1,11 +1,13 @@
 //* src/pages/CatalogPage.tsx
 
-import { useCallback, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { Search, BookOpen, SearchX } from "lucide-react";
 
 import ROUTES from "@/routes/paths";
 import { formatPrice } from "@/lib/currency";
+import pluralize from "@/lib/pluralize";
+import useDebounce from "@/hooks/useDebounce";
 import { useListPublishedCourses } from "@/hooks/useCourses";
 
 import CourseCard from "@/components/common/CourseCard";
@@ -15,6 +17,7 @@ import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
 import { Button } from "@/components/ui/button";
 
 const ALL_CATEGORIES = "All";
+const SEARCH_DEBOUNCE_MS = 300;
 
 /** Public catalog — published courses with a URL-synced search + category chips. */
 const CatalogPage = () => {
@@ -22,23 +25,33 @@ const CatalogPage = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
 
-	// The URL is the source of truth for the query (so a shared /courses?q=… link
-	// lands pre-filtered); typing syncs back with replace so it doesn't stack history.
+	// Input lives in local state so fast typing never drops chars; debounced → ?q=.
 	const query = searchParams.get("q") ?? "";
+	const [searchInput, setSearchInput] = useState(query);
+	const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
 
-	const setQuery = useCallback(
-		(value: string) => {
-			setSearchParams(
-				(params) => {
-					if (value) params.set("q", value);
-					else params.delete("q");
-					return params;
-				},
-				{ replace: true },
-			);
-		},
-		[setSearchParams],
-	);
+	// Pull external URL changes (back/forward, deep link) back into the input.
+	useEffect(() => {
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		setSearchInput((current) => (current === query ? current : query));
+	}, [query]);
+
+	// Push settled input → ?q=; skips re-pushing a stale value after an external change.
+	useEffect(() => {
+		if (debouncedSearch !== searchInput) return;
+
+		setSearchParams(
+			(previous) => {
+				if ((previous.get("q") ?? "") === debouncedSearch) return previous;
+
+				const next = new URLSearchParams(previous);
+				if (debouncedSearch) next.set("q", debouncedSearch);
+				else next.delete("q");
+				return next;
+			},
+			{ replace: true },
+		);
+	}, [debouncedSearch, searchInput, setSearchParams]);
 
 	const courses = useMemo(() => data?.data ?? [], [data]);
 
@@ -73,10 +86,19 @@ const CatalogPage = () => {
 		return filtered;
 	}, [courses, query, selectedCategory]);
 
-	const clearSearch = useCallback(() => {
-		setQuery("");
+	const clearSearch = () => {
+		setSearchInput("");
 		setSelectedCategory(ALL_CATEGORIES);
-	}, [setQuery]);
+		setSearchParams(
+			(previous) => {
+				if (!previous.has("q")) return previous;
+				const next = new URLSearchParams(previous);
+				next.delete("q");
+				return next;
+			},
+			{ replace: true },
+		);
+	};
 
 	if (isLoading) return <Loader className="min-h-[80vh]" />;
 	if (isError)
@@ -96,15 +118,15 @@ const CatalogPage = () => {
 						Browse courses
 					</h1>
 					<p className="mt-1.5 text-sm text-muted-foreground">
-						{courses.length} {courses.length === 1 ? "course" : "courses"}
+						{pluralize(filteredCourses.length, "course")}
 					</p>
 				</div>
 
 				<div className="flex max-w-80 flex-1 items-center gap-2.5 rounded-lg border border-input bg-card px-3 py-2 focus-within:border-primary/30">
 					<Search className="size-4 text-muted-foreground" />
 					<input
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
+						value={searchInput}
+						onChange={(event) => setSearchInput(event.target.value)}
 						placeholder="Search courses…"
 						aria-label="Search courses"
 						className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"

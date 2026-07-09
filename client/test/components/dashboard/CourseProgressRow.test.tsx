@@ -23,6 +23,11 @@ describe("CourseProgressRow", () => {
 		expect(screen.getByText(/39% · 7 \/ 18 lessons/)).toBeInTheDocument();
 	});
 
+	it("shows a singular lesson label when totalLessons is 1", () => {
+		renderRow({ ...base, totalLessons: 1, completedLessons: 0, percentComplete: 0 });
+		expect(screen.getByText("0% · 0 / 1 lesson")).toBeInTheDocument();
+	});
+
 	it("in_progress → shows the next lesson and Resume links to it", () => {
 		renderRow(base);
 		expect(

@@ -7,6 +7,7 @@ import type { LearningCoursePayload } from "@/types/learning.types";
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import pluralize from "@/lib/pluralize";
 
 interface CourseProgressRowProps {
 	course: LearningCoursePayload;
@@ -53,7 +54,7 @@ const CourseProgressRow = ({ course }: CourseProgressRowProps) => {
 
 					<span className="flex-none text-xs text-muted-foreground">
 						{course.percentComplete}% · {course.completedLessons} /{" "}
-						{course.totalLessons} lessons
+						{pluralize(course.totalLessons, "lesson")}
 					</span>
 				</div>
 

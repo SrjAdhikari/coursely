@@ -1,5 +1,7 @@
 //* src/components/dashboard/OverallProgressCard.tsx
 
+import pluralize from "@/lib/pluralize";
+
 interface OverallProgressCardProps {
 	percent: number;
 	completed: number;
@@ -43,7 +45,7 @@ const OverallProgressCard = ({
 		</div>
 
 		<p className="text-xs text-muted-foreground">
-			{completed} / {total} lessons completed
+			{completed} / {pluralize(total, "lesson")} completed
 		</p>
 	</div>
 );

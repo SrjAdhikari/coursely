@@ -25,7 +25,10 @@ const progressByLesson = new Map<string, ProgressPayload>([
 	["l1", { lessonId: "l1", positionSeconds: 120, completed: true }],
 ]);
 
-const renderSidebar = (currentLessonId = "l2") =>
+const renderSidebar = (
+	currentLessonId = "l2",
+	overrides: Partial<{ completedCount: number; totalLessons: number }> = {},
+) =>
 	render(
 		<MemoryRouter>
 			<CurriculumSidebar
@@ -36,8 +39,8 @@ const renderSidebar = (currentLessonId = "l2") =>
 				progressByLesson={progressByLesson}
 				currentLessonId={currentLessonId}
 				overallPercent={50}
-				completedCount={1}
-				totalLessons={2}
+				completedCount={overrides.completedCount ?? 1}
+				totalLessons={overrides.totalLessons ?? 2}
 			/>
 		</MemoryRouter>,
 	);
@@ -56,6 +59,11 @@ describe("CurriculumSidebar", () => {
 		renderSidebar();
 		expect(screen.getByText("50% complete")).toBeInTheDocument();
 		expect(screen.getByText("1 of 2 lessons")).toBeInTheDocument();
+	});
+
+	it("shows a singular lesson label when totalLessons is 1", () => {
+		renderSidebar("l2", { completedCount: 1, totalLessons: 1 });
+		expect(screen.getByText("1 of 1 lesson")).toBeInTheDocument();
 	});
 
 	it("marks only the current lesson with aria-current", () => {

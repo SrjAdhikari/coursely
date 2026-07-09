@@ -6,6 +6,7 @@ import { GraduationCap } from "lucide-react";
 import ROUTES from "@/routes/paths";
 import useLearningOverview from "@/hooks/useLearningOverview";
 import type { LearningCourseState } from "@/types/learning.types";
+import pluralize from "@/lib/pluralize";
 
 import CourseProgressRow from "@/components/dashboard/CourseProgressRow";
 import Loader from "@/components/Loader";
@@ -57,8 +58,8 @@ const MyCoursesPage = () => {
 			<div>
 				<h1 className="font-heading text-3xl font-semibold">My Courses</h1>
 				<p className="mt-1.5 text-sm text-muted-foreground">
-					{courses.length} courses · {lessonsDone} of {lessonsTotal} lessons
-					done
+					{pluralize(courses.length, "course")} ·{" "}
+					{lessonsDone} of {pluralize(lessonsTotal, "lesson")} done
 				</p>
 			</div>
 
@@ -74,7 +75,7 @@ const MyCoursesPage = () => {
 							</h2>
 
 							<span className="flex-none text-xs text-muted-foreground">
-								{group.length} {group.length === 1 ? "course" : "courses"}
+								{pluralize(group.length, "course")}
 							</span>
 
 							<span aria-hidden className="h-px flex-1 bg-border" />

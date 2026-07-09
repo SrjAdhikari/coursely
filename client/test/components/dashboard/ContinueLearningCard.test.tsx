@@ -46,6 +46,11 @@ describe("ContinueLearningCard", () => {
 		).toBeInTheDocument();
 	});
 
+	it("shows a singular lesson label when totalLessons is 1", () => {
+		renderCard([make({ title: "Micro Course", completedLessons: 1, totalLessons: 1 })]);
+		expect(screen.getByText(/1 \/ 1 lesson$/)).toBeInTheDocument();
+	});
+
 	it("shows the lesson number and section in the kick label", () => {
 		renderCard([
 			make({ nextLesson: { lessonId: "l9", title: "Effects", lessonNumber: 9, sectionTitle: "State & hooks" } }),

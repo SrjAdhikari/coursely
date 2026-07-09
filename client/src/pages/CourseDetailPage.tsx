@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatRuntime } from "@/lib/duration";
 import { redirectTo } from "@/lib/navigation";
 import { MY_ENROLLMENTS_KEY } from "@/lib/queryKeys";
+import pluralize from "@/lib/pluralize";
 
 /** Public course detail — curriculum + the three-state purchase card. */
 const CourseDetailPage = () => {
@@ -120,7 +121,8 @@ const CourseDetailPage = () => {
 
 					<span className="flex items-center gap-1.5">
 						<Layers className="size-3.5" />
-						{course.sections.length} sections · {lessonCount} lessons
+						{pluralize(course.sections.length, "section")} ·{" "}
+						{pluralize(lessonCount, "lesson")}
 					</span>
 
 					{totalDuration > 0 && (

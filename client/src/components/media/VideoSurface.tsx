@@ -8,7 +8,7 @@ import {
 	Maximize,
 	Minimize,
 	Gauge,
-	LoaderIcon,
+	Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,12 @@ const VideoSurface = ({
 		duration > 0 ? clamp((bufferedEnd / duration) * 100, 0, 100) : 0;
 	const isSilent = muted || volume === 0;
 
+	// Refocus the container after toggling so keyboard shortcuts keep working.
+	const handleSurfaceToggle = () => {
+		togglePlay();
+		containerRef.current?.focus();
+	};
+
 	return (
 		<div
 			ref={containerRef}
@@ -90,7 +96,7 @@ const VideoSurface = ({
 			<video
 				ref={videoRef}
 				src={src}
-				onClick={togglePlay}
+				onClick={handleSurfaceToggle}
 				playsInline
 				className="h-full w-full cursor-pointer"
 			/>
@@ -101,7 +107,7 @@ const VideoSurface = ({
 					aria-label="Buffering"
 					className="pointer-events-none absolute inset-0 grid place-items-center"
 				>
-					<LoaderIcon
+					<Loader2
 						className="size-10 animate-spin text-white/90"
 						aria-hidden
 					/>
@@ -112,7 +118,7 @@ const VideoSurface = ({
 				<button
 					type="button"
 					aria-label="Play video"
-					onClick={togglePlay}
+					onClick={handleSurfaceToggle}
 					className="absolute top-1/2 left-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
 				>
 					<Play className="size-7 translate-x-0.5 fill-current" aria-hidden />

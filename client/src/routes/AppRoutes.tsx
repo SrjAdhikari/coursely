@@ -22,6 +22,7 @@ import CheckoutSuccessPage from "@/pages/CheckoutSuccessPage";
 import CheckoutCancelPage from "@/pages/CheckoutCancelPage";
 import MyCoursesPage from "@/pages/MyCoursesPage";
 import LearnPage from "@/pages/LearnPage";
+import NotFoundPage from "@/pages/NotFoundPage";
 
 import OverviewPage from "@/pages/admin/OverviewPage";
 import CoursesPage from "@/pages/admin/CoursesPage";
@@ -37,6 +38,7 @@ const AppRoutes = () => {
 		<Routes>
 			<Route element={<HomeLayout />}>
 				<Route path={ROUTES.ROOT} element={<HomePage />} />
+				<Route path="*" element={<NotFoundPage />} />
 			</Route>
 
 			{/* Public storefront */}
@@ -59,10 +61,7 @@ const AppRoutes = () => {
 			<Route element={<ProtectedRoute />}>
 				{/* Learner watch page — full-bleed, not under StoreLayout */}
 				<Route path="/learn/:courseSlug" element={<LearnPage />} />
-				<Route
-					path="/learn/:courseSlug/:lessonId"
-					element={<LearnPage />}
-				/>
+				<Route path="/learn/:courseSlug/:lessonId" element={<LearnPage />} />
 
 				{/* Protected storefront */}
 				<Route element={<StoreLayout />}>

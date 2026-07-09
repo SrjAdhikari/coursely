@@ -62,4 +62,30 @@ describe("MyCoursesPage", () => {
 		expect(screen.getByText("JavaScript Essentials")).toBeInTheDocument(); // completed
 		expect(screen.getAllByText("1 course")).toHaveLength(3); // per-group count, one each
 	});
+
+	it("shows a singular course count in the header when there is exactly one enrolled course", () => {
+		mockOverview.mockReturnValue({
+			data: { data: { ...payload, courses: [payload.courses[0]] } },
+			isLoading: false,
+			isError: false,
+		});
+		renderPage();
+		expect(screen.getByText("1 course · 12 of 30 lessons done")).toBeInTheDocument();
+	});
+
+	it("shows a plural course count in the header for multiple enrolled courses", () => {
+		mockOverview.mockReturnValue({ data: { data: payload }, isLoading: false, isError: false });
+		renderPage();
+		expect(screen.getByText("3 courses · 12 of 30 lessons done")).toBeInTheDocument();
+	});
+
+	it("shows a singular lesson label in the header when totalLessons is 1", () => {
+		mockOverview.mockReturnValue({
+			data: { data: { ...payload, stats: { ...payload.stats, totalLessons: 1 }, courses: [payload.courses[0]] } },
+			isLoading: false,
+			isError: false,
+		});
+		renderPage();
+		expect(screen.getByText("1 course · 12 of 1 lesson done")).toBeInTheDocument();
+	});
 });

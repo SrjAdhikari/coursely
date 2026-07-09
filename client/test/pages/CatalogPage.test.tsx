@@ -1,7 +1,7 @@
 //* test/pages/CatalogPage.test.tsx
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 
@@ -74,14 +74,18 @@ describe("CatalogPage", () => {
 	it("filters client-side by title/instructor", async () => {
 		renderPage();
 		await userEvent.type(screen.getByLabelText(/search courses/i), "node");
-		expect(screen.queryByText("React Basics")).not.toBeInTheDocument();
+		await waitFor(() =>
+			expect(screen.queryByText("React Basics")).not.toBeInTheDocument(),
+		);
 		expect(screen.getByText("Node APIs")).toBeInTheDocument();
 	});
 
 	it("shows a no-results placeholder when nothing matches", async () => {
 		renderPage();
 		await userEvent.type(screen.getByLabelText(/search courses/i), "zzz");
-		expect(screen.getByText(/no courses match/i)).toBeInTheDocument();
+		await waitFor(() =>
+			expect(screen.getByText(/no courses match/i)).toBeInTheDocument(),
+		);
 	});
 
 	it("shows the empty state when there are no courses", () => {
@@ -138,5 +142,22 @@ describe("CatalogPage", () => {
 		expect(screen.getByText(/no courses match/i)).toBeInTheDocument();
 		await userEvent.click(screen.getByRole("button", { name: /clear search/i }));
 		expect(screen.getByText("React Basics")).toBeInTheDocument();
+	});
+
+	it("keeps the full typed query in the input without dropping characters", async () => {
+		renderPage();
+		const searchBox = screen.getByLabelText(/search courses/i);
+		await userEvent.type(searchBox, "react node javascript");
+		expect(searchBox).toHaveValue("react node javascript");
+	});
+
+	it("shows the filtered count with correct pluralization", async () => {
+		renderPage();
+		expect(screen.getByText(/^2 courses$/)).toBeInTheDocument();
+
+		await userEvent.type(screen.getByLabelText(/search courses/i), "node");
+		await waitFor(() =>
+			expect(screen.getByText(/^1 course$/)).toBeInTheDocument(),
+		);
 	});
 });

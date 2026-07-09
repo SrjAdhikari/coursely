@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 
 import { courseKey } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
+import pluralize from "@/lib/pluralize";
 
 import ROUTES from "@/routes/paths";
 import type { LessonPayload, SectionWithLessons } from "@/types/course.types";
@@ -97,7 +98,8 @@ const CurriculumPage = () => {
 			</p>
 
 			<div className="mb-4 text-xs text-muted-foreground">
-				{sections.length} sections · {lessonCount} lessons
+				{pluralize(sections.length, "section")} ·{" "}
+				{pluralize(lessonCount, "lesson")}
 			</div>
 
 			{sections.map((section, index) => (
@@ -112,7 +114,7 @@ const CurriculumPage = () => {
 
 						<h4 className="flex-1 font-semibold">{section.title}</h4>
 						<span className="text-[11.5px] text-muted-foreground">
-							{section.lessons.length} lessons
+							{pluralize(section.lessons.length, "lesson")}
 						</span>
 
 						<Button

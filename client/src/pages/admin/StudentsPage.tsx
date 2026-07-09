@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 import { Search, UsersRound, SearchX } from "lucide-react";
 
 import { useListStudents } from "@/hooks/useStudents";
+import pluralize from "@/lib/pluralize";
 import Loader from "@/components/Loader";
 import { Badge } from "@/components/ui/badge";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
@@ -121,7 +122,7 @@ const StudentsPage = () => {
 					</div>
 
 					<span className="font-mono text-xs text-muted-foreground">
-						{students.length} {students.length === 1 ? "student" : "students"}
+						{pluralize(students.length, "student")}
 					</span>
 				</div>
 
