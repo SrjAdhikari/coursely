@@ -93,6 +93,28 @@ describe("VideoSurface", () => {
 		).not.toBeInTheDocument();
 	});
 
+	it("returns focus to the player after the center play button is clicked", () => {
+		// The overlay button unmounts on play; focus must fall back to the player
+		// container so keyboard shortcuts keep working.
+		render(<VideoSurface src="https://r2/v" />);
+		const playerRegion = screen.getByRole("region", { name: "Video player" });
+
+		fireEvent.click(screen.getByRole("button", { name: "Play video" }));
+
+		expect(playerRegion).toHaveFocus();
+	});
+
+	it("returns focus to the player when the video body is clicked", () => {
+		// Clicking the video itself (not the center overlay) also toggles play, so
+		// it must return focus to the container too or shortcuts go dead.
+		const { container } = render(<VideoSurface src="https://r2/v" />);
+		const playerRegion = screen.getByRole("region", { name: "Video player" });
+
+		fireEvent.click(getVideo(container));
+
+		expect(playerRegion).toHaveFocus();
+	});
+
 	it("seeks the element when the scrub bar is dragged", () => {
 		const { container } = render(<VideoSurface src="https://r2/v" />);
 		const video = getVideo(container);
