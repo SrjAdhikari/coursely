@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.2
-date: 2026-07-05
+version: 1.3
+date: 2026-07-09
 ---
 
 # 06 — Security / Threat Model
@@ -128,10 +128,18 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
 
 ## 3. Cross-Cutting Controls
 
-- **CSRF:** `SameSite=Lax` session cookie is the primary defense (blocks the cross-site
-  request shapes that drive CSRF). **Defense-in-depth:** mutating routes additionally
-  reject requests whose `Origin`/`Referer` is not the known frontend. Two layers, no token
-  plumbing.
+- **CSRF:** the frontend and API are served from **independent origins**, so the session
+  cookie is `SameSite=None; Secure` (required for the browser to send it cross-site) — which
+  means `SameSite` cannot be the CSRF control here. The **primary defense is an
+  `Origin`/`Referer` guard** (`verifyRequestOrigin`, `middlewares/csrf.middleware.ts`): every
+  state-changing request (any method but `GET`/`HEAD`/`OPTIONS`) must carry an `Origin` — or,
+  failing that, a `Referer` whose origin — equal to the configured `APP_ORIGIN`, else it is
+  rejected `403 CSRF_ORIGIN_MISMATCH` before any handler runs. A forged cross-site `fetch` or
+  form POST from a browser always sends a foreign `Origin` and is blocked; a request carrying
+  **neither** header is a non-browser caller that holds no session cookie (no CSRF risk) and
+  is allowed. The Stripe webhook is exempt — it is mounted above the guard and authenticated
+  by signature, not a session. No CSRF token plumbing. (Local dev is same-origin over
+  `localhost`, so the cookie is `SameSite=Lax` there.)
 - **CORS:** locked to the single frontend origin with `credentials: true`; no wildcard.
 - **XSS:** React escapes output by default and `dangerouslySetInnerHTML` is avoided
   (reflected XSS). **Stored XSS** — admin-entered course/lesson text is rendered to
@@ -153,7 +161,7 @@ Card data never crosses our boundaries — it lives entirely inside Stripe Check
 | Broken Access Control (A01) | §2-E (RBAC, IDOR, playback gating) |
 | Injection — NoSQL (A03) | §2-T (validation, mongo-sanitize); no SQL used |
 | XSS (A03) | §3 XSS + CSP |
-| CSRF | §3 (Lax + Origin/Referer) |
+| CSRF | §3 (Origin/Referer guard; `SameSite=None` cross-site) |
 | DDoS / availability | §2-D (rate limit, body limits, Cloudflare, direct-to-R2) |
 | Security headers / CSP | §3 (helmet + explicit CSP) |
 

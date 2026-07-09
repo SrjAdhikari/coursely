@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.3
-date: 2026-07-05
+version: 1.4
+date: 2026-07-09
 ---
 
 # 07 — Implementation Plan
@@ -14,8 +14,8 @@ parks everything deferred.
 
 **Deploy a thin slice end-to-end first, then thicken it.** Get an (almost empty)
 client + API + DB + R2 wired together and *live on the real domain* before building
-features. Rationale: the hard, launch-blocking problems — CORS, the SameSite cookie across
-subdomains, the Stripe webhook reaching a public URL — are *integration* problems that
+features. Rationale: the hard, launch-blocking problems — CORS, the cross-site `SameSite=None`
+session cookie, the Stripe webhook reaching a public URL — are *integration* problems that
 only appear once deployed. Discovering them early is cheap; discovering them at the end is
 expensive. Everything after M0 is layered onto a thing already proven to deploy. Core
 capabilities come before any optional extras.
@@ -26,8 +26,8 @@ capabilities come before any optional extras.
 - Monorepo scaffold: `/client` (Vite React), `/server` (Express, layered).
 - Deploy pipeline live: the static host builds `/client`; the managed host (paid) builds `/server`; Atlas M0
   connected; R2 bucket created (private).
-- Domain wired: `coursely.app` → static host, `api.coursely.app` → managed host, SSL on both;
-  CORS locked to the frontend origin; session cookie `httpOnly+Secure+SameSite=Lax`.
+- Frontend + API deployed on their own origins (separate hosts), SSL on both; CORS locked to
+  the frontend origin; session cookie `httpOnly+Secure+SameSite=None`, host-only (cross-site).
 - Auth end-to-end: signup / login / logout / session (custom `Session` collection), bcrypt,
   `requireAuth`/`requireAdmin`, rate limiting + helmet.
 - **Exit:** a real user can register, log in, and log out on the live domain.

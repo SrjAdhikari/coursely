@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.5
-date: 2026-07-05
+version: 1.6
+date: 2026-07-09
 ---
 
 # 05 — API
@@ -27,9 +27,9 @@ primary evidence of access-control design (NFR-1).
 - **Format:** JSON in/out. Success returns the resource or `{ data }`; errors return a
   consistent shape `{ error: { code, message } }` — **never** stack traces or
   secret-bearing text (NFR-4).
-- **Auth transport:** session-id cookie (httpOnly + Secure + SameSite=Lax), sent
-  automatically by the browser on same-site requests to `api.coursely.app`. No tokens in
-  headers.
+- **Auth transport:** session-id cookie (httpOnly + Secure + SameSite=None, host-only), sent
+  automatically by the browser on cross-origin requests to the API. Mutations are additionally
+  guarded by an `Origin`/`Referer` check (CSRF; `06 §3`). No tokens in headers.
 - **Validation:** every request body/param is schema-validated at the route boundary
   before use; invalid input → `400` with a field-level message (NFR-4).
 - **Guards:** `requireAuth` (valid session) and `requireAdmin` (`role === admin`)
@@ -52,8 +52,9 @@ primary evidence of access-control design (NFR-1).
   `totalDuration` (tallied from the lessons). `?q=` runs a Mongo `$text` relevance search over
   title / description / instructor; a whitespace-only `q` skips search (newest-first) (FR-2).
 - `GET  /api/courses/:slug` — course detail + curriculum (sections + lessons with
-  `isPreview`/locked flags), plus `learningOutcomes`. **`videoKey` / `trailerKey` are never
-  returned** (the trailer is fetched via its own signed-URL route below).
+  `isPreview`/locked flags), plus `learningOutcomes` and a computed `hasTrailer` boolean.
+  **`videoKey` / `trailerKey` are never returned** — the trailer's existence is surfaced only
+  as `hasTrailer`; the trailer itself is fetched via its own signed-URL route below.
 - `POST /api/courses` — create course.
 - `PATCH /api/courses/:id` — edit course.
 - `DELETE /api/courses/:id` — delete course; **`409` if any enrollment exists** (unpublish

@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.2
-date: 2026-07-05
+version: 1.3
+date: 2026-07-09
 ---
 
 # 03 — Architecture
@@ -120,23 +120,23 @@ which stores the object key on the lesson.
 
 ## 7. Cross-Cutting Concepts
 
-- **Authentication & cookie transport:** the client (`coursely.app`) and API
-  (`api.coursely.app`) are siblings under the registrable domain `coursely.app`.
-  Since `SameSite` is scoped to the eTLD+1, requests between them are **same-site** despite being
-  different origins, so the signed session cookie (`httpOnly + Secure + SameSite=Lax`,
-  **host-only** — no `Domain` attribute, scoped to the API host and unreadable by sibling apps)
-  is still sent on the frontend's cross-origin `fetch`. CORS is locked to the frontend origin with
-  `credentials: true`. **Cookie attributes by environment:** dev (`http://localhost`) omits
-  `Secure` so the cookie works over plain http; prod is `httpOnly + Secure + SameSite=Lax`,
-  host-only. **Custom-domain prerequisite:** this holds only once the API serves from
-  `api.coursely.app` — on a hosting platform's default subdomain the cookie is cross-site and
-  blocked, so the custom domain must be wired before auth is tested in prod.
+- **Authentication & cookie transport:** the client and API are served from **independent
+  origins** (separate hosts), so requests between them are **cross-site**. The signed session
+  cookie is therefore `httpOnly + Secure + SameSite=None` (**host-only** — no `Domain`
+  attribute, so it is scoped to the API host and unreadable by any other app), which is what
+  lets the browser send it on the frontend's cross-origin `fetch`. CORS is locked to the single
+  frontend origin with `credentials: true`. **Cookie attributes by environment:** prod is
+  `httpOnly + Secure + SameSite=None`, host-only; local dev is same-origin over
+  `http://localhost`, so it omits `Secure` and uses `SameSite=Lax`. Because the cookie is
+  cross-site, `SameSite` no longer defends CSRF — an `Origin`/`Referer` guard on mutations does
+  (see the CSRF note below and `06 §3`).
 - **R2 CORS:** the bucket carries a CORS rule allowing the frontend origin for the admin's direct
   presigned **PUT** upload (an XHR, subject to CORS); plain `<video>` GET playback is not subject
   to CORS, so signed-URL delivery needs no rule.
-- **CSRF:** `SameSite=Lax` blocks the cross-site request shapes that drive CSRF, so it is
-  the primary defense. Defense-in-depth on mutating routes (origin/referer check or CSRF
-  token) is specified in `06-security` as an additional, lighter layer.
+- **CSRF:** because the session cookie is `SameSite=None` (cross-site origins), `SameSite`
+  is **not** the CSRF control. The primary defense is an `Origin`/`Referer` guard on every
+  mutating route (`verifyRequestOrigin`), rejecting requests whose origin isn't the known
+  frontend with `403 CSRF_ORIGIN_MISMATCH`. Detailed in `06-security §3`. No CSRF token.
 - **Authorization:** role-based only (`requireAdmin`); no per-resource ownership (single
   platform-owner Admin per `01`).
 - **Config & secrets:** all secrets via environment only; never in the repo or client
@@ -155,17 +155,19 @@ Decisions significant + not-easily-reversed enough to record (full ADRs optional
   security burden.
 - **AD-4 Direct-to-R2 presigned transfer** — keep video bytes off the API.
 - **AD-5 Enrollment via verified webhook only** — payment integrity.
-- **AD-6 Sibling subdomains under one owned domain** (client + API) → same-site →
-  `SameSite=Lax` host-only session cookie. Chosen over the hosting platforms' default subdomains
-  (cross-site, would force `SameSite=None`): stronger CSRF posture (the domain is already
-  owned). Cookie is host-only so the sibling storage app cannot read it.
+- **AD-6 Independent origins for client + API** (separate hosts) → cross-site → session
+  cookie is `SameSite=None; Secure`, host-only. Because a cross-site cookie is still sent on
+  cross-origin requests, `SameSite` can't carry the CSRF defense, so an `Origin`/`Referer`
+  guard on mutating routes is the primary CSRF control (`06 §3`). Cookie stays host-only (no
+  `Domain` attribute) so no other app on a shared parent domain can read it.
 - **AD-7 Read-side catalog tallies** — `lessonCount`/`totalDuration` are computed on read
   via a plain `Lesson.find` + in-memory tally (chosen for simplicity/readability over a
   `$group` aggregation), not denormalized onto the course.
 
 ## 9. Risks
 
-- **CSRF** — largely neutralized by same-site `SameSite=Lax` cookies (AD-6); a lighter
-  origin-check / token layer on mutations is added in `06` as defense-in-depth.
+- **CSRF** — the session cookie is `SameSite=None` (cross-site origins), so an
+  `Origin`/`Referer` guard on mutating routes is the primary defense (AD-6, `06 §3`), not
+  `SameSite`.
 - **R2/Stripe credential leakage** — mitigated by env-only secrets + scoped keys.
 - **Single API instance** — acceptable at launch scale; no HA target in v1.

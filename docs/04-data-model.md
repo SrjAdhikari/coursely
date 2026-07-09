@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.4
-date: 2026-07-05
+version: 1.5
+date: 2026-07-09
 ---
 
 # 04 — Data Model
@@ -60,7 +60,7 @@ on each login (session-fixation defense, `06`).
 | `title` | string | |
 | `slug` | string | **unique**; `slugify(title)` + short collision suffix; used in public course URL |
 | `description` | string | |
-| `category` | string? | optional free-text label (≤60 chars); no fixed enum |
+| `category` | string | free-text label (1–60 chars), **required on create** (API validator); no fixed enum |
 | `learningOutcomes` | string[] | "what you'll learn" bullets; default `[]` |
 | `instructorName` | string | display string only — no instructor *role* exists |
 | `thumbnailUrl` | string | image URL |
@@ -71,7 +71,8 @@ on each login (session-fixation defense, `06`).
 | `createdAt` / `updatedAt` | Date | |
 
 > **Computed on read.** `lessonCount` / `totalDuration` are **not stored** on the course — they're
-> tallied from the `lessons` collection at read time.
+> tallied from the `lessons` collection at read time. Course detail additionally returns a computed
+> `hasTrailer` boolean (derived from whether `trailerKey` is set, which is itself never exposed).
 
 ### sections
 
@@ -155,9 +156,10 @@ on each login (session-fixation defense, `06`).
   lesson means no extra section/course lookup.
 - **Progress save** — upsert `progress.{userId, lessonId}` every ~10s.
 - **Dashboard** — `enrollments` by `userId` → courses; per-course % from the caller's
-  `progress` (loaded via `{userId, courseId}`); "continue" = lowest-`order` incomplete
-  lesson; "recently watched" = those same rows sorted by `updatedAt` **in memory** (bounded
-  per-user set) and capped.
+  `progress` (loaded via `{userId, courseId}`); the **resume ("continue") lesson = the
+  most-recently-watched incomplete lesson** (by `progress.updatedAt`), falling back to the
+  first incomplete lesson in curriculum order when none has been started; "recently watched"
+  = those same rows sorted by `updatedAt` **in memory** (bounded per-user set) and capped.
 
 ## 6. Integrity & Lifecycle
 

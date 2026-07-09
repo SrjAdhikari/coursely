@@ -1,7 +1,7 @@
 ---
 status: approved
-version: 1.3
-date: 2026-07-05
+version: 1.4
+date: 2026-07-09
 ---
 
 # 02 — Requirements
@@ -66,7 +66,8 @@ Each requirement is testable. **FR** = functional (what it does), **NFR** = non-
 ### Student dashboard
 
 - **FR-18** Shows enrolled courses ("My Courses"), a "Continue Learning" entry pointing
-  to the next incomplete lesson, per-course progress %, and recently watched lessons.
+  to the lesson to resume (the most-recently-watched incomplete lesson, else the first
+  incomplete lesson in curriculum order), per-course progress %, and recently watched lessons.
 
 ### Admin dashboard
 
