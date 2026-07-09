@@ -146,8 +146,8 @@ Card data never crosses our boundaries - it lives entirely inside Stripe Checkou
   cookie is `SameSite=None; Secure` (required for the browser to send it cross-site) - which
   means `SameSite` cannot be the CSRF control here. The **primary defense is an
   `Origin`/`Referer` guard** (`verifyRequestOrigin`, `middlewares/csrf.middleware.ts`): every
-  state-changing request (any method but `GET`/`HEAD`/`OPTIONS`) must carry an `Origin` - or,
-  failing that, a `Referer` whose origin - equal to the configured `APP_ORIGIN`, else it is
+  state-changing request (any method but `GET`/`HEAD`/`OPTIONS`) must carry an `Origin` (or,
+  failing that, a `Referer`) whose origin matches the configured `APP_ORIGIN`, else it is
   rejected `403 CSRF_ORIGIN_MISMATCH` before any handler runs. A forged cross-site `fetch` or
   form POST from a browser always sends a foreign `Origin` and is blocked. With **neither**
   header the guard **fails closed for authenticated requests**: one carrying a session cookie
