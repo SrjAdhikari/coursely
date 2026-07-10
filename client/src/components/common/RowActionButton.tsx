@@ -3,11 +3,11 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-const baseClass =
-	"cursor-pointer font-mono text-[13px] text-muted-foreground transition-colors";
-const hoverClass = {
-	default: "hover:text-primary",
-	destructive: "hover:text-destructive",
+const baseClass = "cursor-pointer font-mono text-[13px] transition-colors";
+// Destructive rows read red at rest (matching the Deactivate action), not just on hover.
+const variantClass = {
+	default: "text-muted-foreground hover:text-primary",
+	destructive: "text-destructive hover:text-destructive/80",
 };
 
 /** Text button for a table row action (Edit / Delete / Manage …). */
@@ -18,7 +18,7 @@ const RowActionButton = ({
 }: ComponentProps<"button"> & { variant?: "default" | "destructive" }) => (
 	<button
 		type="button"
-		className={cn(baseClass, hoverClass[variant], className)}
+		className={cn(baseClass, variantClass[variant], className)}
 		{...props}
 	/>
 );
