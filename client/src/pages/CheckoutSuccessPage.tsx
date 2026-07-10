@@ -131,7 +131,7 @@ const CheckoutSuccessPage = () => {
 				message={
 					checkoutStatus?.course?.title ? (
 						<>
-							Payment confirmed —{" "}
+							Payment confirmed.{" "}
 							<span className="text-primary">
 								{checkoutStatus.course.title}
 							</span>{" "}

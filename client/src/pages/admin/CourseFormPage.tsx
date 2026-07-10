@@ -102,7 +102,7 @@ const CourseFormPage = () => {
 							label="Category"
 							id="category"
 							placeholder="e.g. Web Development"
-							hint="Required - up to 60 characters"
+							hint="Required: up to 60 characters"
 							error={errors.category?.message}
 							{...register("category")}
 						/>
@@ -134,7 +134,7 @@ const CourseFormPage = () => {
 						placeholder="0"
 						prefix="₹"
 						className="font-mono"
-						hint="Whole rupees — stored as paise (₹999 → 99900)"
+						hint="Whole rupees: stored as paise (₹999 → 99900)"
 						error={errors.priceRupees?.message}
 						{...register("priceRupees")}
 					/>

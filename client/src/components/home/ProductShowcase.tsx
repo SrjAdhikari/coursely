@@ -305,7 +305,7 @@ const ProductShowcase = () => (
 			<ShowcaseRow
 				kicker="watch & learn"
 				heading="Your classroom is one focused screen"
-				intro="A distraction-free player with your curriculum right beside it — and progress that saves as you go."
+				intro="A distraction-free player with your curriculum right beside it, and progress that saves as you go."
 				points={[
 					"Distraction-free video player",
 					"Curriculum and progress side by side",
@@ -319,7 +319,7 @@ const ProductShowcase = () => (
 			<ShowcaseRow
 				kicker="the catalog"
 				heading="A focused catalog, no noise"
-				intro="A tight, curated set of web-development courses — each one with a clear title, an honest price, and free previews. Find your next one in seconds."
+				intro="A tight, curated set of web-development courses: each one with a clear title, an honest price, and free previews. Find your next one in seconds."
 				points={[
 					"Straightforward, scannable course cards",
 					"Filter by topic, not by hype",

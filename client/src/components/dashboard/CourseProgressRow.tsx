@@ -16,7 +16,7 @@ interface CourseProgressRowProps {
 // The line under the progress bar, worded per the course's state.
 const subLineFor = (course: LearningCoursePayload) => {
 	if (course.state === "completed") return "All lessons complete";
-	if (course.state === "not_started") return "Not started yet — begin anytime";
+	if (course.state === "not_started") return "Not started yet. Begin anytime";
 	return course.nextLesson ? `Next: ${course.nextLesson.title}` : null;
 };
 

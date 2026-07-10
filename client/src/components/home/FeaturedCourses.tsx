@@ -51,7 +51,7 @@ const FeaturedCourses = () => {
 				<EmptyStatePlaceholder
 					icon={BookOpen}
 					title="No courses yet"
-					description="New courses are on the way — check back soon."
+					description="New courses are on the way. Check back soon."
 				/>
 			) : (
 				<div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -7,13 +7,13 @@ const buildCards = [
 		idx: "01",
 		icon: Zap,
 		title: "Instant-start video",
-		body: "Lessons stream from Cloudflare R2 with zero egress cost — so playback starts fast and there's no per-view bandwidth bill to pass on to you.",
+		body: "Lessons stream from Cloudflare R2 with zero egress cost, so playback starts fast and there's no per-view bandwidth bill to pass on to you.",
 	},
 	{
 		idx: "02",
 		icon: KeyRound,
 		title: "Signed-URL delivery",
-		body: "Each lesson plays through a short-lived signed URL. Only enrolled students get one, and it expires — so links can't be shared or leaked.",
+		body: "Each lesson plays through a short-lived signed URL. Only enrolled students get one, and it expires, so links can't be shared or leaked.",
 	},
 	{
 		idx: "03",
