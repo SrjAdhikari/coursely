@@ -118,6 +118,7 @@ const LearnPage = () => {
 						<VideoPlayer
 							key={currentLesson._id}
 							lessonId={currentLesson._id}
+							poster={course.thumbnailUrl}
 							resumePositionSeconds={resumePositionSeconds}
 							onReportPosition={handleReportPosition}
 						/>

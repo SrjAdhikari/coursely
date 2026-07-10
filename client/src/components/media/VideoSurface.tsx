@@ -9,6 +9,8 @@ import {
 	Minimize,
 	Gauge,
 	Loader2,
+	ChevronsLeft,
+	ChevronsRight,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,7 @@ import {
 import {
 	useVideoControls,
 	type ReportPositionHandler,
+	SEEK_STEP_SECONDS,
 } from "@/hooks/useVideoControls";
 import { formatTime, clamp } from "@/lib/playerHelpers";
 import { cn } from "@/lib/utils";
@@ -32,6 +35,7 @@ const PLAYBACK_RATES = [0.5, 1, 1.25, 1.5, 2] as const;
 
 interface VideoSurfaceProps {
 	src: string;
+	poster?: string;
 	resumePositionSeconds?: number;
 	onReportPosition?: ReportPositionHandler;
 }
@@ -43,6 +47,7 @@ interface VideoSurfaceProps {
  */
 const VideoSurface = ({
 	src,
+	poster,
 	resumePositionSeconds,
 	onReportPosition,
 }: VideoSurfaceProps) => {
@@ -58,6 +63,8 @@ const VideoSurface = ({
 		rate,
 		isFullscreen,
 		isBuffering,
+		isReady,
+		skipHint,
 		controlsVisible,
 		togglePlay,
 		seekTo,
@@ -96,25 +103,47 @@ const VideoSurface = ({
 			<video
 				ref={videoRef}
 				src={src}
+				poster={poster}
 				onClick={handleSurfaceToggle}
 				playsInline
 				className="h-full w-full cursor-pointer"
 			/>
 
-			{isBuffering && (
+			{(!isReady || isBuffering) && !skipHint && (
 				<div
 					role="status"
 					aria-label="Buffering"
 					className="pointer-events-none absolute inset-0 grid place-items-center"
 				>
-					<Loader2
-						className="size-10 animate-spin text-white/90"
-						aria-hidden
-					/>
+					<Loader2 className="size-8 animate-spin text-white/90" aria-hidden />
 				</div>
 			)}
 
-			{!playing && !isBuffering && (
+			{skipHint && (
+				<div
+					key={skipHint.nonce}
+					role="status"
+					aria-label={
+						skipHint.direction === "forward"
+							? `Forward ${SEEK_STEP_SECONDS} seconds`
+							: `Rewind ${SEEK_STEP_SECONDS} seconds`
+					}
+					className={cn(
+						"pointer-events-none absolute inset-y-0 grid w-2/5 place-items-center",
+						skipHint.direction === "forward" ? "right-0" : "left-0",
+					)}
+				>
+					<div className="grid size-15 animate-in fade-in zoom-in-95 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm duration-200">
+						{skipHint.direction === "forward" ? (
+							<ChevronsRight className="size-8" aria-hidden />
+						) : (
+							<ChevronsLeft className="size-8" aria-hidden />
+						)}
+					</div>
+				</div>
+			)}
+
+			{isReady && !playing && !isBuffering && !skipHint && (
 				<button
 					type="button"
 					aria-label="Play video"

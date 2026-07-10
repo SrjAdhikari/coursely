@@ -7,6 +7,7 @@ import type { ReportPositionHandler } from "@/hooks/useVideoControls";
 
 interface VideoPlayerProps {
 	lessonId: string;
+	poster?: string;
 	resumePositionSeconds?: number;
 	onReportPosition?: ReportPositionHandler;
 }
@@ -18,6 +19,7 @@ interface VideoPlayerProps {
  */
 const VideoPlayer = ({
 	lessonId,
+	poster,
 	resumePositionSeconds,
 	onReportPosition,
 }: VideoPlayerProps) => {
@@ -40,6 +42,7 @@ const VideoPlayer = ({
 	return (
 		<VideoSurface
 			src={data.data.url}
+			poster={poster}
 			resumePositionSeconds={resumePositionSeconds}
 			onReportPosition={onReportPosition}
 		/>

@@ -10,7 +10,8 @@ import {
 
 import { clamp } from "@/lib/playerHelpers";
 
-const SEEK_STEP_SECONDS = 5;
+export const SEEK_STEP_SECONDS = 5;
+const SKIP_HINT_MS = 500;
 const VOLUME_STEP = 0.1;
 const CONTROLS_IDLE_MS = 2500;
 const REPORT_INTERVAL_SECONDS = 12; // throttle position reports during playback
@@ -54,6 +55,13 @@ export const useVideoControls = ({
 	const [rate, setRateState] = useState(1);
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [isBuffering, setIsBuffering] = useState(false);
+	const [isReady, setIsReady] = useState(false);
+	const [skipHint, setSkipHint] = useState<{
+		direction: "forward" | "backward";
+		nonce: number;
+	} | null>(null);
+	const skipHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const skipNonceRef = useRef(0);
 	const [controlsVisible, setControlsVisible] = useState(true);
 
 	// Keep the latest callback / resume value without re-subscribing the media effect.
@@ -102,13 +110,22 @@ export const useVideoControls = ({
 		video.currentTime = clamp(seconds, 0, video.duration || 0);
 	}, []);
 
+	// Brief directional cue on a keyboard skip; nonce re-triggers the animation.
+	const flashSkipHint = useCallback((direction: "forward" | "backward") => {
+		skipNonceRef.current += 1;
+		setSkipHint({ direction, nonce: skipNonceRef.current });
+		if (skipHintTimerRef.current) clearTimeout(skipHintTimerRef.current);
+		skipHintTimerRef.current = setTimeout(() => setSkipHint(null), SKIP_HINT_MS);
+	}, []);
+
 	const seekBy = useCallback(
 		(delta: number) => {
 			const video = videoRef.current;
 			if (!video) return;
 			seekTo(video.currentTime + delta);
+			flashSkipHint(delta >= 0 ? "forward" : "backward");
 		},
-		[seekTo],
+		[seekTo, flashSkipHint],
 	);
 
 	const setVolume = useCallback((value: number) => {
@@ -229,6 +246,9 @@ export const useVideoControls = ({
 		};
 		const onSeeking = () => setIsBuffering(true);
 		const onSeeked = () => setIsBuffering(false);
+		const onLoadedData = () => setIsReady(true);
+		// loadstart resets when the same element gets a new src (preview→preview).
+		const onLoadStart = () => setIsReady(false);
 
 		video.addEventListener("play", onPlay);
 		video.addEventListener("pause", onPause);
@@ -243,6 +263,8 @@ export const useVideoControls = ({
 		video.addEventListener("playing", onPlaying);
 		video.addEventListener("seeking", onSeeking);
 		video.addEventListener("seeked", onSeeked);
+		video.addEventListener("loadeddata", onLoadedData);
+		video.addEventListener("loadstart", onLoadStart);
 
 		return () => {
 			video.removeEventListener("play", onPlay);
@@ -258,6 +280,8 @@ export const useVideoControls = ({
 			video.removeEventListener("playing", onPlaying);
 			video.removeEventListener("seeking", onSeeking);
 			video.removeEventListener("seeked", onSeeked);
+			video.removeEventListener("loadeddata", onLoadedData);
+			video.removeEventListener("loadstart", onLoadStart);
 
 			// Flush the final position on unmount (captured element — videoRef may be
 			// detached). Skip 0 so an early unmount can't overwrite a saved position.
@@ -275,10 +299,11 @@ export const useVideoControls = ({
 			document.removeEventListener("fullscreenchange", onFullscreenChange);
 	}, []);
 
-	// Clear any pending auto-hide timer on unmount.
+	// Clear any pending timers on unmount.
 	useEffect(
 		() => () => {
 			if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+			if (skipHintTimerRef.current) clearTimeout(skipHintTimerRef.current);
 		},
 		[],
 	);
@@ -295,6 +320,8 @@ export const useVideoControls = ({
 		rate,
 		isFullscreen,
 		isBuffering,
+		isReady,
+		skipHint,
 		controlsVisible,
 		togglePlay,
 		seekTo,
