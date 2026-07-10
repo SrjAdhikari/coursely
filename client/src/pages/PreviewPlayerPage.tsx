@@ -62,7 +62,7 @@ const PreviewPlayerPage = () => {
 			</Link>
 
 			<div className="mt-4">
-				<VideoPlayer lessonId={lesson._id} />
+				<VideoPlayer lessonId={lesson._id} poster={course.thumbnailUrl} />
 			</div>
 
 			<p className="mt-3 text-xs uppercase tracking-wider text-muted-foreground">
