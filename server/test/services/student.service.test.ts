@@ -7,8 +7,16 @@ import {
 	listStudents,
 	getStudentById,
 	updateStudent,
+	getStudentEnrollments,
 } from "../../src/services/student.service";
-import { createTestUser } from "../helpers/factories";
+import {
+	createTestUser,
+	createTestCourse,
+	createTestSection,
+	createTestLesson,
+	createTestEnrollment,
+	createTestProgress,
+} from "../helpers/factories";
 
 describe("student.service", () => {
 	it("lists only student-role users and never the password", async () => {
@@ -61,5 +69,39 @@ describe("student.service", () => {
 		await expect(
 			updateStudent(admin._id.toString(), { isActive: false }),
 		).rejects.toMatchObject({ statusCode: 404, errorCode: "STUDENT_NOT_FOUND" });
+	});
+
+	it("returns a student's real enrollments with course, amount and progress", async () => {
+		const student = await createTestUser({ email: "enr@example.com" });
+		const course = await createTestCourse({ title: "CSS Fundamentals" });
+		const section = await createTestSection(course._id);
+		const firstLesson = await createTestLesson(section._id, course._id, {
+			order: 0,
+		});
+		await createTestLesson(section._id, course._id, { order: 1 });
+		await createTestEnrollment(student._id, course._id, { amountPaid: 59900 });
+		await createTestProgress(student._id, firstLesson._id, course._id, {
+			completed: true,
+		});
+
+		const enrollments = await getStudentEnrollments(student._id.toString());
+
+		expect(enrollments).toHaveLength(1);
+		expect(enrollments[0]).toMatchObject({
+			course: "CSS Fundamentals",
+			amount: 59900,
+			progress: 50,
+		});
+	});
+
+	it("excludes enrollments whose course was deleted", async () => {
+		const student = await createTestUser({ email: "orphan@example.com" });
+		const course = await createTestCourse();
+		await createTestEnrollment(student._id, course._id);
+		await createTestEnrollment(student._id, new mongoose.Types.ObjectId());
+
+		const enrollments = await getStudentEnrollments(student._id.toString());
+
+		expect(enrollments).toHaveLength(1);
 	});
 });

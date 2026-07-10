@@ -6,6 +6,7 @@ import {
 	listStudents,
 	getStudentById,
 	updateStudent,
+	getStudentEnrollments,
 } from "../services/student.service";
 
 import httpStatus from "../constants/httpStatus";
@@ -24,11 +25,12 @@ const listStudentsHandler: RequestHandler = async (_req, res) => {
 const getStudentHandler: RequestHandler<{ id: string }> = async (req, res) => {
 	const studentId = req.params.id;
 	const student = await getStudentById(studentId);
+	const enrollments = await getStudentEnrollments(studentId);
 
 	res.status(OK).json({
 		success: true,
 		message: "Student fetched successfully",
-		data: student,
+		data: { ...student, enrollments },
 	});
 };
 
