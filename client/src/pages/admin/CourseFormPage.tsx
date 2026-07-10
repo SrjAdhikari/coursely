@@ -176,7 +176,7 @@ const CourseFormPage = () => {
 					<Button
 						type="submit"
 						size="lg"
-						className="font-mono"
+						className="font-mono disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
 						disabled={pending || !isValid || trailerUpload.isBusy}
 					>
 						{isEdit ? "Save changes" : "Create course"}
