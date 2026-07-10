@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 import pluralize from "@/lib/pluralize";
+import getInitials from "@/lib/getInitials";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface CourseCardProps {
 	to: string;
@@ -48,10 +50,11 @@ const CourseCard = ({
 			</h3>
 
 			<div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-				<span
-					aria-hidden
-					className="size-5 shrink-0 rounded-full bg-linear-to-br from-primary to-primary/60"
-				/>
+				<Avatar aria-hidden size="sm" className="shrink-0">
+					<AvatarFallback className="bg-primary/10 font-medium text-primary">
+						{getInitials(instructorName)}
+					</AvatarFallback>
+				</Avatar>
 				{instructorName}
 			</div>
 
