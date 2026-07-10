@@ -31,6 +31,22 @@ const activeStudent = {
 			role: "student",
 			isActive: true,
 			createdAt: "2026-06-12T00:00:00.000Z",
+			enrollments: [
+				{
+					courseId: "c1",
+					course: "CSS Fundamentals",
+					purchased: "2026-07-09T00:00:00.000Z",
+					amount: 59900,
+					progress: 50,
+				},
+				{
+					courseId: "c2",
+					course: "HTML Fundamentals",
+					purchased: "2026-07-08T00:00:00.000Z",
+					amount: 49900,
+					progress: 100,
+				},
+			],
 		},
 	},
 	isLoading: false,
@@ -70,14 +86,15 @@ describe("StudentManagePage", () => {
 		expect(screen.getByText(/rahul@example\.com/)).toBeInTheDocument();
 	});
 
-	it("shows the enrollments section with the student's courses", () => {
+	it("shows the enrollments section with the student's real enrollments", () => {
 		renderPage();
 		expect(
 			screen.getByRole("heading", { name: /their enrollments/i }),
 		).toBeInTheDocument();
-		expect(screen.getByText("React from Scratch")).toBeInTheDocument();
-		expect(screen.getByText("JavaScript Essentials")).toBeInTheDocument();
-		expect(screen.getByText("₹899")).toBeInTheDocument();
+		expect(screen.getByText("CSS Fundamentals")).toBeInTheDocument();
+		expect(screen.getByText("HTML Fundamentals")).toBeInTheDocument();
+		expect(screen.getByText("₹599")).toBeInTheDocument();
+		expect(screen.queryByText("React from Scratch")).not.toBeInTheDocument();
 	});
 
 	it("promotes to admin: drops the cached detail, refreshes the list, toasts and returns to the list", async () => {

@@ -5,15 +5,18 @@ import { useParams, useNavigate, Link } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import ROUTES from "@/routes/paths";
 import { useGetStudent, useUpdateStudent } from "@/hooks/useStudents";
+import type { StudentEnrollmentPayload } from "@/types/student.types";
+
 import Loader from "@/components/Loader";
 import { Button } from "@/components/ui/button";
 import DataTable, { type Column } from "@/components/common/DataTable";
 import LoadFailed from "@/components/common/LoadFailed";
 import DeactivateDialog from "@/components/admin/DeactivateDialog";
+
 import { formatPrice } from "@/lib/currency";
 import { STUDENTS_KEY, studentKey } from "@/lib/queryKeys";
-import ROUTES from "@/routes/paths";
 
 const cardClass = "rounded-xl border border-border bg-card p-5";
 const cardLabel =
@@ -27,23 +30,7 @@ const formatJoinedDate = (iso: string) =>
 		year: "numeric",
 	});
 
-interface StudentEnrollment {
-	course: string;
-	purchased: string;
-	amount: number;
-	progress: number;
-}
-
-// Phase 5 placeholder — sample enrollments shown until the payments/enrollment
-// feature lands; swap for real data from the enrollments API then.
-const sampleEnrollments: StudentEnrollment[] = [
-	{ course: "React from Scratch", purchased: "Jun 23", amount: 89900, progress: 38 },
-	{ course: "JavaScript Essentials", purchased: "Apr 12", amount: 69900, progress: 100 },
-	{ course: "HTML Foundations", purchased: "Mar 30", amount: 49900, progress: 100 },
-	{ course: "Node.js & Express APIs", purchased: "May 18", amount: 99900, progress: 22 },
-];
-
-const enrollmentColumns: Column<StudentEnrollment>[] = [
+const enrollmentColumns: Column<StudentEnrollmentPayload>[] = [
 	{
 		header: "Course",
 		cellClassName: "font-medium",
@@ -52,7 +39,8 @@ const enrollmentColumns: Column<StudentEnrollment>[] = [
 	{
 		header: "Purchased",
 		cellClassName: "font-mono text-muted-foreground",
-		cell: (enrollment) => enrollment.purchased,
+		cell: (enrollment) =>
+			enrollment.purchased ? formatJoinedDate(enrollment.purchased) : "-",
 	},
 	{
 		header: "Amount",
@@ -194,7 +182,7 @@ const StudentManagePage = () => {
 
 				<div className={cardClass}>
 					<div className={cardLabel}>Enrollments</div>
-					<div className={cardValue}>{sampleEnrollments.length}</div>
+					<div className={cardValue}>{student.enrollments.length}</div>
 					<div className="mt-1 font-mono text-xs text-success">
 						lifetime access
 					</div>
@@ -213,8 +201,8 @@ const StudentManagePage = () => {
 
 				<DataTable
 					columns={enrollmentColumns}
-					rows={sampleEnrollments}
-					getRowKey={(enrollment) => enrollment.course}
+					rows={student.enrollments}
+					getRowKey={(enrollment) => enrollment.courseId}
 					ariaLabelledby="their-enrollments-heading"
 				/>
 			</div>
