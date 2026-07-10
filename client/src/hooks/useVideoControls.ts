@@ -33,7 +33,7 @@ interface VideoControlsOptions {
  * actions (play, seek, volume, rate, fullscreen, keyboard). Keeping it here makes
  * the surface component thin and lets the logic be unit-tested without a query.
  */
-export const useVideoControls = ({
+const useVideoControls = ({
 	resumePositionSeconds = 0,
 	onReportPosition,
 }: VideoControlsOptions = {}) => {
@@ -353,3 +353,7 @@ export const useVideoControls = ({
 		hideControls,
 	};
 };
+
+export type VideoControls = ReturnType<typeof useVideoControls>;
+
+export default useVideoControls;

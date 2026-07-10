@@ -3,7 +3,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
-import { useVideoControls } from "@/hooks/useVideoControls";
+import useVideoControls from "@/hooks/useVideoControls";
 
 // A stand-in for the HTMLVideoElement jsdom can't drive; spies stand in for the
 // playback methods and plain fields stand in for the media properties.
