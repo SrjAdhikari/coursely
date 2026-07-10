@@ -17,10 +17,15 @@ const PLAYBACK_RATES = [0.5, 1, 1.25, 1.5, 2] as const;
 interface PlaybackRateMenuProps {
 	rate: number;
 	onSetRate: (rate: number) => void;
+	container?: HTMLElement | null;
 }
 
 /** Playback-speed picker. */
-const PlaybackRateMenu = ({ rate, onSetRate }: PlaybackRateMenuProps) => {
+const PlaybackRateMenu = ({
+	rate,
+	onSetRate,
+	container,
+}: PlaybackRateMenuProps) => {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -36,7 +41,7 @@ const PlaybackRateMenu = ({ rate, onSetRate }: PlaybackRateMenuProps) => {
 				</Button>
 			</DropdownMenuTrigger>
 
-			<DropdownMenuContent align="end" className="min-w-28">
+			<DropdownMenuContent align="end" className="min-w-28" container={container}>
 				<DropdownMenuLabel>Playback speed</DropdownMenuLabel>
 				<DropdownMenuRadioGroup
 					value={String(rate)}

@@ -17,8 +17,12 @@ const KEYBOARD_SHORTCUTS = [
 	{ label: "Fullscreen", keys: ["F"] },
 ];
 
+interface ShortcutsHintProps {
+	container?: HTMLElement | null;
+}
+
 /** Keyboard-shortcuts reference popover. */
-const ShortcutsHint = () => {
+const ShortcutsHint = ({ container }: ShortcutsHintProps) => {
 	return (
 		<Popover>
 			<PopoverTrigger asChild>
@@ -33,7 +37,7 @@ const ShortcutsHint = () => {
 				</Button>
 			</PopoverTrigger>
 
-			<PopoverContent align="end" className="w-56">
+			<PopoverContent align="end" className="w-56" container={container}>
 				<p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 					Keyboard shortcuts
 				</p>

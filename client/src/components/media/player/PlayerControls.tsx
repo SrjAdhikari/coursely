@@ -1,6 +1,13 @@
 //* src/components/media/player/PlayerControls.tsx
 
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from "lucide-react";
+import {
+	Play,
+	Pause,
+	Volume2,
+	VolumeX,
+	Maximize,
+	Minimize,
+} from "lucide-react";
 
 import PlaybackRateMenu from "@/components/media/player/PlaybackRateMenu";
 import SeekBar from "@/components/media/player/SeekBar";
@@ -17,6 +24,12 @@ interface PlayerControlsProps {
 /** Bottom controls bar: seek, play, volume, time, speed, shortcuts, fullscreen. */
 const PlayerControls = ({ player }: PlayerControlsProps) => {
 	const isSilent = player.muted || player.volume === 0;
+
+	// In fullscreen only the container's subtree paints, so portal menus into it;
+	// normal mode keeps portaling to body to avoid the container's overflow clipping.
+	const portalContainer = player.isFullscreen
+		? player.containerRef.current
+		: undefined;
 
 	return (
 		<div
@@ -73,8 +86,12 @@ const PlayerControls = ({ player }: PlayerControlsProps) => {
 				</span>
 
 				<div className="ml-auto flex items-center gap-1">
-					<PlaybackRateMenu rate={player.rate} onSetRate={player.setRate} />
-					<ShortcutsHint />
+					<PlaybackRateMenu
+						rate={player.rate}
+						onSetRate={player.setRate}
+						container={portalContainer}
+					/>
+					<ShortcutsHint container={portalContainer} />
 
 					<Button
 						type="button"
