@@ -126,7 +126,7 @@ const VideoSurface = ({
 			{mediaError && (
 				<div
 					role="alert"
-					className="pointer-events-none absolute inset-0 grid place-items-center bg-black/70 px-4 text-center"
+					className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-black/70 px-4 text-center"
 				>
 					<div className="pointer-events-auto flex flex-col items-center gap-3 text-white">
 						<TriangleAlert className="size-8 text-white/90" aria-hidden />
@@ -140,7 +140,7 @@ const VideoSurface = ({
 				</div>
 			)}
 
-			{skipHint && (
+			{skipHint && !mediaError && (
 				<div
 					key={skipHint.nonce}
 					role="status"
@@ -164,7 +164,7 @@ const VideoSurface = ({
 				</div>
 			)}
 
-			{isReady && !playing && !isBuffering && !skipHint && (
+			{isReady && !playing && !isBuffering && !skipHint && !mediaError && (
 				<button
 					type="button"
 					aria-label="Play video"
@@ -178,7 +178,7 @@ const VideoSurface = ({
 			<div
 				className={cn(
 					"absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-linear-to-t from-black/80 via-black/40 to-transparent px-3 pt-10 pb-2.5 text-white transition-opacity duration-200",
-					controlsVisible || !playing
+					!mediaError && (controlsVisible || !playing)
 						? "opacity-100"
 						: "pointer-events-none invisible opacity-0",
 				)}

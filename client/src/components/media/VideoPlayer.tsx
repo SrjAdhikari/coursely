@@ -3,6 +3,7 @@
 import { useLessonPlaybackUrl } from "@/hooks/useMedia";
 import Loader from "@/components/Loader";
 import VideoSurface from "@/components/media/VideoSurface";
+import { Button } from "@/components/ui/button";
 import type { ReportPositionHandler } from "@/hooks/useVideoControls";
 
 interface VideoPlayerProps {
@@ -29,13 +30,25 @@ const VideoPlayer = ({
 	if (isLoading) return <Loader className="aspect-video" />;
 
 	if (isError || !data) {
-		const message =
-			error?.code === "VIDEO_NOT_FOUND"
-				? "This lesson has no video yet."
-				: "Couldn't load the video. Please try again.";
+		// A missing video isn't retryable; only offer retry for transient failures.
+		const isMissing = error?.code === "VIDEO_NOT_FOUND";
+		const message = isMissing
+			? "This lesson has no video yet."
+			: "Couldn't load the video. Please try again.";
+
 		return (
-			<div className="flex aspect-video items-center justify-center rounded-lg border border-border bg-muted/40 p-4 text-center text-sm text-muted-foreground">
-				{message}
+			<div className="flex aspect-video flex-col items-center justify-center gap-3 rounded-lg border border-border bg-muted/40 p-4 text-center text-sm text-muted-foreground">
+				<p>{message}</p>
+				{!isMissing && (
+					<Button
+						type="button"
+						variant="secondary"
+						size="sm"
+						onClick={() => refetch()}
+					>
+						Try again
+					</Button>
+				)}
 			</div>
 		);
 	}

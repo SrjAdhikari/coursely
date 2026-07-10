@@ -275,6 +275,41 @@ describe("VideoSurface", () => {
 
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
+
+	it("suppresses the center play overlay when the media errors after loading", () => {
+		// An error after loadeddata keeps isReady true; the play overlay must still
+		// yield to the error state instead of painting over the retry affordance.
+		const { container } = render(<VideoSurface src="https://r2/v" />);
+		const video = getVideo(container);
+
+		fireEvent.loadedData(video);
+		expect(
+			screen.getByRole("button", { name: "Play video" }),
+		).toBeInTheDocument();
+
+		fireEvent.error(video);
+
+		expect(
+			screen.queryByRole("button", { name: "Play video" }),
+		).not.toBeInTheDocument();
+		expect(screen.getByRole("alert")).toBeInTheDocument();
+	});
+
+	it("hides the bottom controls while a media error is active", () => {
+		// No Tailwind CSS in jsdom, so the always-rendered controls stay in the a11y
+		// tree; assert the hiding classes on the controls bar (its CSS-independent signal).
+		const { container } = render(<VideoSurface src="https://r2/v" />);
+		const video = getVideo(container);
+		const controlsBar = screen
+			.getByRole("button", { name: "Play" })
+			.closest(".absolute") as HTMLElement;
+		expect(controlsBar).toHaveClass("opacity-100");
+
+		fireEvent.error(video);
+
+		expect(controlsBar).toHaveClass("invisible");
+		expect(controlsBar).not.toHaveClass("opacity-100");
+	});
 });
 
 describe("VideoSurface progress reporting", () => {
