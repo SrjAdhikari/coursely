@@ -16,7 +16,8 @@
 		"lint": "eslint .",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"schema:apply": "tsx src/schemas/validateSchema.ts"
+		"schema:apply": "tsx src/schemas/validateSchema.ts",
+		"seed:admin": "tsx src/scripts/seedAdmin.ts"
 	},
 	"repository": {
 		"type": "git",
