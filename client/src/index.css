@@ -141,6 +141,9 @@
 	}
 	body {
 		@apply relative bg-background text-foreground;
+		/* Guard against stray horizontal scroll from decorative wide elements
+		   (marquee track, glow). `clip` (not `hidden`) keeps sticky working. */
+		overflow-x: clip;
 	}
 	/* Faint grid, faded out from the top — mockup background. */
 	body::before {
@@ -192,5 +195,21 @@
 		font-weight: 600;
 		letter-spacing: -0.02em;
 		line-height: 1.1;
+	}
+}
+
+/* Reveal elements as they scroll into view. */
+@media (prefers-reduced-motion: no-preference) {
+	.reveal-on-scroll {
+		opacity: 0;
+		transform: translateY(3rem);
+		transition:
+			opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+			transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.reveal-on-scroll.is-visible {
+		opacity: 1;
+		transform: none;
 	}
 }

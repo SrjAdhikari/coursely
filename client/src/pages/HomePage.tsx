@@ -1,6 +1,7 @@
 //* src/pages/HomePage.tsx
 
 import { useListPublishedCourses } from "@/hooks/useCourses";
+import useScrollReveal from "@/hooks/useScrollReveal";
 
 import HeroSection from "@/components/home/HeroSection";
 import FeaturedCourses from "@/components/home/FeaturedCourses";
@@ -28,6 +29,8 @@ const HomePage = () => {
 		courses.reduce((total, course) => total + course.totalDuration, 0) / 3600,
 	);
 
+	useScrollReveal();
+
 	return (
 		<>
 			<HeroSection
@@ -35,15 +38,41 @@ const HomePage = () => {
 				lessonCount={lessonCount}
 				hours={hours}
 			/>
-			<FeaturedCourses />
-			<ValueProps />
-			<ProductShowcase />
-			<BuiltStrip />
-			<TechMarquee />
-			<HowItWorks />
-			<FounderNote />
-			<HomeFaq />
-			<CtaBand />
+			<div className="reveal-on-scroll">
+				<FeaturedCourses />
+			</div>
+
+			<div className="reveal-on-scroll">
+				<ValueProps />
+			</div>
+
+			<div className="reveal-on-scroll">
+				<ProductShowcase />
+			</div>
+
+			<div className="reveal-on-scroll">
+				<BuiltStrip />
+			</div>
+
+			<div className="reveal-on-scroll">
+				<TechMarquee />
+			</div>
+
+			<div className="reveal-on-scroll">
+				<HowItWorks />
+			</div>
+
+			<div className="reveal-on-scroll">
+				<FounderNote />
+			</div>
+
+			<div className="reveal-on-scroll">
+				<HomeFaq />
+			</div>
+
+			<div className="reveal-on-scroll">
+				<CtaBand />
+			</div>
 		</>
 	);
 };
