@@ -33,7 +33,7 @@ interface VideoControlsOptions {
  * actions (play, seek, volume, rate, fullscreen, keyboard). Keeping it here makes
  * the surface component thin and lets the logic be unit-tested without a query.
  */
-export const useVideoControls = ({
+const useVideoControls = ({
 	resumePositionSeconds = 0,
 	onReportPosition,
 }: VideoControlsOptions = {}) => {
@@ -101,7 +101,7 @@ export const useVideoControls = ({
 	const togglePlay = useCallback(() => {
 		const video = videoRef.current;
 		if (!video) return;
-		if (video.paused) void video.play();
+		if (video.paused) video.play().catch(() => {}); // swallow interrupted-play rejections
 		else video.pause();
 	}, []);
 
@@ -162,10 +162,16 @@ export const useVideoControls = ({
 	const handleKeyDown = useCallback(
 		(event: KeyboardEvent) => {
 			const target = event.target as HTMLElement | null;
+			// Keys handled inside an open Radix menu/popover (portaled but React-bubbled) aren't player shortcuts.
+			if (target?.closest("[data-radix-popper-content-wrapper]")) return;
+
 			const onButton = target?.tagName === "BUTTON";
 			const video = videoRef.current;
 
-			switch (event.key) {
+			// Lowercase single-char keys so Shift/Caps letters still match; leave named keys (Arrow*) intact.
+			const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+
+			switch (key) {
 				case " ":
 				case "k":
 					if (onButton) return; // let a focused control activate itself
@@ -353,3 +359,7 @@ export const useVideoControls = ({
 		hideControls,
 	};
 };
+
+export type VideoControls = ReturnType<typeof useVideoControls>;
+
+export default useVideoControls;

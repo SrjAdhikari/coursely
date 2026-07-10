@@ -2,6 +2,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import VideoSurface from "@/components/media/VideoSurface";
 
@@ -309,6 +310,25 @@ describe("VideoSurface", () => {
 
 		expect(controlsBar).toHaveClass("invisible");
 		expect(controlsBar).not.toHaveClass("opacity-100");
+	});
+});
+
+describe("VideoSurface keyboard-shortcuts hint", () => {
+	it("renders a keyboard-shortcuts trigger button", () => {
+		render(<VideoSurface src="https://r2/v" />);
+		expect(
+			screen.getByRole("button", { name: /keyboard shortcuts/i }),
+		).toBeInTheDocument();
+	});
+
+	it("reveals the shortcut list when the hint button is opened", async () => {
+		render(<VideoSurface src="https://r2/v" />);
+		await userEvent.click(
+			screen.getByRole("button", { name: /keyboard shortcuts/i }),
+		);
+		// Popover content is portaled/animated — retry until it mounts.
+		expect(await screen.findByText(/play \/ pause/i)).toBeInTheDocument();
+		expect(screen.getByText(/fullscreen/i)).toBeInTheDocument();
 	});
 });
 

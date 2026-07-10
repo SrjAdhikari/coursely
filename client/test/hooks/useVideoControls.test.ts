@@ -3,7 +3,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
-import { useVideoControls } from "@/hooks/useVideoControls";
+import useVideoControls from "@/hooks/useVideoControls";
 
 // A stand-in for the HTMLVideoElement jsdom can't drive; spies stand in for the
 // playback methods and plain fields stand in for the media properties.
@@ -94,12 +94,12 @@ describe("useVideoControls", () => {
 	it("handleKeyDown maps Space/arrows/m to playback actions", () => {
 		const video = fakeVideo({ currentTime: 50, duration: 100, volume: 0.5 });
 		const { result } = mountWithVideo(video);
-		const press = (key: string, tagName = "DIV") => {
+		const press = (key: string, tagName = "div") => {
 			const preventDefault = vi.fn();
 			act(() =>
 				result.current.handleKeyDown({
 					key,
-					target: { tagName },
+					target: document.createElement(tagName),
 					preventDefault,
 				} as unknown as React.KeyboardEvent),
 			);
@@ -130,11 +130,49 @@ describe("useVideoControls", () => {
 		act(() =>
 			result.current.handleKeyDown({
 				key: " ",
-				target: { tagName: "BUTTON" },
+				target: document.createElement("button"),
 				preventDefault: vi.fn(),
 			} as unknown as React.KeyboardEvent),
 		);
 		expect(video.play).not.toHaveBeenCalled();
+	});
+
+	it("ignores keys that originate inside an open Radix layer", () => {
+		// A key handled by an open speed menu / shortcuts popover bubbles through the
+		// React tree; it must not also drive a player shortcut (e.g. change volume).
+		const video = fakeVideo({ volume: 0.5 });
+		const { result } = mountWithVideo(video);
+
+		const popperWrapper = document.createElement("div");
+		popperWrapper.setAttribute("data-radix-popper-content-wrapper", "");
+		const menuItem = document.createElement("div");
+		popperWrapper.appendChild(menuItem);
+
+		const preventDefault = vi.fn();
+		act(() =>
+			result.current.handleKeyDown({
+				key: "ArrowDown",
+				target: menuItem,
+				preventDefault,
+			} as unknown as React.KeyboardEvent),
+		);
+
+		expect(video.volume).toBe(0.5);
+		expect(preventDefault).not.toHaveBeenCalled();
+	});
+
+	it("treats single-character letter shortcuts case-insensitively", () => {
+		// Shift / Caps Lock yields "M"; it must still map to the lowercase shortcut.
+		const video = fakeVideo({ muted: false });
+		const { result } = mountWithVideo(video);
+		act(() =>
+			result.current.handleKeyDown({
+				key: "M",
+				target: document.createElement("div"),
+				preventDefault: vi.fn(),
+			} as unknown as React.KeyboardEvent),
+		);
+		expect(video.muted).toBe(true);
 	});
 
 	it("toggleFullscreen requests fullscreen on the container when not in it", () => {

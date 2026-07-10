@@ -1,18 +1,13 @@
 import { Link } from "react-router";
 
 import AppLogo from "@/components/common/AppLogo";
+import { useCurrentUser } from "@/hooks/useAuth";
 import ROUTES from "@/routes/paths";
 
 const productLinks = [
 	{ label: "Browse courses", to: ROUTES.CATALOG },
 	{ label: "How it works", to: "#how" },
 	{ label: "FAQ", to: "#faq" },
-];
-
-const accountLinks = [
-	{ label: "Log in", to: ROUTES.LOGIN },
-	{ label: "Sign up", to: ROUTES.REGISTER },
-	{ label: "My courses", to: ROUTES.MY_COURSES },
 ];
 
 const linkClass = "block text-muted-foreground hover:text-primary";
@@ -30,6 +25,20 @@ const FooterLink = ({ to, label }: { to: string; label: string }) =>
 	);
 
 const HomeFooter = () => {
+	const { data } = useCurrentUser();
+	const user = data?.data;
+
+	// Mirror the header: authed users get app links, guests get auth links.
+	const accountLinks = user
+		? [
+				{ label: "Dashboard", to: ROUTES.DASHBOARD },
+				{ label: "My courses", to: ROUTES.MY_COURSES },
+			]
+		: [
+				{ label: "Log in", to: ROUTES.LOGIN },
+				{ label: "Sign up", to: ROUTES.REGISTER },
+			];
+
 	return (
 		<footer className="border-t border-border bg-card/40">
 			<div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr]">
