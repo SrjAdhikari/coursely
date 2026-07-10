@@ -2,7 +2,7 @@
 	"name": "coursely-server",
 	"version": "1.0.0",
 	"private": true,
-	"description": "Coursely LMS — Express 5 + TypeScript REST API",
+	"description": "Coursely LMS - Express 5 + TypeScript REST API",
 	"main": "server.ts",
 	"type": "module",
 	"engines": {
@@ -15,7 +15,8 @@
 		"typecheck": "tsc --noEmit",
 		"lint": "eslint .",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"schema:apply": "tsx src/schemas/validateSchema.ts"
 	},
 	"repository": {
 		"type": "git",
