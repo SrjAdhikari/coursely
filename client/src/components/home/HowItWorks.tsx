@@ -4,7 +4,7 @@ const steps = [
 	{
 		num: 1,
 		title: "Browse the catalog",
-		body: "Explore every course and watch the free preview lessons — no account, no card required.",
+		body: "Explore every course and watch the free preview lessons. No account, no card required.",
 	},
 	{
 		num: 2,

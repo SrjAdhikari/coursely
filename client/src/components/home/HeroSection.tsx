@@ -52,7 +52,7 @@ const HeroSection = ({ courseCount, lessonCount, hours }: HeroSectionProps) => {
 				<input
 					type="search"
 					aria-label="Search courses"
-					placeholder="Search courses — React, CSS, Node…"
+					placeholder="Search courses: React, CSS, Node…"
 					value={query}
 					onChange={(event) => setQuery(event.target.value)}
 					className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"

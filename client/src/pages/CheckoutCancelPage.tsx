@@ -15,7 +15,7 @@ const CheckoutCancelPage = () => (
 
 		<h1 className="font-heading text-2xl font-semibold">Checkout canceled</h1>
 		<p className="mt-2.5 text-sm text-muted-foreground">
-			No payment was taken. Your card was not charged — pick up where you left
+			No payment was taken. Your card was not charged. Pick up where you left
 			off whenever you're ready.
 		</p>
 

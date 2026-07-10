@@ -71,7 +71,7 @@ const PreviewPlayerPage = () => {
 
 			<div className="mt-5 flex flex-col items-start gap-3 rounded-lg border border-border bg-card/50 p-5 sm:flex-row sm:items-center sm:justify-between">
 				<p className="text-sm text-muted-foreground">
-					You're watching a free preview - enroll for lifetime access to all
+					You're watching a free preview. Enroll for lifetime access to all
 					lessons.
 				</p>
 

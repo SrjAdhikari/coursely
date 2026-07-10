@@ -34,7 +34,7 @@ const marketingLinks = [
 ];
 
 const rowClass =
-	"rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
+	"whitespace-nowrap rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
 
 /** Hamburger mobile nav for the marketing header (below the `md` breakpoint). */
 const HomeMobileMenu = ({ user }: HomeMobileMenuProps) => {
@@ -130,7 +130,7 @@ const HomeMobileMenu = ({ user }: HomeMobileMenuProps) => {
 								className={rowClass}
 								onClick={closeMenu}
 							>
-								Library
+								My Courses
 							</Link>
 
 							<button

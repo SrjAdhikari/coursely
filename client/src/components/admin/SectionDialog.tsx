@@ -122,7 +122,7 @@ const SectionDialog = ({ courseId, section, onClose }: SectionDialogProps) => {
 						id="section-order"
 						inputMode="numeric"
 						placeholder="0"
-						hint="Optional — leave blank to append"
+						hint="Optional: leave blank to append"
 						error={errors.order?.message}
 						{...register("order")}
 					/>

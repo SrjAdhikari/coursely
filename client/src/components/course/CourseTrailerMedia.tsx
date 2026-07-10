@@ -84,7 +84,7 @@ const CourseTrailerMedia = ({
 			<DialogContent className="max-w-3xl">
 				{/* sr-only: a11y title without duplicating the page heading. */}
 				<DialogHeader className="sr-only">
-					<DialogTitle>{title} — trailer</DialogTitle>
+					<DialogTitle>{title}: trailer</DialogTitle>
 					<DialogDescription>Preview trailer for {title}.</DialogDescription>
 				</DialogHeader>
 

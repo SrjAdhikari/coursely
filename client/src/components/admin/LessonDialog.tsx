@@ -143,7 +143,7 @@ const LessonDialog = ({
 						id="lesson-order"
 						inputMode="numeric"
 						placeholder="0"
-						hint="Optional — lower numbers appear first"
+						hint="Optional: lower numbers appear first"
 						error={errors.order?.message}
 						{...register("order")}
 					/>
@@ -151,7 +151,7 @@ const LessonDialog = ({
 					<label className="flex items-center gap-2.5 text-sm">
 						<input type="checkbox" {...register("isPreview")} /> Free preview
 						<span className="text-[11px] text-muted-foreground">
-							— playable before purchase
+							(playable before purchase)
 						</span>
 					</label>
 

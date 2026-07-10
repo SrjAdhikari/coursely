@@ -16,7 +16,7 @@ const valueProps = [
 	{
 		icon: CodeXml,
 		title: "Project-based learning",
-		body: "Every course builds toward something real — you learn by writing code, not just watching it.",
+		body: "Every course builds toward something real: you learn by writing code, not just watching it.",
 	},
 	{
 		icon: Clock,

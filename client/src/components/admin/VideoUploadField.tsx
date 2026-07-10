@@ -179,7 +179,7 @@ const VideoUploadField = ({
 							aria-hidden
 						/>
 						<span>
-							Uploaded — but we couldn't read the length automatically. Enter it
+							Uploaded, but we couldn't read the length automatically. Enter it
 							to finish.
 						</span>
 					</div>

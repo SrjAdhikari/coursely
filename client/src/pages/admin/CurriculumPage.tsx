@@ -127,7 +127,7 @@ const CurriculumPage = () => {
 						</Button>
 
 						<Button
-							variant="outline"
+							variant="destructive"
 							size="icon-sm"
 							aria-label={`Delete section ${section.title}`}
 							onClick={() =>
@@ -190,7 +190,7 @@ const CurriculumPage = () => {
 							</Button>
 
 							<Button
-								variant="outline"
+								variant="destructive"
 								size="icon-sm"
 								aria-label={`Delete lesson ${lesson.title}`}
 								onClick={() =>

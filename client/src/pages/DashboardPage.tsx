@@ -6,6 +6,7 @@ import { GraduationCap } from "lucide-react";
 import ROUTES from "@/routes/paths";
 import { useCurrentUser } from "@/hooks/useAuth";
 import useLearningOverview from "@/hooks/useLearningOverview";
+import { pluralizeNoun } from "@/lib/pluralize";
 
 import StatCard from "@/components/admin/StatCard";
 import OverallProgressCard from "@/components/dashboard/OverallProgressCard";
@@ -78,12 +79,12 @@ const DashboardPage = () => {
 					<StatCard
 						label="In progress"
 						value={stats.inProgress}
-						sub="active courses"
+						sub={pluralizeNoun(stats.inProgress, "active course")}
 					/>
 					<StatCard
 						label="Completed"
 						value={stats.completed}
-						sub="finished courses"
+						sub={pluralizeNoun(stats.completed, "finished course")}
 					/>
 					<StatCard
 						label="Lessons completed"
@@ -113,7 +114,7 @@ const DashboardPage = () => {
 				<div className="space-y-3">
 					{activeCourses.length === 0 ? (
 						<p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
-							Nothing in progress yet — pick one from{" "}
+							Nothing in progress yet. Pick one from{" "}
 							<Link to={ROUTES.MY_COURSES} className="text-primary">
 								My Courses
 							</Link>{" "}

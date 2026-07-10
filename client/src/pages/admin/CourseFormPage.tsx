@@ -102,7 +102,7 @@ const CourseFormPage = () => {
 							label="Category"
 							id="category"
 							placeholder="e.g. Web Development"
-							hint="Required - up to 60 characters"
+							hint="Required: up to 60 characters"
 							error={errors.category?.message}
 							{...register("category")}
 						/>
@@ -134,7 +134,7 @@ const CourseFormPage = () => {
 						placeholder="0"
 						prefix="₹"
 						className="font-mono"
-						hint="Whole rupees — stored as paise (₹999 → 99900)"
+						hint="Whole rupees: stored as paise (₹999 → 99900)"
 						error={errors.priceRupees?.message}
 						{...register("priceRupees")}
 					/>
@@ -176,7 +176,7 @@ const CourseFormPage = () => {
 					<Button
 						type="submit"
 						size="lg"
-						className="font-mono"
+						className="font-mono disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
 						disabled={pending || !isValid || trailerUpload.isBusy}
 					>
 						{isEdit ? "Save changes" : "Create course"}

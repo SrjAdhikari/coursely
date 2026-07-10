@@ -22,7 +22,7 @@ const FounderNote = () => (
 
 			<blockquote className="mt-4 space-y-4">
 				<p className="text-lg leading-relaxed text-foreground">
-					Most platforms rent you access — stop paying and your courses
+					Most platforms rent you access. Stop paying and your courses
 					disappear. I wanted the opposite: buy a course once, own it for good,
 					and learn at your own pace. So Coursely is built around project-based
 					lessons and a player that remembers exactly where you stopped.

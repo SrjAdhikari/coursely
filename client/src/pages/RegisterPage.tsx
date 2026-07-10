@@ -111,7 +111,7 @@ const RegisterPage = () => {
 					<Button
 						type="submit"
 						disabled={isPending || !isValid}
-						className="w-full h-11 font-mono cursor-pointer disabled:pointer-events-auto disabled:cursor-not-allowed disabled:hover:bg-primary"
+						className="w-full h-11 font-mono cursor-pointer disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
 					>
 						<span className="text-base font-medium">
 							{isPending ? "Creating account..." : "Create account"}
