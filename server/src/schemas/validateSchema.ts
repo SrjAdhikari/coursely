@@ -24,6 +24,8 @@ const collections = [
  * Creates non-existent collections and adds validation rules to existing ones.
  */
 const validateSchema = async () => {
+	let failed = false;
+
 	try {
 		await connectToMongoDB();
 
@@ -49,15 +51,17 @@ const validateSchema = async () => {
 				});
 				console.log(`✅ Validation added to ${name} collection`);
 			} catch (error) {
+				failed = true;
 				console.error(`❌ Validation failed for ${name} collection:`, error);
 			}
 		}
 	} catch (error) {
+		failed = true;
 		console.error("❌ Error [validateSchema]:", error);
 	} finally {
 		await mongoose.disconnect();
 		console.log("👋️ MongoDB connection closed");
-		process.exit(0);
+		process.exit(failed ? 1 : 0);
 	}
 };
 
