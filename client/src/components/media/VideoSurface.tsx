@@ -8,6 +8,7 @@ import {
 	Maximize,
 	Minimize,
 	Gauge,
+	Keyboard,
 	Loader2,
 	ChevronsLeft,
 	ChevronsRight,
@@ -23,6 +24,11 @@ import {
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
+import {
+	Popover,
+	PopoverTrigger,
+	PopoverContent,
+} from "@/components/ui/popover";
 
 import {
 	useVideoControls,
@@ -33,6 +39,13 @@ import { formatTime, clamp } from "@/lib/playerHelpers";
 import { cn } from "@/lib/utils";
 
 const PLAYBACK_RATES = [0.5, 1, 1.25, 1.5, 2] as const;
+const KEYBOARD_SHORTCUTS = [
+	{ label: "Play / pause", keys: ["Space", "K"] },
+	{ label: "Skip 5s", keys: ["←", "→"] },
+	{ label: "Volume", keys: ["↑", "↓"] },
+	{ label: "Mute", keys: ["M"] },
+	{ label: "Fullscreen", keys: ["F"] },
+];
 
 interface VideoSurfaceProps {
 	src: string;
@@ -132,7 +145,12 @@ const VideoSurface = ({
 						<TriangleAlert className="size-8 text-white/90" aria-hidden />
 						<p className="text-sm text-white/90">Couldn't load the video.</p>
 						{onRetry && (
-							<Button type="button" variant="secondary" size="sm" onClick={onRetry}>
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								onClick={onRetry}
+							>
 								Try again
 							</Button>
 						)}
@@ -280,6 +298,47 @@ const VideoSurface = ({
 								</DropdownMenuRadioGroup>
 							</DropdownMenuContent>
 						</DropdownMenu>
+
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Keyboard shortcuts"
+									className="text-white hover:bg-white/15 hover:text-white"
+								>
+									<Keyboard />
+								</Button>
+							</PopoverTrigger>
+
+							<PopoverContent align="end" className="w-56">
+								<p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+									Keyboard shortcuts
+								</p>
+
+								<ul className="space-y-1.5 text-sm">
+									{KEYBOARD_SHORTCUTS.map((shortcut) => (
+										<li
+											key={shortcut.label}
+											className="flex items-center justify-between gap-4"
+										>
+											<span>{shortcut.label}</span>
+											<span className="flex gap-1">
+												{shortcut.keys.map((key) => (
+													<kbd
+														key={key}
+														className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs"
+													>
+														{key}
+													</kbd>
+												))}
+											</span>
+										</li>
+									))}
+								</ul>
+							</PopoverContent>
+						</Popover>
 
 						<Button
 							type="button"
