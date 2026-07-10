@@ -1,7 +1,9 @@
 //* src/services/student.service.ts
 
 import User from "../models/user.model";
+import Enrollment from "../models/enrollment.model";
 
+import getLearningOverview from "./learning.service";
 import AppError from "../errors/AppError";
 
 import httpStatus from "../constants/httpStatus";
@@ -55,4 +57,40 @@ const updateStudent = async (id: string, input: UpdateStudentInput) => {
 	return student;
 };
 
-export { listStudents, getStudentById, updateStudent };
+// A student's real enrollments (course, amount, purchased, progress) for the
+// admin detail view; reuses the overview, which drops deleted-course rows.
+const getStudentEnrollments = async (studentId: string) => {
+	const [overview, enrollments] = await Promise.all([
+		getLearningOverview(studentId),
+		Enrollment.find({ userId: studentId })
+			.select("courseId amountPaid createdAt")
+			.lean(),
+	]);
+
+	const enrollmentByCourse = new Map(
+		enrollments.map((enrollment) => [
+			enrollment.courseId.toString(),
+			enrollment,
+		]),
+	);
+
+	const rows = overview.courses.map((course) => {
+		const enrollment = enrollmentByCourse.get(course.courseId);
+		return {
+			courseId: course.courseId,
+			course: course.title,
+			purchased: enrollment?.createdAt ?? null,
+			amount: enrollment?.amountPaid ?? 0,
+			progress: course.percentComplete,
+		};
+	});
+
+	return rows;
+};
+
+export {
+	listStudents,
+	getStudentById,
+	updateStudent,
+	getStudentEnrollments,
+};
