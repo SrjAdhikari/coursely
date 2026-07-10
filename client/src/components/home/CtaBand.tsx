@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import ROUTES from "@/routes/paths";
 
 const CtaBand = () => (
-	<section className="mx-auto max-w-6xl px-5 pb-16">
+	<section className="mx-auto max-w-6xl px-5 py-16">
 		<div className="rounded-3xl border border-accent-line bg-accent-soft px-6 py-14 text-center">
 			<p className="text-xs uppercase tracking-widest text-primary">
 				ready when you are

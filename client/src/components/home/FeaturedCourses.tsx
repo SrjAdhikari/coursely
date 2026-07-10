@@ -63,6 +63,8 @@ const FeaturedCourses = () => {
 							instructorName={course.instructorName}
 							thumbnailUrl={course.thumbnailUrl}
 							description={course.description}
+							category={course.category}
+							lessonCount={course.lessonCount}
 							meta={formatPrice(course.price)}
 						/>
 					))}

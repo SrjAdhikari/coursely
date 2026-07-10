@@ -25,7 +25,7 @@ const buildCards = [
 
 const BuiltStrip = () => (
 	<section id="built" className="mx-auto max-w-6xl px-5 py-16">
-		<div className="mb-9 max-w-2xl">
+		<div className="mx-auto mb-9 max-w-2xl text-center">
 			<p className="text-xs uppercase tracking-widest text-primary">
 				how it's built
 			</p>
@@ -39,7 +39,7 @@ const BuiltStrip = () => (
 				instantly and keeps a solo-run platform sustainable.
 			</p>
 
-			<p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+			<p className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
 				<span>
 					Egress <b className="font-semibold text-primary">₹0</b>
 				</span>
