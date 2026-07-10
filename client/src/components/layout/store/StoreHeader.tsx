@@ -13,7 +13,7 @@ import ROUTES from "@/routes/paths";
 // Ghost-button-style nav item; the active route gets a muted pill + primary text.
 const navItemClass = ({ isActive }: { isActive: boolean }) =>
 	cn(
-		"rounded-md px-3 py-1.5 transition-colors",
+		"whitespace-nowrap rounded-md px-3 py-1.5 transition-colors",
 		isActive
 			? "bg-muted text-primary"
 			: "text-muted-foreground hover:text-primary",
@@ -44,7 +44,7 @@ const StoreHeader = () => {
 								</NavLink>
 
 								<NavLink to={ROUTES.MY_COURSES} className={navItemClass}>
-									Library
+									My Courses
 								</NavLink>
 
 								<div className="ml-1 border-l border-border pl-3">

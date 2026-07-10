@@ -14,7 +14,7 @@ import ThemeToggle from "@/components/theme/theme-toggle";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 	cn(
-		"rounded-full px-3 py-1.5 transition-colors",
+		"whitespace-nowrap rounded-full px-3 py-1.5 transition-colors",
 		isActive
 			? "bg-primary text-primary-foreground"
 			: "text-muted-foreground hover:bg-muted hover:text-primary",
@@ -60,7 +60,7 @@ const HomeHeader = () => {
 							</NavLink>
 
 							<NavLink to={ROUTES.MY_COURSES} className={navLinkClass}>
-								Library
+								My Courses
 							</NavLink>
 
 							<div className="ml-1 border-l border-border pl-3">

@@ -47,10 +47,10 @@ describe("StoreHeader", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("shows the Library link and the account menu when logged in", () => {
+	it("shows the My Courses link and the account menu when logged in", () => {
 		loggedIn();
 		renderHeaderAt();
-		expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: /my courses/i })).toHaveAttribute(
 			"href",
 			"/my-courses",
 		);

@@ -36,11 +36,11 @@ describe("HomeHeader", () => {
 		expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute("href", "/signup");
 	});
 
-	it("shows Dashboard, Library, and the account menu when logged in", () => {
+	it("shows Dashboard, My Courses, and the account menu when logged in", () => {
 		mockUseCurrentUser.mockReturnValue({ data: { data: loggedInUser } });
 		renderHeader();
 		expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute("href", "/dashboard");
-		expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute("href", "/my-courses");
+		expect(screen.getByRole("link", { name: /my courses/i })).toHaveAttribute("href", "/my-courses");
 		expect(
 			screen.getByRole("button", { name: /account menu/i }),
 		).toBeInTheDocument();
