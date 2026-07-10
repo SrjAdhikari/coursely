@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import pluralize from "@/lib/pluralize";
+import pluralize, { pluralizeNoun } from "@/lib/pluralize";
 
 describe("pluralize", () => {
 	it("keeps the noun singular when the count is exactly 1", () => {
@@ -17,5 +17,21 @@ describe("pluralize", () => {
 	it("pluralizes a multi-word noun on its final word", () => {
 		expect(pluralize(1, "video lesson")).toBe("1 video lesson");
 		expect(pluralize(3, "video lesson")).toBe("3 video lessons");
+	});
+});
+
+describe("pluralizeNoun", () => {
+	it("keeps the noun singular when the count is exactly 1", () => {
+		expect(pluralizeNoun(1, "active course")).toBe("active course");
+	});
+
+	it("pluralizes the noun for any count other than 1", () => {
+		expect(pluralizeNoun(0, "active course")).toBe("active courses");
+		expect(pluralizeNoun(2, "finished course")).toBe("finished courses");
+	});
+
+	it("pluralizes a multi-word noun on its final word", () => {
+		expect(pluralizeNoun(1, "video lesson")).toBe("video lesson");
+		expect(pluralizeNoun(3, "video lesson")).toBe("video lessons");
 	});
 });
