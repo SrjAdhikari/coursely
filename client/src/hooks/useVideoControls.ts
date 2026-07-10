@@ -56,6 +56,7 @@ export const useVideoControls = ({
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [isBuffering, setIsBuffering] = useState(false);
 	const [isReady, setIsReady] = useState(false);
+	const [mediaError, setMediaError] = useState(false);
 	const [skipHint, setSkipHint] = useState<{
 		direction: "forward" | "backward";
 		nonce: number;
@@ -115,7 +116,10 @@ export const useVideoControls = ({
 		skipNonceRef.current += 1;
 		setSkipHint({ direction, nonce: skipNonceRef.current });
 		if (skipHintTimerRef.current) clearTimeout(skipHintTimerRef.current);
-		skipHintTimerRef.current = setTimeout(() => setSkipHint(null), SKIP_HINT_MS);
+		skipHintTimerRef.current = setTimeout(
+			() => setSkipHint(null),
+			SKIP_HINT_MS,
+		);
 	}, []);
 
 	const seekBy = useCallback(
@@ -204,11 +208,13 @@ export const useVideoControls = ({
 			setPlaying(true);
 			revealControls();
 		};
+
 		const onPause = () => {
 			setPlaying(false);
 			revealControls();
 			report("pause");
 		};
+
 		const onTimeUpdate = () => {
 			setCurrentTime(video.currentTime);
 			if (
@@ -218,6 +224,7 @@ export const useVideoControls = ({
 				report("interval");
 			}
 		};
+
 		const onDurationChange = () =>
 			setDuration(Number.isFinite(video.duration) ? video.duration : 0);
 		const onLoadedMetadata = () => {
@@ -234,21 +241,29 @@ export const useVideoControls = ({
 			const ranges = video.buffered;
 			setBufferedEnd(ranges.length ? ranges.end(ranges.length - 1) : 0);
 		};
+
 		const onVolumeChange = () => {
 			setVolumeState(video.volume);
 			setMuted(video.muted);
 		};
+
 		const onRateChange = () => setRateState(video.playbackRate);
 		const onWaiting = () => setIsBuffering(true);
 		const onPlaying = () => {
 			setIsBuffering(false);
 			setPlaying(true);
 		};
+
 		const onSeeking = () => setIsBuffering(true);
 		const onSeeked = () => setIsBuffering(false);
 		const onLoadedData = () => setIsReady(true);
+		const onError = () => setMediaError(true);
+
 		// loadstart resets when the same element gets a new src (preview→preview).
-		const onLoadStart = () => setIsReady(false);
+		const onLoadStart = () => {
+			setIsReady(false);
+			setMediaError(false);
+		};
 
 		video.addEventListener("play", onPlay);
 		video.addEventListener("pause", onPause);
@@ -264,6 +279,7 @@ export const useVideoControls = ({
 		video.addEventListener("seeking", onSeeking);
 		video.addEventListener("seeked", onSeeked);
 		video.addEventListener("loadeddata", onLoadedData);
+		video.addEventListener("error", onError);
 		video.addEventListener("loadstart", onLoadStart);
 
 		return () => {
@@ -281,6 +297,7 @@ export const useVideoControls = ({
 			video.removeEventListener("seeking", onSeeking);
 			video.removeEventListener("seeked", onSeeked);
 			video.removeEventListener("loadeddata", onLoadedData);
+			video.removeEventListener("error", onError);
 			video.removeEventListener("loadstart", onLoadStart);
 
 			// Flush the final position on unmount (captured element — videoRef may be
@@ -321,6 +338,7 @@ export const useVideoControls = ({
 		isFullscreen,
 		isBuffering,
 		isReady,
+		mediaError,
 		skipHint,
 		controlsVisible,
 		togglePlay,

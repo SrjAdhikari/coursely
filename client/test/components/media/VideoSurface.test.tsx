@@ -238,6 +238,43 @@ describe("VideoSurface", () => {
 			vi.useRealTimers();
 		}
 	});
+
+	it("shows an error affordance and hides the spinner when the media element errors", () => {
+		const { container } = render(<VideoSurface src="https://r2/v" />);
+		const video = getVideo(container);
+
+		// The element fails before any frame decodes (expired URL / 403 / decode error).
+		fireEvent.error(video);
+
+		expect(screen.getByRole("alert")).toBeInTheDocument();
+		expect(screen.getByText(/couldn't load the video/i)).toBeInTheDocument();
+		expect(
+			screen.queryByRole("status", { name: /buffering/i }),
+		).not.toBeInTheDocument();
+	});
+
+	it("renders a retry button that calls onRetry when the media element errors", () => {
+		const onRetry = vi.fn();
+		const { container } = render(
+			<VideoSurface src="https://r2/v" onRetry={onRetry} />,
+		);
+		fireEvent.error(getVideo(container));
+
+		fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+
+		expect(onRetry).toHaveBeenCalledTimes(1);
+	});
+
+	it("clears the error affordance when the element starts a fresh load", () => {
+		const { container } = render(<VideoSurface src="https://r2/v" />);
+		const video = getVideo(container);
+		fireEvent.error(video);
+		expect(screen.getByRole("alert")).toBeInTheDocument();
+
+		fireEvent.loadStart(video);
+
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+	});
 });
 
 describe("VideoSurface progress reporting", () => {

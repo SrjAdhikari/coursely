@@ -23,7 +23,8 @@ const VideoPlayer = ({
 	resumePositionSeconds,
 	onReportPosition,
 }: VideoPlayerProps) => {
-	const { data, isLoading, isError, error } = useLessonPlaybackUrl(lessonId);
+	const { data, isLoading, isError, error, refetch } =
+		useLessonPlaybackUrl(lessonId);
 
 	if (isLoading) return <Loader className="aspect-video" />;
 
@@ -45,6 +46,7 @@ const VideoPlayer = ({
 			poster={poster}
 			resumePositionSeconds={resumePositionSeconds}
 			onReportPosition={onReportPosition}
+			onRetry={() => refetch()}
 		/>
 	);
 };

@@ -11,6 +11,7 @@ import {
 	Loader2,
 	ChevronsLeft,
 	ChevronsRight,
+	TriangleAlert,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ interface VideoSurfaceProps {
 	poster?: string;
 	resumePositionSeconds?: number;
 	onReportPosition?: ReportPositionHandler;
+	onRetry?: () => void;
 }
 
 /**
@@ -50,6 +52,7 @@ const VideoSurface = ({
 	poster,
 	resumePositionSeconds,
 	onReportPosition,
+	onRetry,
 }: VideoSurfaceProps) => {
 	const {
 		videoRef,
@@ -64,6 +67,7 @@ const VideoSurface = ({
 		isFullscreen,
 		isBuffering,
 		isReady,
+		mediaError,
 		skipHint,
 		controlsVisible,
 		togglePlay,
@@ -109,13 +113,30 @@ const VideoSurface = ({
 				className="h-full w-full cursor-pointer"
 			/>
 
-			{(!isReady || isBuffering) && !skipHint && (
+			{(!isReady || isBuffering) && !skipHint && !mediaError && (
 				<div
 					role="status"
 					aria-label="Buffering"
 					className="pointer-events-none absolute inset-0 grid place-items-center"
 				>
 					<Loader2 className="size-8 animate-spin text-white/90" aria-hidden />
+				</div>
+			)}
+
+			{mediaError && (
+				<div
+					role="alert"
+					className="pointer-events-none absolute inset-0 grid place-items-center bg-black/70 px-4 text-center"
+				>
+					<div className="pointer-events-auto flex flex-col items-center gap-3 text-white">
+						<TriangleAlert className="size-8 text-white/90" aria-hidden />
+						<p className="text-sm text-white/90">Couldn't load the video.</p>
+						{onRetry && (
+							<Button type="button" variant="secondary" size="sm" onClick={onRetry}>
+								Try again
+							</Button>
+						)}
+					</div>
 				</div>
 			)}
 
