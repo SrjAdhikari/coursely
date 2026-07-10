@@ -10,6 +10,7 @@ import AdminRoute from "@/routes/AdminRoute";
 import AdminLayout from "@/components/layout/AdminLayout";
 import StoreLayout from "@/components/layout/store/StoreLayout";
 import HomeLayout from "@/components/layout/home/HomeLayout";
+import AuthLayout from "@/components/layout/AuthLayout";
 
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
@@ -53,8 +54,10 @@ const AppRoutes = () => {
 
 			{/* Logged-out only */}
 			<Route element={<GuestRoute />}>
-				<Route path={ROUTES.LOGIN} element={<LoginPage />} />
-				<Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+				<Route element={<AuthLayout />}>
+					<Route path={ROUTES.LOGIN} element={<LoginPage />} />
+					<Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+				</Route>
 			</Route>
 
 			{/* Authenticated */}
