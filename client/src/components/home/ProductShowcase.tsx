@@ -7,21 +7,47 @@ import { cn } from "@/lib/utils";
 import ProductFrame from "@/components/home/ProductFrame";
 
 const dashboardStats = [
-	{ label: "Courses", value: "3" },
-	{ label: "Lessons done", value: "41" },
-	{ label: "Hours watched", value: "12.5" },
+	{ label: "Enrolled", value: "3", hint: "in your library" },
+	{ label: "In progress", value: "1", hint: "active course" },
+	{ label: "Completed", value: "0", hint: "keep going" },
+	{ label: "Lessons", value: "8", hint: "of 19 done" },
 ];
 
-const learnLessons = [
-	{ title: "Why React exists", duration: "8:20", state: "done" },
-	{ title: "JSX & the render tree", duration: "11:05", state: "done" },
+const dashboardCourses = [
 	{
-		title: "Building your first component",
-		duration: "14:38",
-		state: "active",
+		glyph: "⚛",
+		title: "React from Scratch",
+		meta: "Lesson 4 of 12",
+		progress: 44,
 	},
-	{ title: "Props & composition", duration: "9:41", state: "locked" },
-	{ title: "State with useState", duration: "12:56", state: "locked" },
+	{
+		glyph: "JS",
+		title: "JavaScript Essentials",
+		meta: "Lesson 2 of 9",
+		progress: 22,
+	},
+];
+
+const learnSections = [
+	{
+		title: "Section 1 · Foundations",
+		lessons: [
+			{ title: "Why React exists", duration: "8:20", state: "done" },
+			{ title: "JSX & the render tree", duration: "11:05", state: "done" },
+			{ title: "Thinking in components", duration: "9:30", state: "done" },
+			{ title: "Rendering & the DOM", duration: "7:12", state: "done" },
+			{ title: "Your first component", duration: "14:38", state: "active" },
+		],
+	},
+	{
+		title: "Section 2 · State & interaction",
+		lessons: [
+			{ title: "Props & composition", duration: "9:41", state: "locked" },
+			{ title: "State with useState", duration: "12:56", state: "locked" },
+			{ title: "Handling events", duration: "7:18", state: "locked" },
+			{ title: "Lists & keys", duration: "6:40", state: "locked" },
+		],
+	},
 ];
 
 const catalogFilters = [
@@ -36,8 +62,8 @@ const catalogFilters = [
 // varied grid instead of an all-lime block that fights the accent.
 const catalogCourses = [
 	{
-		glyph: "</>",
-		title: "HTML & CSS Foundations",
+		glyph: "HTML",
+		title: "HTML Foundations",
 		price: "₹499",
 		tile: "linear-gradient(135deg,#e8662a,#b8420f)",
 		ink: "#0a0c08",
@@ -50,7 +76,7 @@ const catalogCourses = [
 		ink: "#1a1500",
 	},
 	{
-		glyph: "⚛",
+		glyph: "React",
 		title: "React from Scratch",
 		price: "₹999",
 		tile: "linear-gradient(135deg,#22d3ee,#0e7490)",
@@ -64,14 +90,14 @@ const catalogCourses = [
 		ink: "#ffffff",
 	},
 	{
-		glyph: "Nd",
+		glyph: "Node",
 		title: "Node & Express APIs",
 		price: "₹999",
 		tile: "linear-gradient(135deg,#6ee7b7,#059669)",
 		ink: "#04241a",
 	},
 	{
-		glyph: "#",
+		glyph: "CSS",
 		title: "Modern CSS Layout",
 		price: "₹599",
 		tile: "linear-gradient(135deg,#3a8bff,#1452cc)",
@@ -82,82 +108,130 @@ const catalogCourses = [
 // Placeholder mock-UI frames — swapped for real screenshots post content-seeding.
 // Each fills the fixed stage height so it seats cleanly like the mockup.
 const DashboardMock = () => (
-	<div aria-hidden className="flex h-full flex-col p-5 text-left">
-		<div className="mb-4 flex items-center justify-between gap-4">
-			<div>
-				<p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-					Welcome back
-				</p>
-				<h4 className="mt-1 text-xl">Keep the streak going</h4>
+	<div aria-hidden className="flex h-full flex-col gap-3 p-4 text-left">
+		{/* Stat tiles + overall-progress ring */}
+		<div className="grid grid-cols-[1fr_auto] gap-2.5">
+			<div className="grid grid-cols-2 gap-2.5">
+				{dashboardStats.map((stat) => (
+					<div
+						key={stat.label}
+						className="rounded-lg border border-border bg-card p-2.5"
+					>
+						<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+							{stat.label}
+						</p>
+
+						<p className="mt-0.5 text-xl font-semibold leading-none">
+							{stat.value}
+						</p>
+
+						<p className="mt-1 text-[10px] text-muted-foreground">
+							{stat.hint}
+						</p>
+					</div>
+				))}
 			</div>
-			<div className="relative size-18 shrink-0">
-				<svg viewBox="0 0 80 80" className="size-full -rotate-90">
-					<circle
-						cx="40"
-						cy="40"
-						r="34"
-						fill="none"
-						strokeWidth={6}
-						className="stroke-border"
-					/>
-					<circle
-						cx="40"
-						cy="40"
-						r="34"
-						fill="none"
-						strokeWidth={6}
-						strokeLinecap="round"
-						strokeDasharray="213.6"
-						strokeDashoffset="81.2"
-						className="stroke-primary"
-					/>
-				</svg>
-				<span className="absolute inset-0 grid place-items-center text-sm font-semibold">
-					62%
+
+			<div className="flex w-30 flex-col items-center justify-center gap-1 rounded-lg border border-border bg-card p-2">
+				<p className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">
+					Overall progress
+				</p>
+
+				<div className="relative size-16">
+					<svg viewBox="0 0 80 80" className="size-full -rotate-90">
+						<circle
+							cx="40"
+							cy="40"
+							r="34"
+							fill="none"
+							strokeWidth={6}
+							className="stroke-border"
+						/>
+						<circle
+							cx="40"
+							cy="40"
+							r="34"
+							fill="none"
+							strokeWidth={6}
+							strokeLinecap="round"
+							strokeDasharray="213.6"
+							strokeDashoffset="123.9"
+							className="stroke-primary"
+						/>
+					</svg>
+
+					<span className="absolute inset-0 grid place-items-center text-sm font-semibold">
+						42%
+					</span>
+				</div>
+
+				<p className="text-[10px] text-muted-foreground">8 / 19 lessons</p>
+			</div>
+		</div>
+
+		{/* Continue learning */}
+		<div>
+			<p className="text-[10px] uppercase tracking-wider text-primary">
+				Continue learning
+			</p>
+
+			<div className="mt-1.5 flex items-center gap-3 rounded-xl border border-input bg-muted p-3">
+				<span className="grid size-11 shrink-0 place-items-center rounded-lg bg-linear-to-br from-primary to-primary/60 text-base font-bold text-primary-foreground">
+					⚛
+				</span>
+
+				<div className="min-w-0 flex-1">
+					<p className="truncate text-sm font-semibold">React from Scratch</p>
+					<div className="mt-1.5 flex items-center gap-2">
+						<span className="h-1 w-28 overflow-hidden rounded-full bg-border">
+							<span
+								className="block h-full rounded-full bg-primary"
+								style={{ width: "44%" }}
+							/>
+						</span>
+
+						<span className="text-[11px] text-muted-foreground">
+							Lesson 04 · 44%
+						</span>
+					</div>
+				</div>
+
+				<span className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground">
+					Resume
 				</span>
 			</div>
 		</div>
 
-		<div className="mb-4 grid grid-cols-3 gap-2.5">
-			{dashboardStats.map((tile) => (
-				<div
-					key={tile.label}
-					className="rounded-lg border border-border bg-card p-3"
-				>
-					<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-						{tile.label}
-					</p>
-					<p className="mt-1 text-xl font-semibold">{tile.value}</p>
-				</div>
-			))}
-		</div>
+		{/* Your courses — flex-1 absorbs slack so there is no empty band */}
+		<div className="flex min-h-0 flex-1 flex-col">
+			<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+				Your courses
+			</p>
 
-		<div className="mt-auto flex items-center gap-3 rounded-xl border border-input bg-muted p-3">
-			<span className="grid size-12 shrink-0 place-items-center rounded-lg bg-linear-to-br from-primary to-primary/60 text-lg font-bold text-primary-foreground">
-				⚛
-			</span>
-			<div className="min-w-0 flex-1">
-				<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-					Continue learning
-				</p>
-				<p className="mt-0.5 truncate text-sm font-semibold">
-					React from Scratch
-				</p>
-				<div className="mt-1.5 flex items-center gap-2">
-					<span className="h-1 w-32 overflow-hidden rounded-full bg-border">
-						<span
-							className="block h-full rounded-full bg-primary"
-							style={{ width: "44%" }}
-						/>
-					</span>
-					<span className="text-[11px] text-muted-foreground">
-						8 / 18 lessons
-					</span>
-				</div>
+			<div className="mt-1.5 flex flex-1 flex-col justify-center gap-2">
+				{dashboardCourses.map((course) => (
+					<div
+						key={course.title}
+						className="flex items-center gap-3 rounded-lg border border-border bg-card p-2.5"
+					>
+						<span className="grid size-9 shrink-0 place-items-center rounded-md bg-muted text-xs font-bold">
+							{course.glyph}
+						</span>
+
+						<div className="min-w-0 flex-1">
+							<p className="truncate text-xs font-semibold">{course.title}</p>
+							<p className="text-[10px] text-muted-foreground">{course.meta}</p>
+						</div>
+
+						<span className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-border">
+							<span
+								className="block h-full rounded-full bg-primary"
+								style={{ width: `${course.progress}%` }}
+							/>
+						</span>
+					</div>
+				))}
 			</div>
-			<span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-				<Play className="size-4 translate-x-px" aria-hidden />
-			</span>
 		</div>
 	</div>
 );
@@ -169,10 +243,12 @@ const LearnMock = () => (
 				<span className="grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-card">
 					<Play className="size-6 translate-x-0.5" aria-hidden />
 				</span>
+
 				<span className="absolute bottom-3 left-3 rounded bg-foreground/70 px-2 py-1 text-[11px] text-background">
-					04 · Building your first component
+					05 · Your first component
 				</span>
 			</div>
+
 			<div className="bg-card p-4">
 				<div className="mb-3 h-1 overflow-hidden rounded-full bg-border">
 					<span
@@ -180,6 +256,7 @@ const LearnMock = () => (
 						style={{ width: "44%" }}
 					/>
 				</div>
+
 				<div className="flex items-center gap-3 text-muted-foreground">
 					<Play className="size-4" aria-hidden />
 					<Volume2 className="size-4" aria-hidden />
@@ -197,6 +274,7 @@ const LearnMock = () => (
 					<p className="text-sm font-semibold">Course progress</p>
 					<span className="text-xs text-primary">44%</span>
 				</div>
+
 				<div className="h-1 overflow-hidden rounded-full bg-border">
 					<span
 						className="block h-full rounded-full bg-primary"
@@ -204,27 +282,33 @@ const LearnMock = () => (
 					/>
 				</div>
 			</div>
-			<div className="p-2">
-				<p className="px-2 py-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-					Section 1 · Foundations
-				</p>
-				{learnLessons.map((lesson) => (
-					<div
-						key={lesson.title}
-						className={cn(
-							"flex items-center gap-2.5 rounded-md px-2 py-2 text-sm text-muted-foreground",
-							lesson.state === "active" && "bg-accent-soft text-foreground",
-						)}
-					>
-						{lesson.state === "done" ? (
-							<Check className="size-4 shrink-0 text-primary" aria-hidden />
-						) : lesson.state === "active" ? (
-							<Play className="size-4 shrink-0 text-primary" aria-hidden />
-						) : (
-							<Lock className="size-4 shrink-0" aria-hidden />
-						)}
-						<span className="flex-1 truncate">{lesson.title}</span>
-						<span className="shrink-0 text-[11px]">{lesson.duration}</span>
+
+			<div className="min-h-0 flex-1 overflow-hidden p-2">
+				{learnSections.map((section) => (
+					<div key={section.title}>
+						<p className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+							{section.title}
+						</p>
+
+						{section.lessons.map((lesson) => (
+							<div
+								key={lesson.title}
+								className={cn(
+									"flex items-center gap-2.5 rounded-md px-2 py-2 text-sm text-muted-foreground",
+									lesson.state === "active" && "bg-accent-soft text-foreground",
+								)}
+							>
+								{lesson.state === "done" ? (
+									<Check className="size-4 shrink-0 text-primary" aria-hidden />
+								) : lesson.state === "active" ? (
+									<Play className="size-4 shrink-0 text-primary" aria-hidden />
+								) : (
+									<Lock className="size-4 shrink-0" aria-hidden />
+								)}
+								<span className="flex-1 truncate">{lesson.title}</span>
+								<span className="shrink-0 text-[11px]">{lesson.duration}</span>
+							</div>
+						))}
 					</div>
 				))}
 			</div>
@@ -232,8 +316,8 @@ const LearnMock = () => (
 	</div>
 );
 
-// Fits the fixed 424px stage: shorter 16/7 thumbnails + a flex column whose grid
-// takes the remaining space, so all six cards and prices stay visible.
+// Fills the fixed stage: a 3×2 grid of equal cards whose color tile flexes to
+// absorb the height, so there is no empty band below the last row.
 const CatalogMock = () => (
 	<div aria-hidden className="flex h-full flex-col p-4 text-left">
 		<div className="mb-3 flex flex-wrap gap-2">
@@ -251,21 +335,25 @@ const CatalogMock = () => (
 				</span>
 			))}
 		</div>
-		<div className="grid flex-1 grid-cols-2 content-start gap-2.5 sm:grid-cols-3">
+
+		<div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-3 gap-2.5 sm:grid-cols-3 sm:grid-rows-2">
 			{catalogCourses.map((course) => (
 				<div
 					key={course.title}
-					className="overflow-hidden rounded-lg border border-border bg-card"
+					className="flex flex-col overflow-hidden rounded-lg border border-border bg-card"
 				>
 					<div
-						className="grid aspect-[16/7] place-items-center text-lg font-bold"
+						className="grid flex-1 place-items-center text-xl font-bold"
 						style={{ background: course.tile, color: course.ink }}
 					>
 						{course.glyph}
 					</div>
+
 					<div className="p-2.5">
-						<p className="text-xs font-semibold leading-tight">{course.title}</p>
-						<p className="mt-1.5 text-xs font-bold">{course.price}</p>
+						<p className="text-xs font-semibold leading-tight">
+							{course.title}
+						</p>
+						<p className="mt-1 text-xs font-bold">{course.price}</p>
 					</div>
 				</div>
 			))}
@@ -378,6 +466,7 @@ const ProductShowcase = () => {
 				<p className="text-xs uppercase tracking-widest text-primary">
 					inside coursely
 				</p>
+
 				<h2 className="mt-3 text-4xl">A calm place to learn</h2>
 				<p className="mt-3 text-muted-foreground">
 					The whole app is built around one idea: get out of your way so you can
@@ -420,6 +509,7 @@ const ProductShowcase = () => {
 										<span className="self-start rounded-full border border-accent-line bg-accent-soft px-2.5 py-1 text-xs uppercase tracking-wider text-primary">
 											{feature.kicker}
 										</span>
+
 										<span className="font-heading text-base font-semibold leading-tight">
 											{feature.heading}
 										</span>
@@ -434,6 +524,7 @@ const ProductShowcase = () => {
 										<p className="max-w-prose pt-2 text-sm leading-relaxed text-muted-foreground">
 											{feature.intro}
 										</p>
+
 										<ul className="flex flex-col gap-2.5 pt-3.5">
 											{feature.points.map((point) => (
 												<li
@@ -470,7 +561,7 @@ const ProductShowcase = () => {
 							>
 								<div className="showcase-stage">
 									<ProductFrame url={feature.url}>
-										<div className="overflow-hidden sm:h-106">
+										<div className="overflow-hidden sm:h-120">
 											<FeatureMock />
 										</div>
 									</ProductFrame>
