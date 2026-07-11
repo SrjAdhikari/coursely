@@ -11,12 +11,12 @@ import { Button } from "@/components/ui/button";
 const AuthLayout = () => (
 	<div className="relative z-10 flex min-h-screen flex-col">
 		<header className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur">
-			<div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+			<div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-5">
 				<Link to={ROUTES.ROOT}>
-					<AppLogo className="text-lg" />
+					<AppLogo iconClassName="size-8" />
 				</Link>
 
-				<Button asChild variant="ghost">
+				<Button asChild variant="ghost" className="hover:text-primary">
 					<Link to={ROUTES.CATALOG}>Browse courses</Link>
 				</Button>
 			</div>

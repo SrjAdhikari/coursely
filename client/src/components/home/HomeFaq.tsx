@@ -53,7 +53,7 @@ const HomeFaq = () => (
 			type="single"
 			collapsible
 			defaultValue="item-0"
-			className="mx-auto max-w-3xl space-y-3"
+			className="space-y-3"
 		>
 			{faqItems.map((item, index) => (
 				<AccordionItem
@@ -65,7 +65,7 @@ const HomeFaq = () => (
 						{item.question}
 					</AccordionTrigger>
 
-					<AccordionContent className="max-w-prose leading-relaxed text-muted-foreground">
+					<AccordionContent className="leading-relaxed text-muted-foreground">
 						{item.answer}
 					</AccordionContent>
 				</AccordionItem>

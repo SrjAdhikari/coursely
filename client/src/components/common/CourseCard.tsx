@@ -45,6 +45,12 @@ const CourseCard = ({
 		</div>
 
 		<div className="flex flex-1 flex-col p-4">
+			{category && (
+				<p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+					{category}
+				</p>
+			)}
+
 			<h3 className="font-heading text-base font-semibold leading-snug">
 				{title}
 			</h3>
@@ -64,22 +70,15 @@ const CourseCard = ({
 				</p>
 			)}
 
-			{(category || typeof lessonCount === "number") && (
-				<div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-					{category && (
-						<span className="rounded-full border border-border px-2 py-0.5">
-							{category}
-						</span>
-					)}
-
-					{typeof lessonCount === "number" && (
-						<span>{pluralize(lessonCount, "lesson")}</span>
-					)}
-				</div>
-			)}
-
-			<div className="mt-4 flex items-center justify-end border-t border-border pt-3.5">
-				<span className="text-base font-semibold text-foreground">{meta}</span>
+			<div className="mt-4 flex items-center gap-2 border-t border-border pt-3.5">
+				{typeof lessonCount === "number" && (
+					<span className="text-sm text-muted-foreground">
+						{pluralize(lessonCount, "lesson")}
+					</span>
+				)}
+				<span className="ml-auto text-base font-semibold text-foreground">
+					{meta}
+				</span>
 			</div>
 		</div>
 	</Link>

@@ -48,7 +48,7 @@ const MarqueeItem = ({ label, duplicate }: MarqueeItemProps) => (
 );
 
 const TechMarquee = () => (
-	<section className="mx-auto max-w-6xl px-5 pb-16">
+	<section className="mx-auto max-w-6xl px-5 py-16">
 		<div className="text-center">
 			<p className="mb-5 text-xs uppercase tracking-widest text-muted-foreground">
 				Built on

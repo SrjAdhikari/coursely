@@ -67,7 +67,7 @@ const HeroSection = ({ courseCount, lessonCount, hours }: HeroSectionProps) => {
 					{courseCount ? (
 						<div>
 							<dt className="sr-only">Courses</dt>
-							<dd className="font-heading text-3xl text-primary">
+							<dd className="font-heading text-3xl font-bold leading-none text-primary">
 								{courseCount}
 							</dd>
 
@@ -80,7 +80,7 @@ const HeroSection = ({ courseCount, lessonCount, hours }: HeroSectionProps) => {
 					{lessonCount ? (
 						<div>
 							<dt className="sr-only">Lessons</dt>
-							<dd className="font-heading text-3xl text-primary">
+							<dd className="font-heading text-3xl font-bold leading-none text-primary">
 								{lessonCount}
 							</dd>
 
@@ -93,7 +93,7 @@ const HeroSection = ({ courseCount, lessonCount, hours }: HeroSectionProps) => {
 					{hours ? (
 						<div>
 							<dt className="sr-only">Hours</dt>
-							<dd className="font-heading text-3xl text-primary">{hours}</dd>
+							<dd className="font-heading text-3xl font-bold leading-none text-primary">{hours}</dd>
 							<p className="text-xs uppercase tracking-wider text-muted-foreground">
 								hours
 							</p>

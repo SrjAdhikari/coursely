@@ -6,7 +6,7 @@ import founderPhoto from "@/assets/founder.jpg";
 
 const FounderNote = () => (
 	<section id="founder" className="mx-auto max-w-6xl px-5 py-16">
-		<figure className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl border border-border bg-linear-to-br from-muted to-card p-8 sm:p-12">
+		<figure className="relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-muted to-card p-8 sm:p-12">
 			<span
 				className="absolute inset-y-0 left-0 w-1 bg-linear-to-b from-primary to-transparent"
 				aria-hidden
