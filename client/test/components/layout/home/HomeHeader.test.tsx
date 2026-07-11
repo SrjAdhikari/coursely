@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
@@ -9,6 +9,13 @@ vi.mock("@/hooks/useAuth", () => ({
 	useCurrentUser: () => mockUseCurrentUser(),
 	useLogout: () => ({ mutate: vi.fn() }),
 }));
+
+const mockUseActiveSection = vi.fn((): string | null => null);
+vi.mock("@/hooks/useActiveSection", () => ({
+	default: () => mockUseActiveSection(),
+}));
+
+afterEach(() => mockUseActiveSection.mockReturnValue(null));
 
 import HomeHeader from "@/components/layout/home/HomeHeader";
 
@@ -50,6 +57,20 @@ describe("HomeHeader", () => {
 		mockUseCurrentUser.mockReturnValue({ data: undefined });
 		renderHeader();
 		expect(screen.getByRole("link", { name: /^courses$/i })).toHaveAttribute("href", "/courses");
+	});
+
+	it("marks the nav link active for the section currently in view", () => {
+		mockUseCurrentUser.mockReturnValue({ data: undefined });
+		mockUseActiveSection.mockReturnValue("faq");
+		renderHeader();
+
+		expect(screen.getByRole("link", { name: /^faq$/i })).toHaveAttribute(
+			"aria-current",
+			"true",
+		);
+		expect(screen.getByRole("link", { name: /^why$/i })).not.toHaveAttribute(
+			"aria-current",
+		);
 	});
 
 	describe("mobile menu", () => {
