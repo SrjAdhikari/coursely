@@ -185,6 +185,7 @@
 	}
 	html {
 		@apply font-mono;
+		scrollbar-gutter: stable;
 	}
 	h1,
 	h2,
