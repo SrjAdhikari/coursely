@@ -13,17 +13,23 @@ interface FormTextareaProps extends React.ComponentProps<"textarea"> {
 
 /**
  * Reusable multi-line field — label, textarea, and an error or hint line.
- * Uses forwardRef so React Hook Form's register() can attach its ref.
+ * The hint sits just below the textarea (tight gap). Uses forwardRef so
+ * React Hook Form's register() can attach its ref.
  */
 const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
 	({ label, error, hint, id, ...props }, ref) => (
-		<div className="space-y-2">
-			<Label htmlFor={id}>{label}</Label>
-			<Textarea id={id} ref={ref} aria-invalid={!!error} {...props} />
+		<div>
+			<div className="space-y-2">
+				<Label htmlFor={id}>{label}</Label>
+				<Textarea id={id} ref={ref} aria-invalid={!!error} {...props} />
+			</div>
+
 			{error ? (
-				<span className="font-mono text-sm text-destructive">{error}</span>
+				<span className="mt-1.5 block font-mono text-sm text-destructive">
+					{error}
+				</span>
 			) : hint ? (
-				<span className="font-mono text-[11px] text-muted-foreground">
+				<span className="mt-1.5 block font-mono text-[11px] text-muted-foreground">
 					{hint}
 				</span>
 			) : null}
