@@ -31,13 +31,18 @@ const ShortcutsHint = ({ container }: ShortcutsHintProps) => {
 					variant="ghost"
 					size="icon-sm"
 					aria-label="Keyboard shortcuts"
-					className="text-white hover:bg-white/15 hover:text-white"
+					className="rounded-sm text-white hover:bg-white/15 hover:text-white"
 				>
 					<Keyboard />
 				</Button>
 			</PopoverTrigger>
 
-			<PopoverContent align="end" className="w-56" container={container}>
+			<PopoverContent
+				align="end"
+				side="top"
+				className="w-56"
+				container={container}
+			>
 				<p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 					Keyboard shortcuts
 				</p>

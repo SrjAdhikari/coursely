@@ -27,21 +27,26 @@ const PlaybackRateMenu = ({
 	container,
 }: PlaybackRateMenuProps) => {
 	return (
-		<DropdownMenu>
+		<DropdownMenu modal={false}>
 			<DropdownMenuTrigger asChild>
 				<Button
 					type="button"
 					variant="ghost"
-					size="icon-sm"
+					size="sm"
 					aria-label="Playback speed"
-					className="gap-1 px-1.5 text-xs text-white hover:bg-white/15 hover:text-white"
+					className="gap-1 rounded-sm px-1.5 text-xs text-white hover:bg-white/15 hover:text-white"
 				>
-					<Gauge />
+					<Gauge className="size-4" />
 					<span className="tabular-nums">{rate}×</span>
 				</Button>
 			</DropdownMenuTrigger>
 
-			<DropdownMenuContent align="end" className="min-w-28" container={container}>
+			<DropdownMenuContent
+				align="end"
+				side="top"
+				className="min-w-28"
+				container={container}
+			>
 				<DropdownMenuLabel>Playback speed</DropdownMenuLabel>
 				<DropdownMenuRadioGroup
 					value={String(rate)}
