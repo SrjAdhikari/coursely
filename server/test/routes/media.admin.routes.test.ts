@@ -110,3 +110,57 @@ describe("admin media flow", () => {
 		);
 	});
 });
+
+describe("admin course thumbnail flow", () => {
+	it("mints an upload URL for a valid image type and stores the key on confirm", async () => {
+		const agent = await adminAgent();
+		const course = await createTestCourse();
+		const courseId = course._id.toString();
+
+		// Thumbnail — presign PUT (valid content-type)
+		const upload = await agent
+			.post(`/api/admin/courses/${courseId}/thumbnail-url`)
+			.send({ contentType: "image/png" });
+		expect(upload.status).toBe(200);
+		expect(upload.body.data.thumbnailKey).toBe(`courses/${courseId}/thumbnail`);
+		expect(upload.body.data.uploadUrl).toContain("https://r2.test/put/");
+
+		// Thumbnail — invalid content-type → 400 VALIDATION_ERROR
+		const bad = await agent
+			.post(`/api/admin/courses/${courseId}/thumbnail-url`)
+			.send({ contentType: "image/gif" });
+		expect(bad.status).toBe(400);
+		expect(bad.body.error.code).toBe("VALIDATION_ERROR");
+
+		// Thumbnail — confirm (no body)
+		const confirm = await agent.patch(
+			`/api/admin/courses/${courseId}/thumbnail`,
+		);
+		expect(confirm.status).toBe(200);
+		expect(confirm.body.data.thumbnailKey).toBe(`courses/${courseId}/thumbnail`);
+	});
+
+	it("401s unauthenticated and 403s a student on thumbnail-url", async () => {
+		const course = await createTestCourse();
+		const path = `/api/admin/courses/${course._id.toString()}/thumbnail-url`;
+
+		const unauth = await request(app)
+			.post(path)
+			.send({ contentType: "image/png" });
+		expect(unauth.status).toBe(401);
+
+		await createTestUser({
+			email: "student@example.com",
+			password: "Password@123",
+			role: "student",
+		});
+		const studentAgent = request.agent(app).set("Origin", APP_ORIGIN);
+		await studentAgent
+			.post("/api/auth/login")
+			.send({ email: "student@example.com", password: "Password@123" });
+		const forbidden = await studentAgent
+			.post(path)
+			.send({ contentType: "image/png" });
+		expect(forbidden.status).toBe(403);
+	});
+});

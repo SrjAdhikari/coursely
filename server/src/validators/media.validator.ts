@@ -12,7 +12,16 @@ const setLessonVideoSchema = z.object({
 		.min(1, "Duration must be at least 1 second"),
 });
 
-type SetLessonVideoInput = z.infer<typeof setLessonVideoSchema>;
+// The upload's Content-Type is pinned into the presigned PUT, so only the
+// browser-safe raster formats we intend to serve are allowed.
+const createThumbnailUploadUrlSchema = z.object({
+	contentType: z.enum(["image/png", "image/jpeg", "image/webp"]),
+});
 
-export { setLessonVideoSchema };
-export type { SetLessonVideoInput };
+type SetLessonVideoInput = z.infer<typeof setLessonVideoSchema>;
+type CreateThumbnailUploadUrlInput = z.infer<
+	typeof createThumbnailUploadUrlSchema
+>;
+
+export { setLessonVideoSchema, createThumbnailUploadUrlSchema };
+export type { SetLessonVideoInput, CreateThumbnailUploadUrlInput };

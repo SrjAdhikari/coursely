@@ -24,14 +24,16 @@ const r2Client = new S3Client({
 	},
 });
 
-// Short PUT window (admin upload); ~1h GET window (per-request playback).
 const UPLOAD_URL_TTL_SECONDS = 5 * 60;
 const PLAYBACK_URL_TTL_SECONDS = 60 * 60;
+const THUMBNAIL_URL_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 /** Canonical, deterministic object keys — derived server-side, never client-supplied. */
 const lessonVideoKey = (lessonId: string) => `lessons/${lessonId}/source.mp4`;
 const courseTrailerKey = (courseId: string) =>
 	`courses/${courseId}/trailer.mp4`;
+const courseThumbnailKey = (courseId: string) =>
+	`courses/${courseId}/thumbnail`;
 
 /** Mint a presigned PUT for a video object (pins Content-Type; short TTL). */
 const presignPut = (key: string, contentType = "video/mp4") =>
@@ -45,12 +47,12 @@ const presignPut = (key: string, contentType = "video/mp4") =>
 		{ expiresIn: UPLOAD_URL_TTL_SECONDS },
 	);
 
-/** Mint a presigned GET for a video object (~1h TTL). */
-const presignGet = (key: string) =>
+/** Mint a presigned GET (defaults to the ~1h playback TTL; callers may widen it). */
+const presignGet = (key: string, ttlSeconds = PLAYBACK_URL_TTL_SECONDS) =>
 	getSignedUrl(
 		r2Client,
 		new GetObjectCommand({ Bucket: R2_BUCKET, Key: key }),
-		{ expiresIn: PLAYBACK_URL_TTL_SECONDS },
+		{ expiresIn: ttlSeconds },
 	);
 
 /** Whether an object exists in the bucket (HeadObject). 404 → false; other errors rethrow. */
@@ -70,9 +72,11 @@ export {
 	r2Client,
 	lessonVideoKey,
 	courseTrailerKey,
+	courseThumbnailKey,
 	presignPut,
 	presignGet,
 	objectExists,
 	UPLOAD_URL_TTL_SECONDS,
 	PLAYBACK_URL_TTL_SECONDS,
+	THUMBNAIL_URL_TTL_SECONDS,
 };

@@ -21,11 +21,13 @@ import {
 	setLessonVideo,
 	createCourseTrailerUploadUrl,
 	setCourseTrailer,
+	createCourseThumbnailUploadUrl,
+	setCourseThumbnail,
 	getLessonPlaybackUrl,
 	getCourseTrailerUrl,
 } from "../../src/services/media.service";
 import { isEnrolled } from "../../src/services/enrollment.service";
-import { objectExists } from "../../src/lib/r2";
+import { objectExists, presignPut } from "../../src/lib/r2";
 import {
 	createTestCourse,
 	createTestSection,
@@ -34,6 +36,7 @@ import {
 
 const mockedIsEnrolled = vi.mocked(isEnrolled);
 const mockedObjectExists = vi.mocked(objectExists);
+const mockedPresignPut = vi.mocked(presignPut);
 
 beforeEach(() => {
 	mockedIsEnrolled.mockReset();
@@ -103,6 +106,51 @@ describe("media.service — admin upload/confirm", () => {
 		const course = await createTestCourse();
 		await expect(
 			setCourseTrailer(course._id.toString()),
+		).rejects.toMatchObject({ statusCode: 400, errorCode: "UPLOAD_INCOMPLETE" });
+	});
+
+	it("createCourseThumbnailUploadUrl returns a presigned PUT + canonical key and pins the image content-type", async () => {
+		const course = await createTestCourse();
+		const id = course._id.toString();
+		const { uploadUrl, thumbnailKey } = await createCourseThumbnailUploadUrl(
+			id,
+			"image/png",
+		);
+		expect(thumbnailKey).toBe(`courses/${id}/thumbnail`);
+		expect(uploadUrl).toBe(`https://r2.test/put/courses/${id}/thumbnail`);
+		expect(mockedPresignPut).toHaveBeenLastCalledWith(
+			`courses/${id}/thumbnail`,
+			"image/png",
+		);
+	});
+
+	it("createCourseThumbnailUploadUrl 404s a missing course", async () => {
+		await expect(
+			createCourseThumbnailUploadUrl(
+				new mongoose.Types.ObjectId().toString(),
+				"image/png",
+			),
+		).rejects.toMatchObject({ statusCode: 404, errorCode: "COURSE_NOT_FOUND" });
+	});
+
+	it("setCourseThumbnail stores the canonical thumbnail key", async () => {
+		const course = await createTestCourse();
+		const id = course._id.toString();
+		const updated = await setCourseThumbnail(id);
+		expect(updated.thumbnailKey).toBe(`courses/${id}/thumbnail`);
+	});
+
+	it("setCourseThumbnail 404s a missing course", async () => {
+		await expect(
+			setCourseThumbnail(new mongoose.Types.ObjectId().toString()),
+		).rejects.toMatchObject({ statusCode: 404, errorCode: "COURSE_NOT_FOUND" });
+	});
+
+	it("setCourseThumbnail 400s when the upload is not in storage", async () => {
+		mockedObjectExists.mockResolvedValueOnce(false);
+		const course = await createTestCourse();
+		await expect(
+			setCourseThumbnail(course._id.toString()),
 		).rejects.toMatchObject({ statusCode: 400, errorCode: "UPLOAD_INCOMPLETE" });
 	});
 });

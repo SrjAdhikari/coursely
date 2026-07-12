@@ -8,6 +8,8 @@ import {
 	getLessonPlaybackUrl,
 	createCourseTrailerUploadUrl,
 	setCourseTrailer,
+	createCourseThumbnailUploadUrl,
+	setCourseThumbnail,
 	getCourseTrailerUrl,
 } from "../services/media.service";
 
@@ -59,18 +61,19 @@ const getLessonPlaybackUrlHandler: RequestHandler<{ id: string }> = async (
 	});
 };
 
-const createCourseTrailerUploadUrlHandler: RequestHandler<{ id: string }> =
-	async (req, res) => {
-		const courseId = req.params.id;
-		const { uploadUrl, trailerKey } =
-			await createCourseTrailerUploadUrl(courseId);
+const createCourseTrailerUploadUrlHandler: RequestHandler<{
+	id: string;
+}> = async (req, res) => {
+	const courseId = req.params.id;
+	const { uploadUrl, trailerKey } =
+		await createCourseTrailerUploadUrl(courseId);
 
-		res.status(OK).json({
-			success: true,
-			message: "Trailer upload URL generated successfully",
-			data: { uploadUrl, trailerKey },
-		});
-	};
+	res.status(OK).json({
+		success: true,
+		message: "Trailer upload URL generated successfully",
+		data: { uploadUrl, trailerKey },
+	});
+};
 
 const setCourseTrailerHandler: RequestHandler<{ id: string }> = async (
 	req,
@@ -82,6 +85,38 @@ const setCourseTrailerHandler: RequestHandler<{ id: string }> = async (
 	res.status(OK).json({
 		success: true,
 		message: "Course trailer saved successfully",
+		data: course,
+	});
+};
+
+const createCourseThumbnailUploadUrlHandler: RequestHandler<{
+	id: string;
+}> = async (req, res) => {
+	const { id } = req.params;
+	const { contentType } = req.body;
+
+	const { uploadUrl, thumbnailKey } = await createCourseThumbnailUploadUrl(
+		id,
+		contentType,
+	);
+
+	res.status(OK).json({
+		success: true,
+		message: "Thumbnail upload URL generated successfully",
+		data: { uploadUrl, thumbnailKey },
+	});
+};
+
+const setCourseThumbnailHandler: RequestHandler<{ id: string }> = async (
+	req,
+	res,
+) => {
+	const { id } = req.params;
+	const course = await setCourseThumbnail(id);
+
+	res.status(OK).json({
+		success: true,
+		message: "Course thumbnail saved successfully",
 		data: course,
 	});
 };
@@ -106,5 +141,7 @@ export {
 	getLessonPlaybackUrlHandler,
 	createCourseTrailerUploadUrlHandler,
 	setCourseTrailerHandler,
+	createCourseThumbnailUploadUrlHandler,
+	setCourseThumbnailHandler,
 	getCourseTrailerUrlHandler,
 };

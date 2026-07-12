@@ -52,6 +52,17 @@ describe("course validators", () => {
 		);
 	});
 
+	it("accepts a course without a thumbnailUrl (now optional — set later via upload)", () => {
+		const withoutThumbnail = {
+			title: "Intro",
+			description: "desc",
+			instructorName: "Asha",
+			price: 49900,
+			category: "Web Development",
+		};
+		expect(createCourseSchema.safeParse(withoutThumbnail).success).toBe(true);
+	});
+
 	it("rejects a thumbnailUrl with a non-http(s) scheme", () => {
 		const base = {
 			title: "Intro",

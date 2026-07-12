@@ -9,7 +9,6 @@ const coursesSchema = {
 			"slug",
 			"description",
 			"instructorName",
-			"thumbnailUrl",
 			"price",
 			"currency",
 			"isPublished",
@@ -40,7 +39,11 @@ const coursesSchema = {
 			},
 			thumbnailUrl: {
 				bsonType: "string",
-				description: "Cover image URL",
+				description: "Optional cover image URL (legacy/external thumbnails)",
+			},
+			thumbnailKey: {
+				bsonType: "string",
+				description: "Optional storage key for the uploaded thumbnail image",
 			},
 			trailerKey: {
 				bsonType: "string",
