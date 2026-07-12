@@ -7,7 +7,7 @@ export interface CoursePayload {
 	slug: string;
 	description: string;
 	instructorName: string;
-	thumbnailUrl: string;
+	thumbnailUrl?: string;
 	trailerKey?: string;
 	price: number;
 	currency: string;
@@ -92,7 +92,7 @@ export interface PublicCoursePayload {
 	slug: string;
 	description: string;
 	instructorName: string;
-	thumbnailUrl: string;
+	thumbnailUrl?: string;
 	price: number;
 	currency: string;
 	category?: string;

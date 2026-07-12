@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 
 interface CourseTrailerMediaProps {
-	thumbnailUrl: string;
+	thumbnailUrl?: string;
 	hasTrailer: boolean;
 	slug: string;
 	title: string;

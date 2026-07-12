@@ -375,6 +375,17 @@ describe("course.service — thumbnail serialization", () => {
 			(keyed as unknown as Record<string, unknown>).thumbnailKey,
 		).toBeUndefined();
 	});
+
+	it("omits thumbnailUrl when the course has neither a key nor a URL", async () => {
+		await createTestCourse({ slug: "no-thumb", thumbnailUrl: undefined });
+
+		const courses = await listPublishedCourses();
+		const bare = courses.find((course) => course.slug === "no-thumb")!;
+		expect(bare.thumbnailUrl).toBeUndefined();
+
+		const detail = await getCourseBySlug("no-thumb");
+		expect(detail.thumbnailUrl).toBeUndefined();
+	});
 });
 
 describe("course.service — lesson stats aggregation", () => {
