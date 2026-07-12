@@ -15,6 +15,8 @@ import {
 	getLessonPlaybackUrl,
 	createCourseTrailerUploadUrl,
 	setCourseTrailer,
+	createCourseThumbnailUploadUrl,
+	setCourseThumbnail,
 	uploadToR2,
 } from "@/api/media.api";
 
@@ -57,6 +59,24 @@ describe("media.api", () => {
 		expect(axiosClient.patch).toHaveBeenCalledWith("/admin/courses/c1/trailer");
 	});
 
+	it("mints a thumbnail upload URL with the content type in the body", async () => {
+		vi.mocked(axiosClient.post).mockResolvedValue(
+			ok({ uploadUrl: "u", thumbnailKey: "k" }),
+		);
+		const res = await createCourseThumbnailUploadUrl("c1", "image/png");
+		expect(axiosClient.post).toHaveBeenCalledWith(
+			"/admin/courses/c1/thumbnail-url",
+			{ contentType: "image/png" },
+		);
+		expect(res.data.thumbnailKey).toBe("k");
+	});
+
+	it("confirms a thumbnail with a bodyless PATCH", async () => {
+		vi.mocked(axiosClient.patch).mockResolvedValue(ok({ _id: "c1" }));
+		await setCourseThumbnail("c1");
+		expect(axiosClient.patch).toHaveBeenCalledWith("/admin/courses/c1/thumbnail");
+	});
+
 	it("PUTs to R2 with a bare axios call, pinned video/mp4, threading progress", async () => {
 		vi.mocked(axios.put).mockResolvedValue({});
 		const file = new File(["x"], "v.mp4", { type: "video/mp4" });
@@ -71,5 +91,13 @@ describe("media.api", () => {
 
 		config?.onUploadProgress?.({ loaded: 50, total: 200 } as never);
 		expect(onProgress).toHaveBeenCalledWith(25);
+	});
+
+	it("pins a caller-provided content type on the R2 PUT (image upload)", async () => {
+		vi.mocked(axios.put).mockResolvedValue({});
+		const file = new File(["x"], "c.png", { type: "image/png" });
+		await uploadToR2("https://r2/put", file, { contentType: "image/png" });
+		const [, , config] = vi.mocked(axios.put).mock.calls[0];
+		expect(config?.headers).toEqual({ "Content-Type": "image/png" });
 	});
 });

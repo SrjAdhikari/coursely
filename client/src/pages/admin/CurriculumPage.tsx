@@ -6,12 +6,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Play, SquarePen, Trash2, Video } from "lucide-react";
 
+import useCourseTrailerUpload from "@/hooks/useCourseTrailerUpload";
+import useCourseThumbnailUpload from "@/hooks/useCourseThumbnailUpload";
 import { useGetCourse } from "@/hooks/useCourses";
 import { useDeleteSection, useDeleteLesson } from "@/hooks/useCurriculum";
 
 import SectionDialog from "@/components/admin/SectionDialog";
 import LessonDialog from "@/components/admin/LessonDialog";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import VideoUploadField from "@/components/admin/VideoUploadField";
+import ImageUploadField from "@/components/admin/ImageUploadField";
 import LoadFailed from "@/components/common/LoadFailed";
 import Loader from "@/components/Loader";
 import { Button } from "@/components/ui/button";
@@ -41,6 +45,9 @@ const CurriculumPage = () => {
 
 	const { mutate: removeSection } = useDeleteSection();
 	const { mutate: removeLesson } = useDeleteLesson();
+
+	const trailerUpload = useCourseTrailerUpload(id);
+	const thumbnailUpload = useCourseThumbnailUpload(id);
 
 	const [editing, setEditing] = useState<Editing>(null);
 	const [deleting, setDeleting] = useState<Deleting>(null);
@@ -92,14 +99,29 @@ const CurriculumPage = () => {
 				{" / Curriculum"}
 			</div>
 
-			<h1 className="font-heading text-3xl font-semibold">Curriculum</h1>
-			<p className="mb-5 mt-1.5 text-sm text-muted-foreground">
-				{course.title}
-			</p>
+			<h1 className="font-heading text-3xl font-semibold mb-1">Curriculum</h1>
 
 			<div className="mb-4 text-xs text-muted-foreground">
 				{pluralize(sections.length, "section")} ·{" "}
 				{pluralize(lessonCount, "lesson")}
+			</div>
+
+			<div className="mb-6 rounded-xl border border-border bg-card p-5">
+				<h2 className="mb-3 text-sm font-semibold">Course Media</h2>
+				<div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+					<ImageUploadField
+						label="Thumbnail"
+						state={thumbnailUpload}
+						hasImage={!!course.thumbnailUrl}
+						previewUrl={course.thumbnailUrl}
+					/>
+
+					<VideoUploadField
+						label="Trailer"
+						state={trailerUpload}
+						hasVideo={!!course.trailerKey}
+					/>
+				</div>
 			</div>
 
 			{sections.map((section, index) => (

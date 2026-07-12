@@ -20,6 +20,8 @@ import {
 	getCourseTrailerUrlHandler,
 	createCourseTrailerUploadUrlHandler,
 	setCourseTrailerHandler,
+	createCourseThumbnailUploadUrlHandler,
+	setCourseThumbnailHandler,
 } from "../controllers/media.controller";
 
 import validateBody from "../middlewares/validate.middleware";
@@ -28,6 +30,7 @@ import {
 	createCourseSchema,
 	updateCourseSchema,
 } from "../validators/course.validator";
+import { createThumbnailUploadUrlSchema } from "../validators/media.validator";
 
 /** Public catalog router — mounted at /api/courses */
 const publicCourseRouter = Router();
@@ -105,6 +108,22 @@ adminCourseRouter.post(
  * @route PATCH /api/admin/courses/:id/trailer
  */
 adminCourseRouter.patch("/courses/:id/trailer", setCourseTrailerHandler);
+
+/**
+ * Mint a presigned PUT for a course thumbnail image
+ * @route POST /api/admin/courses/:id/thumbnail-url
+ */
+adminCourseRouter.post(
+	"/courses/:id/thumbnail-url",
+	validateBody(createThumbnailUploadUrlSchema),
+	createCourseThumbnailUploadUrlHandler,
+);
+
+/**
+ * Store the course thumbnail key after upload
+ * @route PATCH /api/admin/courses/:id/thumbnail
+ */
+adminCourseRouter.patch("/courses/:id/thumbnail", setCourseThumbnailHandler);
 
 export default adminCourseRouter;
 export { publicCourseRouter };

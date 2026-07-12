@@ -29,11 +29,6 @@ const courseFormSchema = z.object({
 	description: z.string().trim().min(1, "Description is required"),
 	instructorName: z.string().trim().min(1, "Instructor name is required"),
 
-	thumbnailUrl: z.url({
-		protocol: /^https?$/,
-		error: "Enter a valid http(s) URL",
-	}),
-
 	priceRupees: z
 		.string()
 		.trim()
@@ -67,7 +62,6 @@ const buildCoursePayload = (values: CourseFormData): CreateCoursePayload => {
 		title: values.title,
 		description: values.description,
 		instructorName: values.instructorName,
-		thumbnailUrl: values.thumbnailUrl,
 		price: rupeesToPaise(Number(values.priceRupees)),
 		isPublished: values.isPublished,
 		category: values.category,

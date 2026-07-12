@@ -1,4 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// Predictable signed URLs so thumbnail serialization is assertable (TTL arg ignored).
+vi.mock("../../src/lib/r2", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/lib/r2")>();
+  return {
+    ...actual,
+    presignGet: vi.fn(async (key: string) => `https://r2.test/get/${key}`),
+  };
+});
+
 import getLearningOverview from "../../src/services/learning.service";
 import Progress from "../../src/models/progress.model";
 import {
@@ -185,6 +195,35 @@ describe("learning.service · getLearningOverview", () => {
       lessons[5]!._id.toString(), lessons[4]!._id.toString(),
       lessons[3]!._id.toString(), lessons[2]!._id.toString(),
     ]);
+  });
+
+  it("signs an uploaded thumbnail into the course row's thumbnailUrl and never leaks the key", async () => {
+    const user = await createTestUser();
+    const course = await createTestCourse({
+      thumbnailUrl: undefined,
+      thumbnailKey: "courses/keyed/thumbnail",
+    });
+    await createTestEnrollment(user._id, course._id);
+
+    const overview = await getLearningOverview(user._id.toString());
+    const row = overview.courses[0]!;
+    expect(row.thumbnailUrl).toBe("https://r2.test/get/courses/keyed/thumbnail");
+    expect(
+      (row as unknown as Record<string, unknown>).thumbnailKey,
+    ).toBeUndefined();
+  });
+
+  it("returns a raw external thumbnailUrl unchanged on the course row (no key)", async () => {
+    const user = await createTestUser();
+    const course = await createTestCourse({
+      thumbnailUrl: "https://cdn.example.com/raw.jpg",
+    });
+    await createTestEnrollment(user._id, course._id);
+
+    const overview = await getLearningOverview(user._id.toString());
+    expect(overview.courses[0]!.thumbnailUrl).toBe(
+      "https://cdn.example.com/raw.jpg",
+    );
   });
 
   it("is caller-scoped — user A never sees user B's progress (IDOR)", async () => {

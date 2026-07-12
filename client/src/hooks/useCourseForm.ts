@@ -12,7 +12,6 @@ import {
 	useCreateCourse,
 	useUpdateCourse,
 } from "@/hooks/useCourses";
-import { useVideoUpload } from "@/hooks/useVideoUpload";
 
 import ROUTES from "@/routes/paths";
 import {
@@ -23,11 +22,6 @@ import {
 
 import { paiseToRupees } from "@/lib/currency";
 import { COURSES_KEY, courseKey } from "@/lib/queryKeys";
-
-import {
-	createCourseTrailerUploadUrl,
-	setCourseTrailer,
-} from "@/api/media.api";
 
 /** Data + form state for the admin course create/edit page. */
 const useCourseForm = (id?: string) => {
@@ -46,17 +40,6 @@ const useCourseForm = (id?: string) => {
 	const { mutate: create, isPending: creating } = useCreateCourse();
 	const { mutate: update, isPending: updating } = useUpdateCourse();
 
-	// Trailer upload (edit mode only — a course id must exist to mint an upload URL).
-	const trailerUpload = useVideoUpload({
-		mint: () => createCourseTrailerUploadUrl(id ?? "").then((res) => res.data),
-		confirm: () => setCourseTrailer(id ?? ""),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: courseKey(id ?? "") });
-			toast.success("Trailer uploaded");
-		},
-		onError: (message) => toast.error(message),
-	});
-
 	const {
 		register,
 		handleSubmit,
@@ -72,7 +55,6 @@ const useCourseForm = (id?: string) => {
 			title: "",
 			description: "",
 			instructorName: "",
-			thumbnailUrl: "",
 			priceRupees: "",
 			isPublished: false,
 			category: "",
@@ -93,7 +75,6 @@ const useCourseForm = (id?: string) => {
 			title: course.title,
 			description: course.description,
 			instructorName: course.instructorName,
-			thumbnailUrl: course.thumbnailUrl,
 			priceRupees: String(paiseToRupees(course.price)),
 			isPublished: course.isPublished,
 			category: course.category ?? "",
@@ -126,7 +107,7 @@ const useCourseForm = (id?: string) => {
 				onSuccess: (res) => {
 					queryClient.invalidateQueries({ queryKey: COURSES_KEY });
 					toast.success("Course created");
-					navigate(ROUTES.adminCourseEdit(res.data._id));
+					navigate(ROUTES.adminCourseCurriculum(res.data._id));
 				},
 				onError: (err) => toast.error(err.message),
 			});
@@ -145,8 +126,6 @@ const useCourseForm = (id?: string) => {
 		isPublished,
 		setPublished: (value: boolean) =>
 			setValue("isPublished", value, { shouldValidate: true }),
-		trailerUpload,
-		hasTrailer: !!existing?.data?.trailerKey,
 		pending: creating || updating,
 		submitForm: handleSubmit(submitCourse),
 	};

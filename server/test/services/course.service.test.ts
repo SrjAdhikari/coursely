@@ -1,7 +1,16 @@
 //* test/services/course.service.test.ts
 
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "vitest";
 import mongoose from "mongoose";
+
+// Predictable signed URLs so serialization output is assertable (TTL arg ignored).
+vi.mock("../../src/lib/r2", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("../../src/lib/r2")>();
+	return {
+		...actual,
+		presignGet: vi.fn(async (key: string) => `https://r2.test/get/${key}`),
+	};
+});
 
 import Course from "../../src/models/course.model";
 import {
@@ -292,6 +301,90 @@ describe("course.service — category & learning outcomes", () => {
 		expect(updated.title).toBe("Renamed");
 		expect(updated.category).toBe("Design");
 		expect(updated.learningOutcomes).toEqual(["Grid systems"]);
+	});
+});
+
+describe("course.service — thumbnail serialization", () => {
+	const THUMB_KEY = "courses/keyed/thumbnail";
+	const SIGNED_URL = `https://r2.test/get/${THUMB_KEY}`;
+
+	it("resolves a signed thumbnailUrl from thumbnailKey and never leaks the key (list)", async () => {
+		await createTestCourse({ slug: "keyed", thumbnailKey: THUMB_KEY });
+
+		const courses = await listPublishedCourses();
+		const keyed = courses.find((course) => course.slug === "keyed")!;
+		expect(keyed.thumbnailUrl).toBe(SIGNED_URL);
+		expect(
+			(keyed as unknown as Record<string, unknown>).thumbnailKey,
+		).toBeUndefined();
+	});
+
+	it("returns a raw thumbnailUrl unchanged when there is no key (list)", async () => {
+		await createTestCourse({
+			slug: "urled",
+			thumbnailUrl: "https://cdn.example.com/raw.jpg",
+		});
+
+		const courses = await listPublishedCourses();
+		const urled = courses.find((course) => course.slug === "urled")!;
+		expect(urled.thumbnailUrl).toBe("https://cdn.example.com/raw.jpg");
+	});
+
+	it("resolves a signed thumbnailUrl from thumbnailKey and never leaks the key (public detail)", async () => {
+		await createTestCourse({ slug: "keyed-detail", thumbnailKey: THUMB_KEY });
+
+		const detail = await getCourseBySlug("keyed-detail");
+		expect(detail.thumbnailUrl).toBe(SIGNED_URL);
+		expect(
+			(detail as unknown as Record<string, unknown>).thumbnailKey,
+		).toBeUndefined();
+	});
+
+	it("returns a raw thumbnailUrl unchanged when there is no key (public detail)", async () => {
+		await createTestCourse({
+			slug: "urled-detail",
+			thumbnailUrl: "https://cdn.example.com/raw.jpg",
+		});
+
+		const detail = await getCourseBySlug("urled-detail");
+		expect(detail.thumbnailUrl).toBe("https://cdn.example.com/raw.jpg");
+	});
+
+	it("resolves the thumbnail and strips the key on the admin detail", async () => {
+		const course = await createTestCourse({ thumbnailKey: THUMB_KEY });
+
+		const detail = await getCourseById(course._id.toString());
+		expect(detail.thumbnailUrl).toBe(SIGNED_URL);
+		expect(
+			(detail as unknown as Record<string, unknown>).thumbnailKey,
+		).toBeUndefined();
+	});
+
+	it("resolves the thumbnail and strips the key on the admin list", async () => {
+		const course = await createTestCourse({
+			slug: "admin-keyed",
+			thumbnailKey: THUMB_KEY,
+		});
+
+		const courses = await listAllCourses();
+		const keyed = courses.find(
+			(listed) => listed._id.toString() === course._id.toString(),
+		)!;
+		expect(keyed.thumbnailUrl).toBe(SIGNED_URL);
+		expect(
+			(keyed as unknown as Record<string, unknown>).thumbnailKey,
+		).toBeUndefined();
+	});
+
+	it("omits thumbnailUrl when the course has neither a key nor a URL", async () => {
+		await createTestCourse({ slug: "no-thumb", thumbnailUrl: undefined });
+
+		const courses = await listPublishedCourses();
+		const bare = courses.find((course) => course.slug === "no-thumb")!;
+		expect(bare.thumbnailUrl).toBeUndefined();
+
+		const detail = await getCourseBySlug("no-thumb");
+		expect(detail.thumbnailUrl).toBeUndefined();
 	});
 });
 

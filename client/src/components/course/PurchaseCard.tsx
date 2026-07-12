@@ -16,7 +16,7 @@ type PurchaseStatus = "guest" | "buyable" | "enrolled";
 interface PurchaseCardProps {
 	slug: string;
 	title: string;
-	thumbnailUrl: string;
+	thumbnailUrl?: string;
 	hasTrailer: boolean;
 	price: number;
 	lessonCount: number;

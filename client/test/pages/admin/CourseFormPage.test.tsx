@@ -20,19 +20,6 @@ vi.mock("sonner", () => ({
 	toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock("@/hooks/useVideoUpload", () => ({
-	useVideoUpload: () => ({
-		status: "idle",
-		progress: 0,
-		fileName: "",
-		error: null,
-		start: vi.fn(),
-		submitManualDuration: vi.fn(),
-		cancel: vi.fn(),
-		reset: vi.fn(),
-	}),
-}));
-
 import { toast } from "sonner";
 import CourseFormPage from "@/pages/admin/CourseFormPage";
 
@@ -53,10 +40,6 @@ const fillCreateForm = async (user: ReturnType<typeof userEvent.setup>) => {
 	await user.type(screen.getByLabelText(/title/i), "React from Scratch");
 	await user.type(screen.getByLabelText(/description/i), "Hooks and state.");
 	await user.type(screen.getByLabelText(/instructor/i), "Asha Rai");
-	await user.type(
-		screen.getByLabelText(/thumbnail/i),
-		"https://cdn.coursely.app/r.png",
-	);
 	await user.type(screen.getByLabelText(/price/i), "999");
 	await user.type(screen.getByLabelText(/category/i), "Web Development");
 };
@@ -175,15 +158,16 @@ describe("CourseFormPage (create)", () => {
 		await user.type(screen.getByLabelText(/title/i), "React from Scratch");
 		await user.type(screen.getByLabelText(/description/i), "Hooks and state.");
 		await user.type(screen.getByLabelText(/instructor/i), "Asha Rai");
-		await user.type(
-			screen.getByLabelText(/thumbnail/i),
-			"https://cdn.coursely.app/r.png",
-		);
 		await user.type(screen.getByLabelText(/price/i), "999");
 		// category left blank
 		expect(
 			screen.getByRole("button", { name: /create course/i }),
 		).toBeDisabled();
+	});
+
+	it("no longer renders a Thumbnail URL field (uploaded on the build page)", () => {
+		renderAt("/admin/courses/new");
+		expect(screen.queryByLabelText(/thumbnail/i)).not.toBeInTheDocument();
 	});
 
 	it("invalidates the courses list and toasts on a successful create", async () => {
@@ -347,8 +331,21 @@ describe("CourseFormPage (edit)", () => {
 		expect(await screen.findByDisplayValue("Course B")).toBeInTheDocument();
 	});
 
-	it("shows the trailer upload field in edit mode", async () => {
+	it("no longer renders the trailer upload field in edit mode", async () => {
 		renderAt("/admin/courses/c1/edit");
-		expect(await screen.findByLabelText(/upload trailer/i)).toBeInTheDocument();
+		await screen.findByDisplayValue("Old Title");
+		expect(
+			screen.queryByLabelText(/upload trailer/i),
+		).not.toBeInTheDocument();
+	});
+
+	it("links to the curriculum builder via a Manage content button", async () => {
+		renderAt("/admin/courses/c1/edit");
+		expect(
+			await screen.findByRole("button", { name: /manage content/i }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /edit curriculum/i }),
+		).not.toBeInTheDocument();
 	});
 });

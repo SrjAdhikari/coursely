@@ -87,6 +87,62 @@ describe("useVideoUpload", () => {
 		expect(confirm).not.toHaveBeenCalled();
 	});
 
+	// Injected constraints let the same uploader accept images (thumbnails).
+	const IMAGE_ACCEPT = {
+		allowedTypes: ["image/png", "image/jpeg", "image/webp"],
+		maxBytes: 5 * 1000 * 1000,
+		typeErrorMessage: "Please choose a PNG, JPEG, or WebP image.",
+		sizeErrorMessage: "That image is larger than 5 MB.",
+	};
+
+	it("accepts an allowed image and mints with the file's content type", async () => {
+		vi.mocked(uploadToR2).mockResolvedValue(undefined);
+		const mint = vi.fn().mockResolvedValue({ uploadUrl: "u" });
+		const confirm = vi.fn().mockResolvedValue({});
+		const png = new File([new Uint8Array(10)], "c.png", { type: "image/png" });
+
+		const { result } = renderHook(() =>
+			useVideoUpload({ mint, confirm, accept: IMAGE_ACCEPT }),
+		);
+		await act(async () => result.current.start(png));
+		await waitFor(() => expect(result.current.status).toBe("done"));
+
+		expect(mint).toHaveBeenCalledWith("image/png");
+		expect(confirm).toHaveBeenCalledWith(undefined);
+	});
+
+	it("rejects a non-image with the injected accept config", async () => {
+		const onError = vi.fn();
+		const mint = vi.fn();
+		const { result } = renderHook(() =>
+			useVideoUpload({ mint, confirm: vi.fn(), accept: IMAGE_ACCEPT, onError }),
+		);
+		const mp4 = new File([new Uint8Array(10)], "v.mp4", { type: "video/mp4" });
+		await act(async () => result.current.start(mp4));
+
+		expect(result.current.status).toBe("error");
+		expect(mint).not.toHaveBeenCalled();
+	});
+
+	it("rejects an oversize image with the injected size message", async () => {
+		const onError = vi.fn();
+		const big = new File([new Uint8Array(10)], "big.png", { type: "image/png" });
+		Object.defineProperty(big, "size", { value: 6 * 1000 * 1000 });
+
+		const { result } = renderHook(() =>
+			useVideoUpload({
+				mint: vi.fn(),
+				confirm: vi.fn(),
+				accept: IMAGE_ACCEPT,
+				onError,
+			}),
+		);
+		await act(async () => result.current.start(big));
+
+		expect(result.current.status).toBe("error");
+		expect(onError).toHaveBeenCalledWith("That image is larger than 5 MB.");
+	});
+
 	it("confirms without a duration when no probe is configured (trailer)", async () => {
 		vi.mocked(uploadToR2).mockResolvedValue(undefined);
 		const mint = vi.fn().mockResolvedValue({ uploadUrl: "u" });

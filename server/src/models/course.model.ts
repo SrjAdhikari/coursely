@@ -9,7 +9,8 @@ export interface CourseDocument {
 	slug: string;
 	description: string;
 	instructorName: string;
-	thumbnailUrl: string;
+	thumbnailUrl?: string;
+	thumbnailKey?: string;
 	trailerKey?: string;
 	price: number;
 	currency: string;
@@ -32,9 +33,6 @@ const courseSchema = new Schema<CourseDocument>(
 			type: String,
 			required: true,
 			unique: true,
-			// Normalize every write through slugify so a non-URL-safe slug can
-			// never be persisted, whatever the write path (slugify lowercases
-			// and trims, so those casters are redundant here).
 			set: slugify,
 		},
 		description: {
@@ -49,8 +47,10 @@ const courseSchema = new Schema<CourseDocument>(
 		},
 		thumbnailUrl: {
 			type: String,
-			required: true,
 			trim: true,
+		},
+		thumbnailKey: {
+			type: String,
 		},
 		trailerKey: {
 			type: String,

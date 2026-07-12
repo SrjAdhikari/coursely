@@ -13,10 +13,12 @@ const createCourseSchema = z.object({
 		.max(200, "Title must be at most 200 characters"),
 	description: z.string().trim().min(1, "Description is required"),
 	instructorName: z.string().trim().min(1, "Instructor name is required"),
-	thumbnailUrl: z.url({
-		protocol: /^https?$/,
-		error: "Thumbnail must be a valid http(s) URL",
-	}),
+	thumbnailUrl: z
+		.url({
+			protocol: /^https?$/,
+			error: "Thumbnail must be a valid http(s) URL",
+		})
+		.optional(),
 	price: z
 		.number()
 		.int("Price must be an integer (paise)")

@@ -13,6 +13,7 @@ import appErrorCode from "../constants/appErrorCode";
 import {
 	lessonVideoKey,
 	courseTrailerKey,
+	courseThumbnailKey,
 	presignPut,
 	presignGet,
 	objectExists,
@@ -123,6 +124,55 @@ const setCourseTrailer = async (courseId: string) => {
 };
 
 /**
+ * Admin: mint a presigned PUT for a course's thumbnail image. The image type is
+ * pinned by the given Content-Type; the key is server-derived (extension-less).
+ *
+ * @throws {AppError} 404 COURSE_NOT_FOUND if the course does not exist.
+ * @returns The upload URL and the canonical (server-derived) thumbnail key.
+ */
+const createCourseThumbnailUploadUrl = async (
+	courseId: string,
+	contentType: string,
+) => {
+	const course = await Course.findById(courseId);
+	if (!course) {
+		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
+	}
+
+	const thumbnailKey = courseThumbnailKey(courseId);
+	const uploadUrl = await presignPut(thumbnailKey, contentType);
+
+	return { uploadUrl, thumbnailKey };
+};
+
+/**
+ * Admin: confirm a course thumbnail upload — verify the object exists in R2,
+ * then store the canonical key.
+ *
+ * @throws {AppError} 404 COURSE_NOT_FOUND / 400 UPLOAD_INCOMPLETE
+ */
+const setCourseThumbnail = async (courseId: string) => {
+	const course = await Course.findById(courseId);
+	if (!course) {
+		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
+	}
+
+	const thumbnailKey = courseThumbnailKey(courseId);
+	if (!(await objectExists(thumbnailKey))) {
+		throw new AppError(
+			"Thumbnail upload not found in storage",
+			BAD_REQUEST,
+			UPLOAD_INCOMPLETE,
+		);
+	}
+
+	course.thumbnailKey = thumbnailKey;
+	await course.save();
+
+	return course;
+};
+
+/**
  * Mint a ~1h playback URL for a lesson's video.
  * Draft (unpublished) courses are not public — only an admin may play their
  * lessons (for pre-publish authoring). For a published course: preview lessons
@@ -208,6 +258,8 @@ export {
 	setLessonVideo,
 	createCourseTrailerUploadUrl,
 	setCourseTrailer,
+	createCourseThumbnailUploadUrl,
+	setCourseThumbnail,
 	getLessonPlaybackUrl,
 	getCourseTrailerUrl,
 };

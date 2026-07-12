@@ -55,4 +55,10 @@ describe("CourseCard", () => {
 		renderCard();
 		expect(screen.queryByText(/lessons?$/i)).not.toBeInTheDocument();
 	});
+
+	it("renders a branded text placeholder when no thumbnailUrl is provided", () => {
+		renderCard({ thumbnailUrl: undefined });
+		// The title's first word stands in for the missing cover image.
+		expect(screen.getByText("React")).toBeInTheDocument();
+	});
 });

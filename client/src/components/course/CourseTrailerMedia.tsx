@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 
 interface CourseTrailerMediaProps {
-	thumbnailUrl: string;
+	thumbnailUrl?: string;
 	hasTrailer: boolean;
 	slug: string;
 	title: string;
@@ -39,7 +39,15 @@ const CourseTrailerMedia = ({
 
 	const poster = (
 		<div className="relative aspect-video w-full overflow-hidden border-b border-border bg-black">
-			<img src={thumbnailUrl} alt={title} className="size-full object-cover" />
+			{thumbnailUrl ? (
+				<img src={thumbnailUrl} alt={title} className="size-full object-cover" />
+			) : (
+				<div className="flex size-full items-center justify-center px-4">
+					<span className="truncate font-heading text-3xl font-semibold text-white/60">
+						{title.split(" ")[0] || title}
+					</span>
+				</div>
+			)}
 
 			{hasTrailer && (
 				<>

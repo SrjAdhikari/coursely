@@ -10,6 +10,7 @@ import AppError from "../errors/AppError";
 
 import httpStatus from "../constants/httpStatus";
 import appErrorCode from "../constants/appErrorCode";
+import resolveThumbnailUrl from "../lib/thumbnail";
 import { slugify } from "../utils/slug";
 import type {
 	CreateCourseInput,
@@ -19,13 +20,17 @@ import type {
 const { NOT_FOUND, CONFLICT } = httpStatus;
 const { COURSE_NOT_FOUND, COURSE_HAS_ENROLLMENTS } = appErrorCode;
 
-/** Public list cards never expose trailerKey/videoKey. */
+/**
+ * Public list cards never expose trailerKey/videoKey. thumbnailKey is projected
+ * only so serialization can sign it into a viewable URL, then it is stripped.
+ */
 const LIST_FIELDS = {
 	title: 1,
 	slug: 1,
 	description: 1,
 	instructorName: 1,
 	thumbnailUrl: 1,
+	thumbnailKey: 1,
 	price: 1,
 	currency: 1,
 	isPublished: 1,
@@ -33,7 +38,10 @@ const LIST_FIELDS = {
 	createdAt: 1,
 } as const;
 
-export interface CourseDetail extends Omit<CourseDocument, "trailerKey"> {
+export interface CourseDetail extends Omit<
+	CourseDocument,
+	"trailerKey" | "thumbnailKey"
+> {
 	sections: (SectionDocument & {
 		lessons: Omit<LessonDocument, "videoKey">[];
 	})[];
@@ -95,14 +103,21 @@ const listPublishedCourses = async (q?: string) => {
 		statsByCourseId.set(key, stats);
 	}
 
-	const coursesWithStats = courses.map((course) => {
-		const stats = statsByCourseId.get(course._id.toString());
-		return {
-			...course,
-			lessonCount: stats?.lessonCount ?? 0,
-			totalDuration: stats?.totalDuration ?? 0,
-		};
-	});
+	// Resolve each card's thumbnail (may sign an R2 GET) and strip the raw key.
+	const coursesWithStats = await Promise.all(
+		courses.map(async (course) => {
+			const stats = statsByCourseId.get(course._id.toString());
+			const thumbnailUrl = await resolveThumbnailUrl(course);
+			const { thumbnailKey: _thumbnailKey, ...cardFields } = course;
+
+			return {
+				...cardFields,
+				thumbnailUrl,
+				lessonCount: stats?.lessonCount ?? 0,
+				totalDuration: stats?.totalDuration ?? 0,
+			};
+		}),
+	);
 
 	return coursesWithStats;
 };
@@ -110,7 +125,7 @@ const listPublishedCourses = async (q?: string) => {
 /**
  * Get a published course by slug, with its sections and lessons (no videoKey).
  * lessonCount + totalDuration are totalled in memory from the loaded lessons.
- * 
+ *
  * @param slug - The slug of the course to fetch.
  * @returns A promise resolving to the course with its sections and lessons.
  * @throws {AppError} 404 COURSE_NOT_FOUND if the course does not exist.
@@ -122,10 +137,11 @@ const getCourseBySlug = async (slug: string): Promise<CourseDetail> => {
 		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
 	}
 
-	// Load trailerKey only to derive hasTrailer, then strip it — the key must
-	// never reach the client.
-	const { trailerKey, ...publicCourse } = course;
+	// Strip the storage keys — neither trailerKey nor thumbnailKey may reach the
+	// client. trailerKey only derives hasTrailer; thumbnailKey signs the URL below.
+	const { trailerKey, thumbnailKey: _thumbnailKey, ...publicCourse } = course;
 	const hasTrailer = !!trailerKey;
+	const thumbnailUrl = await resolveThumbnailUrl(course);
 
 	const [sections, lessons] = await Promise.all([
 		Section.find({ courseId: course._id }).sort({ order: 1 }).lean(),
@@ -154,6 +170,7 @@ const getCourseBySlug = async (slug: string): Promise<CourseDetail> => {
 
 	return {
 		...publicCourse,
+		thumbnailUrl,
 		hasTrailer,
 		sections: sections.map((section) => ({
 			...section,
@@ -246,8 +263,19 @@ const deleteCourse = async (id: string): Promise<void> => {
 	}
 };
 
-/** Admin: all courses (published + drafts), newest first. */
-const listAllCourses = () => Course.find().sort({ createdAt: -1 }).lean();
+/** Admin: all courses (published + drafts), newest first, with viewable thumbnails. */
+const listAllCourses = async () => {
+	const courses = await Course.find().sort({ createdAt: -1 }).lean();
+
+	// Sign each thumbnail for admin preview and strip the raw key (trailerKey stays).
+	return Promise.all(
+		courses.map(async (course) => {
+			const thumbnailUrl = await resolveThumbnailUrl(course);
+			const { thumbnailKey: _thumbnailKey, ...courseFields } = course;
+			return { ...courseFields, thumbnailUrl };
+		}),
+	);
+};
 
 /**
  * Get a course by id, with its sections and lessons (videoKey included).
@@ -275,8 +303,13 @@ const getCourseById = async (id: string): Promise<CourseDetailFull> => {
 		lessonsBySection.set(key, bucket);
 	}
 
+	// Sign the thumbnail for admin preview and strip the raw key (trailerKey stays).
+	const thumbnailUrl = await resolveThumbnailUrl(course);
+	const { thumbnailKey: _thumbnailKey, ...courseFields } = course;
+
 	return {
-		...course,
+		...courseFields,
+		thumbnailUrl,
 		sections: sections.map((section) => ({
 			...section,
 			lessons: lessonsBySection.get(section._id.toString()) ?? [],

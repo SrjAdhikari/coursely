@@ -3,6 +3,15 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import mongoose from "mongoose";
 
+// Predictable signed URLs so thumbnail serialization is assertable (TTL arg ignored).
+vi.mock("../../src/lib/r2", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("../../src/lib/r2")>();
+	return {
+		...actual,
+		presignGet: vi.fn(async (key: string) => `https://r2.test/get/${key}`),
+	};
+});
+
 import {
 	isEnrolled,
 	createEnrollment,
@@ -132,6 +141,43 @@ describe("listMyEnrollments", () => {
 
 		const rows = await listMyEnrollments(user._id.toString());
 		expect(rows).toHaveLength(0);
+	});
+
+	it("signs an uploaded thumbnail into courseId.thumbnailUrl and strips the key", async () => {
+		const user = await createTestUser();
+		const course = await createTestCourse({
+			slug: "keyed-course",
+			thumbnailUrl: undefined,
+			thumbnailKey: "courses/keyed/thumbnail",
+		});
+		await createTestEnrollment(user._id, course._id);
+
+		const rows = await listMyEnrollments(user._id.toString());
+		const populatedCourse = rows[0]!.courseId as unknown as Record<
+			string,
+			unknown
+		>;
+		expect(populatedCourse.thumbnailUrl).toBe(
+			"https://r2.test/get/courses/keyed/thumbnail",
+		);
+		expect(populatedCourse.thumbnailKey).toBeUndefined();
+	});
+
+	it("returns a raw external thumbnailUrl unchanged and never exposes a key", async () => {
+		const user = await createTestUser();
+		const course = await createTestCourse({
+			slug: "urled-course",
+			thumbnailUrl: "https://cdn.example.com/raw.jpg",
+		});
+		await createTestEnrollment(user._id, course._id);
+
+		const rows = await listMyEnrollments(user._id.toString());
+		const populatedCourse = rows[0]!.courseId as unknown as Record<
+			string,
+			unknown
+		>;
+		expect(populatedCourse.thumbnailUrl).toBe("https://cdn.example.com/raw.jpg");
+		expect(populatedCourse.thumbnailKey).toBeUndefined();
 	});
 });
 
