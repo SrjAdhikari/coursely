@@ -7,6 +7,8 @@ import Section from "../models/section.model";
 import Lesson from "../models/lesson.model";
 import Progress from "../models/progress.model";
 
+import resolveThumbnailUrl from "../lib/thumbnail";
+
 // How many recent lessons the overview surfaces.
 const RECENT_LIMIT = 4;
 
@@ -21,7 +23,8 @@ type CourseLean = {
 	_id: Types.ObjectId;
 	title: string;
 	slug: string;
-	thumbnailUrl: string;
+	thumbnailUrl?: string;
+	thumbnailKey?: string;
 	instructorName: string;
 };
 
@@ -36,7 +39,7 @@ const getLearningOverview = async (userId: string) => {
 		.sort({ createdAt: -1 })
 		.populate<{
 			courseId: CourseLean;
-		}>("courseId", "title slug thumbnailUrl instructorName")
+		}>("courseId", "title slug thumbnailUrl thumbnailKey instructorName")
 		.lean();
 
 	// Drop enrollments whose course was deleted (populate → null).
@@ -59,6 +62,17 @@ const getLearningOverview = async (userId: string) => {
 			recentLessons: [],
 		};
 	}
+
+	// Resolve each enrolled course's thumbnail once (signs an uploaded key, else
+	// keeps the raw URL) so cards + recent-lesson tiles serve a viewable URL.
+	const thumbnailUrlByCourse = new Map(
+		await Promise.all(
+			courses.map(
+				async (course) =>
+					[course._id.toString(), await resolveThumbnailUrl(course)] as const,
+			),
+		),
+	);
 
 	// Fetch all sections, lessons, and progress rows for the enrolled courses in parallel.
 	const [sections, lessons, progressRows] = await Promise.all([
@@ -170,7 +184,7 @@ const getLearningOverview = async (userId: string) => {
 			courseId,
 			title: course.title,
 			slug: course.slug,
-			thumbnailUrl: course.thumbnailUrl,
+			thumbnailUrl: thumbnailUrlByCourse.get(courseId) ?? "",
 			instructorName: course.instructorName,
 			totalLessons,
 			completedLessons,
@@ -212,7 +226,7 @@ const getLearningOverview = async (userId: string) => {
 				title: lesson?.title ?? "",
 				courseTitle: course?.title ?? "",
 				courseSlug: course?.slug ?? "",
-				thumbnailUrl: course?.thumbnailUrl ?? "",
+				thumbnailUrl: thumbnailUrlByCourse.get(row.courseId.toString()) ?? "",
 				updatedAt: row.updatedAt,
 			};
 		});

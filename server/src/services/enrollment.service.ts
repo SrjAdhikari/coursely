@@ -1,11 +1,28 @@
 //* src/services/enrollment.service.ts
 
-import mongoose from "mongoose";
+import mongoose, { type Types } from "mongoose";
 import Enrollment from "../models/enrollment.model";
 
-/** Course summary fields surfaced on a student's My Courses list. */
+import resolveThumbnailUrl from "../lib/thumbnail";
+
+/**
+ * Course summary fields surfaced on a student's My Courses list. thumbnailKey is
+ * projected only so serialization can sign it into a viewable URL, then stripped.
+ */
 const MY_COURSE_FIELDS =
-	"title slug thumbnailUrl instructorName price currency";
+	"title slug thumbnailUrl thumbnailKey instructorName price currency";
+
+/** The course summary shape populated onto a My Courses enrollment. */
+interface PopulatedCourseSummary {
+	_id: Types.ObjectId;
+	title: string;
+	slug: string;
+	thumbnailUrl?: string;
+	thumbnailKey?: string;
+	instructorName: string;
+	price: number;
+	currency: string;
+}
 
 interface CreateEnrollmentData {
 	userId: string;
@@ -94,7 +111,20 @@ const listMyEnrollments = async (userId: string) => {
 		.populate("courseId", MY_COURSE_FIELDS)
 		.lean();
 
-	return enrollments;
+	// Sign each course's uploaded thumbnail (else keep the raw URL) and strip the
+	// raw key — the populated course is returned to the client as-is.
+	const myEnrollments = await Promise.all(
+		enrollments.map(async (enrollment) => {
+			const course = enrollment.courseId as unknown as PopulatedCourseSummary | null;
+			if (!course) return enrollment;
+
+			const thumbnailUrl = await resolveThumbnailUrl(course);
+			const { thumbnailKey: _thumbnailKey, ...courseSummary } = course;
+			return { ...enrollment, courseId: { ...courseSummary, thumbnailUrl } };
+		}),
+	);
+
+	return myEnrollments;
 };
 
 /**
