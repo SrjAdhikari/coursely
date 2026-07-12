@@ -2,7 +2,6 @@
 
 import { Link, useNavigate, useParams } from "react-router";
 
-import VideoUploadField from "@/components/admin/VideoUploadField";
 import FormField from "@/components/form/FormField";
 import FormTextarea from "@/components/form/FormTextarea";
 import StatusSegment from "@/components/StatusSegment";
@@ -37,8 +36,6 @@ const CourseFormPage = () => {
 		title,
 		isPublished,
 		setPublished,
-		trailerUpload,
-		hasTrailer,
 		pending,
 		submitForm,
 	} = useCourseForm(id);
@@ -149,53 +146,44 @@ const CourseFormPage = () => {
 						/>
 					</div>
 
-					{isEdit && (
-						<div className="sm:col-span-2">
-							<VideoUploadField
-								label="Trailer"
-								state={trailerUpload}
-								hasVideo={hasTrailer}
-							/>
-						</div>
-					)}
-
 					<StatusSegment value={isPublished} onChange={setPublished} />
 				</div>
 
-				<div className="mt-6 flex justify-end gap-3 border-t border-border pt-5">
-					<Button
-						type="button"
-						variant="outline"
-						size="lg"
-						className="font-mono"
-						onClick={() => navigate(ROUTES.ADMIN_COURSES)}
-					>
-						Cancel
-					</Button>
+				<div className="mt-6 flex items-center gap-3 border-t border-border pt-5">
+					{isEdit && (
+						<Button
+							type="button"
+							variant="outline"
+							size="lg"
+							className="font-mono"
+							onClick={() => id && navigate(ROUTES.adminCourseCurriculum(id))}
+						>
+							Manage content
+						</Button>
+					)}
 
-					<Button
-						type="submit"
-						size="lg"
-						className="font-mono disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
-						disabled={pending || !isValid || trailerUpload.isBusy}
-					>
-						{isEdit ? "Save changes" : "Create course"}
-					</Button>
+					<div className="ml-auto flex gap-3">
+						<Button
+							type="button"
+							variant="outline"
+							size="lg"
+							className="font-mono"
+							onClick={() => navigate(ROUTES.ADMIN_COURSES)}
+						>
+							Cancel
+						</Button>
+
+						<Button
+							type="submit"
+							size="lg"
+							className="font-mono disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
+							disabled={pending || !isValid}
+						>
+							{isEdit ? "Save changes" : "Create course"}
+						</Button>
+					</div>
 				</div>
 			</form>
-
-			{isEdit && (
-				<div className="mt-3.5 max-w-3xl">
-					<Button
-						variant="outline"
-						size="lg"
-						className="font-mono"
-						onClick={() => id && navigate(ROUTES.adminCourseCurriculum(id))}
-					>
-						Edit curriculum →
-					</Button>
-				</div>
-			)}
 		</section>
 	);
 };

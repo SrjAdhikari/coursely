@@ -29,6 +29,20 @@ vi.mock("sonner", () => ({
 	toast: { success: vi.fn(), error: vi.fn() },
 }));
 
+vi.mock("@/hooks/useCourseTrailerUpload", () => ({
+	default: () => ({
+		status: "idle",
+		progress: 0,
+		fileName: "",
+		totalBytes: 0,
+		error: null,
+		start: vi.fn(),
+		submitManualDuration: vi.fn(),
+		cancel: vi.fn(),
+		reset: vi.fn(),
+	}),
+}));
+
 import { toast } from "sonner";
 import CurriculumPage from "@/pages/admin/CurriculumPage";
 
@@ -89,6 +103,11 @@ describe("CurriculumPage", () => {
 		expect(screen.getByText("Getting Started")).toBeInTheDocument();
 		expect(screen.getByText("Welcome")).toBeInTheDocument();
 		expect(screen.getByText("Preview")).toBeInTheDocument();
+	});
+
+	it("renders the course trailer upload control", () => {
+		renderPage();
+		expect(screen.getByLabelText(/upload trailer/i)).toBeInTheDocument();
 	});
 
 	it("opens the add-section dialog and submits a new section", async () => {
