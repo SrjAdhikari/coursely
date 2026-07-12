@@ -27,7 +27,7 @@ const StoreHeader = () => {
 	return (
 		<header className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur">
 			<div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-5">
-				<Link to={ROUTES.ROOT}>
+				<Link to={user ? ROUTES.DASHBOARD : ROUTES.ROOT}>
 					<AppLogo iconClassName="size-8" />
 				</Link>
 

@@ -90,4 +90,22 @@ describe("StoreHeader", () => {
 			screen.getByRole("button", { name: /toggle theme/i }),
 		).toBeInTheDocument();
 	});
+
+	it("links the logo to home when logged out", () => {
+		mockUseCurrentUser.mockReturnValue({ data: undefined });
+		renderHeaderAt();
+		expect(screen.getByRole("link", { name: /coursely/i })).toHaveAttribute(
+			"href",
+			"/",
+		);
+	});
+
+	it("links the logo to the dashboard when logged in", () => {
+		loggedIn();
+		renderHeaderAt();
+		expect(screen.getByRole("link", { name: /coursely/i })).toHaveAttribute(
+			"href",
+			"/dashboard",
+		);
+	});
 });
