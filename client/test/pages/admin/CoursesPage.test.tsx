@@ -48,6 +48,15 @@ const successResult = {
 	refetch: mockRefetch,
 };
 
+const manyCourses = Array.from({ length: 12 }, (_unused, index) => ({
+	_id: String(index + 1),
+	title: `Course ${index + 1}`,
+	slug: `course-${index + 1}`,
+	instructorName: "Asha Rai",
+	price: 99900,
+	isPublished: true,
+}));
+
 const renderPage = (client = new QueryClient()) =>
 	render(
 		<QueryClientProvider client={client}>
@@ -79,6 +88,25 @@ describe("CoursesPage", () => {
 		);
 		expect(screen.queryByText("React from Scratch")).not.toBeInTheDocument();
 		expect(screen.getByText("TS Deep Dive")).toBeInTheDocument();
+	});
+
+	it("paginates when there are more than a page of courses", async () => {
+		const user = userEvent.setup();
+		mockUseListCourses.mockReturnValue({
+			data: { data: manyCourses },
+			isLoading: false,
+			isError: false,
+			refetch: mockRefetch,
+		});
+		renderPage();
+
+		expect(screen.getByText("Course 1")).toBeInTheDocument();
+		expect(screen.queryByText("Course 11")).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: /go to page 2/i }));
+
+		expect(screen.getByText("Course 11")).toBeInTheDocument();
+		expect(screen.queryByText("Course 1")).not.toBeInTheDocument();
 	});
 
 	it("shows the empty placeholder when there are no courses", () => {

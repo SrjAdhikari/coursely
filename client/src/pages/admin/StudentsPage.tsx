@@ -5,11 +5,13 @@ import { useNavigate } from "react-router";
 import { Search, UsersRound, SearchX } from "lucide-react";
 
 import { useListStudents } from "@/hooks/useStudents";
+import useClientPagination from "@/hooks/useClientPagination";
 import pluralize from "@/lib/pluralize";
 import Loader from "@/components/Loader";
 import { Badge } from "@/components/ui/badge";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
 import DataTable, { type Column } from "@/components/common/DataTable";
+import Paginator from "@/components/common/Paginator";
 import {
 	RowActionButton,
 	RowActions,
@@ -17,6 +19,8 @@ import {
 import LoadFailed from "@/components/common/LoadFailed";
 import ROUTES from "@/routes/paths";
 import type { StudentPayload } from "@/types/student.types";
+
+const PAGE_SIZE = 10;
 
 const formatJoinedDate = (iso: string) =>
 	new Date(iso).toLocaleDateString("en-IN", {
@@ -39,6 +43,11 @@ const StudentsPage = () => {
 			[student.name, student.email].join(" ").toLowerCase().includes(term),
 		);
 	}, [students, query]);
+
+	const { page, setPage, pageItems, total, totalPages } = useClientPagination(
+		filtered,
+		PAGE_SIZE,
+	);
 
 	if (isLoading) return <Loader className="min-h-[80vh]" />;
 	if (isError)
@@ -114,7 +123,10 @@ const StudentsPage = () => {
 						<Search className="size-4 text-muted-foreground" />
 						<input
 							value={query}
-							onChange={(event) => setQuery(event.target.value)}
+							onChange={(event) => {
+								setQuery(event.target.value);
+								setPage(1); // narrowing the search returns to the first page
+							}}
 							placeholder="Search by name or email…"
 							aria-label="Search students"
 							className="flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-muted-foreground"
@@ -141,11 +153,21 @@ const StudentsPage = () => {
 						/>
 					)
 				) : (
-					<DataTable
-						columns={columns}
-						rows={filtered}
-						getRowKey={(student) => student._id}
-					/>
+					<>
+						<DataTable
+							columns={columns}
+							rows={pageItems}
+							getRowKey={(student) => student._id}
+						/>
+
+						<Paginator
+							page={page}
+							pageSize={PAGE_SIZE}
+							total={total}
+							totalPages={totalPages}
+							onPageChange={setPage}
+						/>
+					</>
 				)}
 			</div>
 		</section>

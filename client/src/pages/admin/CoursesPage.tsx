@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Search, Plus, LibraryBig, SearchX } from "lucide-react";
 
 import { useListCourses, useDeleteCourse } from "@/hooks/useCourses";
+import useClientPagination from "@/hooks/useClientPagination";
 import { formatPrice } from "@/lib/currency";
 import { COURSES_KEY } from "@/lib/queryKeys";
 import pluralize from "@/lib/pluralize";
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
 import DataTable, { type Column } from "@/components/common/DataTable";
+import Paginator from "@/components/common/Paginator";
 import {
 	RowActionButton,
 	RowActions,
@@ -25,6 +27,8 @@ import LoadFailed from "@/components/common/LoadFailed";
 
 import ROUTES from "@/routes/paths";
 import type { CoursePayload } from "@/types/course.types";
+
+const PAGE_SIZE = 10;
 
 const CoursesPage = () => {
 	const navigate = useNavigate();
@@ -48,6 +52,11 @@ const CoursesPage = () => {
 				.includes(term),
 		);
 	}, [courses, query]);
+
+	const { page, setPage, pageItems, total, totalPages } = useClientPagination(
+		filtered,
+		PAGE_SIZE,
+	);
 
 	if (isLoading) return <Loader className="min-h-[80vh]" />;
 	if (isError)
@@ -149,7 +158,10 @@ const CoursesPage = () => {
 						<Search className="size-4 text-muted-foreground" />
 						<input
 							value={query}
-							onChange={(event) => setQuery(event.target.value)}
+							onChange={(event) => {
+								setQuery(event.target.value);
+								setPage(1); // narrowing the search returns to the first page
+							}}
 							placeholder="Search courses…"
 							aria-label="Search courses"
 							className="flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-muted-foreground"
@@ -176,11 +188,21 @@ const CoursesPage = () => {
 						/>
 					)
 				) : (
-					<DataTable
-						columns={columns}
-						rows={filtered}
-						getRowKey={(course) => course._id}
-					/>
+					<>
+						<DataTable
+							columns={columns}
+							rows={pageItems}
+							getRowKey={(course) => course._id}
+						/>
+
+						<Paginator
+							page={page}
+							pageSize={PAGE_SIZE}
+							total={total}
+							totalPages={totalPages}
+							onPageChange={setPage}
+						/>
+					</>
 				)}
 			</div>
 
