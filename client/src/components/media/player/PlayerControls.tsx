@@ -54,7 +54,7 @@ const PlayerControls = ({ player }: PlayerControlsProps) => {
 					size="icon-sm"
 					aria-label={player.playing ? "Pause" : "Play"}
 					onClick={player.togglePlay}
-					className="text-white hover:bg-white/15 hover:text-white"
+					className="rounded-sm text-white hover:bg-white/15 hover:text-white"
 				>
 					{player.playing ? <Pause /> : <Play />}
 				</Button>
@@ -65,7 +65,7 @@ const PlayerControls = ({ player }: PlayerControlsProps) => {
 					size="icon-sm"
 					aria-label={isSilent ? "Unmute" : "Mute"}
 					onClick={player.toggleMute}
-					className="text-white hover:bg-white/15 hover:text-white"
+					className="rounded-sm text-white hover:bg-white/15 hover:text-white"
 				>
 					{isSilent ? <VolumeX /> : <Volume2 />}
 				</Button>
@@ -101,7 +101,7 @@ const PlayerControls = ({ player }: PlayerControlsProps) => {
 							player.isFullscreen ? "Exit fullscreen" : "Enter fullscreen"
 						}
 						onClick={player.toggleFullscreen}
-						className="text-white hover:bg-white/15 hover:text-white"
+						className="rounded-sm text-white hover:bg-white/15 hover:text-white"
 					>
 						{player.isFullscreen ? <Minimize /> : <Maximize />}
 					</Button>
