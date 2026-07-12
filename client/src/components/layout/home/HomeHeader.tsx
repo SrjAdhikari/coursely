@@ -42,7 +42,10 @@ const HomeHeader = () => {
 	return (
 		<header className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur">
 			<div className="mx-auto grid h-18 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-5">
-				<Link to={ROUTES.ROOT} className="justify-self-start">
+				<Link
+					to={user ? ROUTES.DASHBOARD : ROUTES.ROOT}
+					className="justify-self-start"
+				>
 					<AppLogo iconClassName="size-8" />
 				</Link>
 
@@ -91,13 +94,20 @@ const HomeHeader = () => {
 
 					<span className="hidden h-5 w-px bg-border sm:block" aria-hidden />
 
-					<ThemeToggle />
-
 					{user ? (
-						<span className="hidden sm:block">
-							<UserMenu user={user} />
-						</span>
+						<>
+							<span className="hidden sm:block">
+								<UserMenu user={user} />
+							</span>
+
+							<span
+								className="hidden h-5 w-px bg-border sm:block"
+								aria-hidden
+							/>
+						</>
 					) : null}
+
+					<ThemeToggle />
 
 					<HomeMobileMenu user={user} />
 				</div>

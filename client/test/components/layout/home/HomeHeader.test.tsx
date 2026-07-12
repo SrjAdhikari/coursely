@@ -59,6 +59,24 @@ describe("HomeHeader", () => {
 		expect(screen.getByRole("link", { name: /^courses$/i })).toHaveAttribute("href", "/courses");
 	});
 
+	it("links the logo to home when logged out", () => {
+		mockUseCurrentUser.mockReturnValue({ data: undefined });
+		renderHeader();
+		expect(screen.getByRole("link", { name: /coursely/i })).toHaveAttribute(
+			"href",
+			"/",
+		);
+	});
+
+	it("links the logo to the dashboard when logged in", () => {
+		mockUseCurrentUser.mockReturnValue({ data: { data: loggedInUser } });
+		renderHeader();
+		expect(screen.getByRole("link", { name: /coursely/i })).toHaveAttribute(
+			"href",
+			"/dashboard",
+		);
+	});
+
 	it("marks the nav link active for the section currently in view", () => {
 		mockUseCurrentUser.mockReturnValue({ data: undefined });
 		mockUseActiveSection.mockReturnValue("faq");
