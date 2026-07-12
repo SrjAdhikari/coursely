@@ -12,6 +12,12 @@ export interface TrailerUploadUrl {
 	trailerKey: string;
 }
 
+/** Response of the course-thumbnail upload-URL mint. */
+export interface ThumbnailUploadUrl {
+	uploadUrl: string;
+	thumbnailKey: string;
+}
+
 /** Response of a playback-URL mint. */
 export interface PlaybackUrl {
 	url: string;

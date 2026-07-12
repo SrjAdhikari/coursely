@@ -10,6 +10,7 @@ import type { CoursePayload, LessonPayload } from "@/types/course.types";
 import type {
 	LessonUploadUrl,
 	TrailerUploadUrl,
+	ThumbnailUploadUrl,
 	PlaybackUrl,
 } from "@/types/media.types";
 
@@ -62,22 +63,38 @@ const setCourseTrailer = async (courseId: string) => {
 	return data;
 };
 
-/**
- * PUT raw bytes straight to R2's presigned URL. Uses a BARE axios call (NOT the
- * shared axiosClient) so it carries no baseURL, no cookies, no JSON default, and
- * is not touched by the session-eviction interceptor. Content-Type is pinned to
- * match the server's presign or R2 rejects the signature.
- */
+/** Admin: mint a presigned PUT for a course thumbnail image (pins the content type). */
+const createCourseThumbnailUploadUrl = async (
+	courseId: string,
+	contentType: string,
+) => {
+	const { data } = await axiosClient.post<
+		ApiSuccessResponse<ThumbnailUploadUrl>
+	>(`/admin/courses/${courseId}/thumbnail-url`, { contentType });
+	return data;
+};
+
+/** Admin: confirm a course thumbnail upload — stores the key (no body). */
+const setCourseThumbnail = async (courseId: string) => {
+	const { data } = await axiosClient.patch<ApiSuccessResponse<CoursePayload>>(
+		`/admin/courses/${courseId}/thumbnail`,
+	);
+	return data;
+};
+
+// Raw PUT to R2's presigned URL via bare axios (no baseURL/cookies/interceptor).
+// Content-Type must match the presign or R2 rejects the signature.
 const uploadToR2 = async (
 	uploadUrl: string,
 	file: File,
 	options: {
+		contentType?: string;
 		onProgress?: (percent: number) => void;
 		signal?: AbortSignal;
 	} = {},
 ) => {
 	await axios.put(uploadUrl, file, {
-		headers: { "Content-Type": VIDEO_MIME },
+		headers: { "Content-Type": options.contentType ?? VIDEO_MIME },
 		signal: options.signal,
 		onUploadProgress: (event) => {
 			if (event.total && options.onProgress) {
@@ -94,5 +111,7 @@ export {
 	getCourseTrailerUrl,
 	createCourseTrailerUploadUrl,
 	setCourseTrailer,
+	createCourseThumbnailUploadUrl,
+	setCourseThumbnail,
 	uploadToR2,
 };

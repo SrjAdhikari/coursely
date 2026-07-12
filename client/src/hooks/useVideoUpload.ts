@@ -13,13 +13,28 @@ type UploadStatus =
 	| "done"
 	| "error";
 
+/** File constraints the uploader enforces before minting — injectable so the same
+ * state machine serves videos (default) and images (thumbnails). */
+interface UploadConstraints {
+	allowedTypes: readonly string[];
+	maxBytes: number;
+	typeErrorMessage: string;
+	sizeErrorMessage: string;
+}
+
+// Default constraints keep every existing video/trailer caller unchanged.
+const VIDEO_CONSTRAINTS: UploadConstraints = {
+	allowedTypes: [VIDEO_MIME],
+	maxBytes: MAX_VIDEO_BYTES,
+	typeErrorMessage: "Please choose an MP4 video.",
+	sizeErrorMessage: `That file is larger than ${MAX_VIDEO_LABEL}.`,
+};
+
 interface UseVideoUploadConfig {
-	/** Mint the presigned PUT (resolves the absolute R2 upload URL). */
-	mint: () => Promise<{ uploadUrl: string }>;
-	/** Persist the upload. `duration` is set only when a probe is configured. */
+	mint: (contentType: string) => Promise<{ uploadUrl: string }>;
 	confirm: (duration?: number) => Promise<unknown>;
-	/** Read the video length; when present, drives auto-detect + manual fallback. */
 	probeDuration?: (file: File) => Promise<number>;
+	accept?: UploadConstraints;
 	onSuccess?: () => void;
 	onError?: (message: string) => void;
 }
@@ -27,10 +42,10 @@ interface UseVideoUploadConfig {
 const messageOf = (error: unknown, fallback: string) =>
 	(error as { message?: string })?.message ?? fallback;
 
-const validate = (file: File): string | null => {
-	if (file.type !== VIDEO_MIME) return "Please choose an MP4 video.";
-	if (file.size > MAX_VIDEO_BYTES)
-		return `That file is larger than ${MAX_VIDEO_LABEL}.`;
+const validate = (file: File, constraints: UploadConstraints): string | null => {
+	if (!constraints.allowedTypes.includes(file.type))
+		return constraints.typeErrorMessage;
+	if (file.size > constraints.maxBytes) return constraints.sizeErrorMessage;
 	return null;
 };
 
@@ -38,6 +53,7 @@ const useVideoUpload = ({
 	mint,
 	confirm,
 	probeDuration,
+	accept = VIDEO_CONSTRAINTS,
 	onSuccess,
 	onError,
 }: UseVideoUploadConfig) => {
@@ -90,7 +106,7 @@ const useVideoUpload = ({
 
 	const start = useCallback(
 		async (file: File) => {
-			const invalid = validate(file);
+			const invalid = validate(file, accept);
 			if (invalid) {
 				fail(invalid);
 				return;
@@ -111,8 +127,9 @@ const useVideoUpload = ({
 			const cancelled = () => controller.signal.aborted;
 
 			try {
-				const { uploadUrl } = await mint();
+				const { uploadUrl } = await mint(file.type);
 				await uploadToR2(uploadUrl, file, {
+					contentType: file.type,
 					onProgress: setProgress,
 					signal: controller.signal,
 				});
@@ -138,7 +155,7 @@ const useVideoUpload = ({
 				fail(messageOf(err, "Upload failed. Please try again."));
 			}
 		},
-		[mint, probeDuration, finish, fail],
+		[mint, probeDuration, accept, finish, fail],
 	);
 
 	const submitManualDuration = useCallback(
@@ -186,4 +203,4 @@ const useVideoUpload = ({
 };
 
 export { useVideoUpload };
-export type { UseVideoUploadConfig, UploadStatus };
+export type { UseVideoUploadConfig, UploadStatus, UploadConstraints };
