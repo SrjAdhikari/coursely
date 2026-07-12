@@ -47,12 +47,12 @@ const UserMenu = ({ user }: UserMenuProps) => {
 	};
 
 	return (
-		<DropdownMenu>
+		<DropdownMenu modal={false}>
 			<DropdownMenuTrigger asChild>
 				<button
 					type="button"
 					aria-label="Account menu"
-					className="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+					className="cursor-pointer rounded-full ring-1 ring-border transition hover:ring-1 hover:ring-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					<Avatar>
 						<AvatarFallback className="bg-primary/10 font-medium text-primary">
