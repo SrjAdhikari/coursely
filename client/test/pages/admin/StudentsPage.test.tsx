@@ -41,6 +41,15 @@ const successResult = {
 	refetch: mockRefetch,
 };
 
+const manyStudents = Array.from({ length: 12 }, (_unused, index) => ({
+	_id: String(index + 1),
+	name: `Student ${index + 1}`,
+	email: `student${index + 1}@example.com`,
+	role: "student",
+	isActive: true,
+	createdAt: "2026-06-01T00:00:00.000Z",
+}));
+
 const renderPage = (client = new QueryClient()) =>
 	render(
 		<QueryClientProvider client={client}>
@@ -158,6 +167,25 @@ describe("StudentsPage", () => {
 			"zzz",
 		);
 		expect(screen.getByText("No matching students")).toBeInTheDocument();
+	});
+
+	it("paginates when there are more than a page of students", async () => {
+		const user = userEvent.setup();
+		mockUseListStudents.mockReturnValue({
+			data: { data: manyStudents },
+			isLoading: false,
+			isError: false,
+			refetch: mockRefetch,
+		});
+		renderPage();
+
+		expect(screen.getByText("Student 1")).toBeInTheDocument();
+		expect(screen.queryByText("Student 11")).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: /go to page 2/i }));
+
+		expect(screen.getByText("Student 11")).toBeInTheDocument();
+		expect(screen.queryByText("Student 1")).not.toBeInTheDocument();
 	});
 
 	it("navigates to the manage page for the chosen student", async () => {
