@@ -94,13 +94,20 @@ const HomeHeader = () => {
 
 					<span className="hidden h-5 w-px bg-border sm:block" aria-hidden />
 
-					<ThemeToggle />
-
 					{user ? (
-						<span className="hidden sm:block">
-							<UserMenu user={user} />
-						</span>
+						<>
+							<span className="hidden sm:block">
+								<UserMenu user={user} />
+							</span>
+
+							<span
+								className="hidden h-5 w-px bg-border sm:block"
+								aria-hidden
+							/>
+						</>
 					) : null}
+
+					<ThemeToggle />
 
 					<HomeMobileMenu user={user} />
 				</div>

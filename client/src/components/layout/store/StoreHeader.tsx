@@ -46,10 +46,6 @@ const StoreHeader = () => {
 								<NavLink to={ROUTES.MY_COURSES} className={navItemClass}>
 									My Courses
 								</NavLink>
-
-								<div className="ml-1 border-l border-border pl-3">
-									<UserMenu user={user} />
-								</div>
 							</>
 						) : (
 							<>
@@ -64,7 +60,21 @@ const StoreHeader = () => {
 						)}
 					</nav>
 
-					<ThemeToggle />
+					{/* Account + theme controls, avatar separated from the toggle. */}
+					<div className="flex items-center gap-3">
+						{user ? (
+							<>
+								<UserMenu user={user} />
+
+								<span
+									className="h-5 w-px bg-border"
+									aria-hidden
+								/>
+							</>
+						) : null}
+
+						<ThemeToggle />
+					</div>
 				</div>
 			</div>
 		</header>
