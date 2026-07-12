@@ -10,7 +10,7 @@ interface CourseCardProps {
 	to: string;
 	title: string;
 	instructorName: string;
-	thumbnailUrl: string;
+	thumbnailUrl?: string;
 	description?: string;
 	badge?: string;
 	category?: string;
@@ -30,58 +30,73 @@ const CourseCard = ({
 	category,
 	lessonCount,
 	meta,
-}: CourseCardProps) => (
-	<Link
-		to={to}
-		className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition duration-200 hover:-translate-y-1 hover:border-input hover:shadow-lg"
-	>
-		<div className="relative aspect-video overflow-hidden bg-muted">
-			<img src={thumbnailUrl} alt="" className="size-full object-cover" />
-			{badge && (
-				<span className="absolute right-2.5 top-2.5 rounded-full border border-primary/30 bg-card/90 px-2.5 py-1 text-xs text-primary">
-					{badge}
-				</span>
-			)}
-		</div>
+}: CourseCardProps) => {
+	// First word of the title — a compact stand-in when there's no cover image.
+	const fallbackWord = title.split(" ")[0] || title;
 
-		<div className="flex flex-1 flex-col p-4">
-			{category && (
-				<p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-					{category}
-				</p>
-			)}
+	return (
+		<Link
+			to={to}
+			className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition duration-200 hover:-translate-y-1 hover:border-input hover:shadow-lg"
+		>
+			<div className="relative aspect-video overflow-hidden bg-muted">
+				{thumbnailUrl ? (
+					<img src={thumbnailUrl} alt="" className="size-full object-cover" />
+				) : (
+					<div className="flex size-full items-center justify-center px-4">
+						<span className="truncate font-heading text-2xl font-semibold text-muted-foreground">
+							{fallbackWord}
+						</span>
+					</div>
+				)}
 
-			<h3 className="font-heading text-base font-semibold leading-snug">
-				{title}
-			</h3>
-
-			<div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-				<Avatar aria-hidden size="sm" className="shrink-0">
-					<AvatarFallback className="bg-primary/10 font-medium text-primary">
-						{getInitials(instructorName)}
-					</AvatarFallback>
-				</Avatar>
-				{instructorName}
-			</div>
-
-			{description && (
-				<p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-					{description}
-				</p>
-			)}
-
-			<div className="mt-4 flex items-center gap-2 border-t border-border pt-3.5">
-				{typeof lessonCount === "number" && (
-					<span className="text-sm text-muted-foreground">
-						{pluralize(lessonCount, "lesson")}
+				{badge && (
+					<span className="absolute right-2.5 top-2.5 rounded-full border border-primary/30 bg-card/90 px-2.5 py-1 text-xs text-primary">
+						{badge}
 					</span>
 				)}
-				<span className="ml-auto text-base font-semibold text-foreground">
-					{meta}
-				</span>
 			</div>
-		</div>
-	</Link>
-);
+
+			<div className="flex flex-1 flex-col p-4">
+				{category && (
+					<p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+						{category}
+					</p>
+				)}
+
+				<h3 className="font-heading text-base font-semibold leading-snug">
+					{title}
+				</h3>
+
+				<div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+					<Avatar aria-hidden size="sm" className="shrink-0">
+						<AvatarFallback className="bg-primary/10 font-medium text-primary">
+							{getInitials(instructorName)}
+						</AvatarFallback>
+					</Avatar>
+					{instructorName}
+				</div>
+
+				{description && (
+					<p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+						{description}
+					</p>
+				)}
+
+				<div className="mt-4 flex items-center gap-2 border-t border-border pt-3.5">
+					{typeof lessonCount === "number" && (
+						<span className="text-sm text-muted-foreground">
+							{pluralize(lessonCount, "lesson")}
+						</span>
+					)}
+
+					<span className="ml-auto text-base font-semibold text-foreground">
+						{meta}
+					</span>
+				</div>
+			</div>
+		</Link>
+	);
+};
 
 export default CourseCard;
