@@ -63,6 +63,7 @@ const Paginator = ({
 						<Button
 							variant="outline"
 							size="icon"
+							className="rounded-sm"
 							aria-label="Go to previous page"
 							disabled={page <= 1}
 							onClick={() => goToPage(page - 1)}
@@ -76,6 +77,7 @@ const Paginator = ({
 							<Button
 								variant={pageNumber === page ? "default" : "outline"}
 								size="icon"
+								className="rounded-sm"
 								aria-label={`Go to page ${pageNumber}`}
 								aria-current={pageNumber === page ? "page" : undefined}
 								onClick={() => goToPage(pageNumber)}
@@ -89,6 +91,7 @@ const Paginator = ({
 						<Button
 							variant="outline"
 							size="icon"
+							className="rounded-sm"
 							aria-label="Go to next page"
 							disabled={page >= totalPages}
 							onClick={() => goToPage(page + 1)}
