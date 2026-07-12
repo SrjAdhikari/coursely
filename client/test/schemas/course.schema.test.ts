@@ -11,7 +11,6 @@ const valid = {
 	title: "React from Scratch",
 	description: "Hooks and state.",
 	instructorName: "Asha Rai",
-	thumbnailUrl: "https://cdn.coursely.app/react.png",
 	priceRupees: "999",
 	isPublished: false,
 	category: "Web Development",
@@ -22,32 +21,13 @@ describe("courseFormSchema", () => {
 		expect(courseFormSchema.safeParse(valid).success).toBe(true);
 	});
 
+	it("does not require a thumbnailUrl (it is uploaded on the build page)", () => {
+		expect(valid).not.toHaveProperty("thumbnailUrl");
+		expect(courseFormSchema.safeParse(valid).success).toBe(true);
+	});
+
 	it("rejects a title shorter than 3 characters", () => {
 		const r = courseFormSchema.safeParse({ ...valid, title: "Re" });
-		expect(r.success).toBe(false);
-	});
-
-	it("rejects a non-http(s) thumbnail URL", () => {
-		const r = courseFormSchema.safeParse({
-			...valid,
-			thumbnailUrl: "ftp://x/y.png",
-		});
-		expect(r.success).toBe(false);
-	});
-
-	it("rejects a javascript: scheme thumbnail URL", () => {
-		const r = courseFormSchema.safeParse({
-			...valid,
-			thumbnailUrl: "javascript:alert(1)",
-		});
-		expect(r.success).toBe(false);
-	});
-
-	it("rejects a data: scheme thumbnail URL", () => {
-		const r = courseFormSchema.safeParse({
-			...valid,
-			thumbnailUrl: "data:text/html,<script>alert(1)</script>",
-		});
 		expect(r.success).toBe(false);
 	});
 
@@ -94,7 +74,6 @@ describe("courseFormSchema", () => {
 			title: "React from Scratch",
 			description: "Hooks and state.",
 			instructorName: "Asha Rai",
-			thumbnailUrl: "https://cdn.coursely.app/react.png",
 			priceRupees: "999",
 			isPublished: false,
 		};
@@ -141,7 +120,6 @@ describe("buildCoursePayload", () => {
 		title: "React from Scratch",
 		description: "Hooks and state.",
 		instructorName: "Asha Rai",
-		thumbnailUrl: "https://cdn.coursely.app/r.png",
 		priceRupees: "999",
 		isPublished: false,
 		category: "Web Development",

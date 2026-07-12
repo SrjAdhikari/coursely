@@ -53,7 +53,8 @@ export interface CreateCoursePayload {
 	title: string;
 	description: string;
 	instructorName: string;
-	thumbnailUrl: string;
+	/** Optional — the cover image is uploaded separately on the build page. */
+	thumbnailUrl?: string;
 	price: number;
 	currency?: string;
 	isPublished?: boolean;

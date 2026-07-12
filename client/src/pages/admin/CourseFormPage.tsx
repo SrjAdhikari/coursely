@@ -76,6 +76,7 @@ const CourseFormPage = () => {
 							label="Title"
 							id="title"
 							placeholder="e.g. React from Scratch"
+							autoComplete="off"
 							error={errors.title?.message}
 							{...register("title")}
 						/>
@@ -99,6 +100,7 @@ const CourseFormPage = () => {
 							label="Category"
 							id="category"
 							placeholder="e.g. Web Development"
+							autoComplete="off"
 							hint="Required: up to 60 characters"
 							error={errors.category?.message}
 							{...register("category")}
@@ -120,6 +122,7 @@ const CourseFormPage = () => {
 						label="Instructor"
 						id="instructorName"
 						placeholder="Instructor name"
+						autoComplete="off"
 						error={errors.instructorName?.message}
 						{...register("instructorName")}
 					/>
@@ -129,22 +132,13 @@ const CourseFormPage = () => {
 						id="priceRupees"
 						inputMode="numeric"
 						placeholder="0"
+						autoComplete="off"
 						prefix="₹"
 						className="font-mono"
 						hint="Whole rupees: stored as paise (₹999 → 99900)"
 						error={errors.priceRupees?.message}
 						{...register("priceRupees")}
 					/>
-
-					<div className="sm:col-span-2">
-						<FormField
-							label="Thumbnail URL"
-							id="thumbnailUrl"
-							placeholder="https://…"
-							error={errors.thumbnailUrl?.message}
-							{...register("thumbnailUrl")}
-						/>
-					</div>
 
 					<StatusSegment value={isPublished} onChange={setPublished} />
 				</div>
