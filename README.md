@@ -306,9 +306,9 @@ the whole system runs for roughly the price of one always-on API instance.
 | MongoDB Atlas M0  | Database                                 | Free      | $0                           |
 | Cloudflare Pages  | Frontend and CDN                         | Free      | $0                           |
 | Cloudflare R2     | Video storage and delivery (zero egress) | Free tier | ~$0                          |
-| Managed Node host | Always-on API                            | Paid      | $5 to $7                     |
+| Managed Node host | Always-on API                            | Paid      | $3                           |
 | Stripe            | Payments                                 | Test mode | $0                           |
-| **Total**         |                                          |           | **about $5 to $7 per month** |
+| **Total**         |                                          |           | **about $3 per month**       |
 
 The one paid line is deliberate. An always-on instance avoids the cold-start delay of free sleeping
 tiers. The cost consciously not paid is an HLS or transcode pipeline (see [Roadmap](#roadmap)).
