@@ -69,7 +69,7 @@ with security and running cost treated as first-class design inputs rather than 
   cross-site CSRF guard.
 - Automated quality gates: CI runs lint, typecheck, build, and tests for both packages on every push,
   plus an automated code review on every pull request and a job that triages CodeRabbit's findings.
-- 46 backend and 74 frontend automated test files.
+- 46 backend and 85 frontend automated test files.
 
 ---
 
@@ -78,7 +78,7 @@ with security and running cost treated as first-class design inputs rather than 
 | Layer                 | Choices                                                                                                                                                      |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Frontend**          | React 19, Vite, TypeScript, TanStack Query (server state), axios, React Router, React Hook Form with zod, shadcn and Radix on Tailwind, lucide-react, sonner |
-| **Backend**           | Express 5, TypeScript (Node 20), Mongoose, zod, bcrypt, Stripe SDK, AWS S3 SDK pointed at Cloudflare R2, Helmet, express-rate-limit                     |
+| **Backend**           | Express 5, TypeScript (Node 20), Mongoose, zod, bcryptjs, Stripe SDK, AWS S3 SDK pointed at Cloudflare R2, Helmet, express-rate-limit                     |
 | **Database**          | MongoDB Atlas (managed)                                                                                                                                      |
 | **Storage and video** | Cloudflare R2 (S3-compatible, private bucket, presigned URLs)                                                                                                |
 | **Payments**          | Stripe (hosted Checkout and webhooks)                                                                                                                        |
@@ -306,9 +306,9 @@ the whole system runs for roughly the price of one always-on API instance.
 | MongoDB Atlas M0  | Database                                 | Free      | $0                           |
 | Cloudflare Pages  | Frontend and CDN                         | Free      | $0                           |
 | Cloudflare R2     | Video storage and delivery (zero egress) | Free tier | ~$0                          |
-| Managed Node host | Always-on API                            | Paid      | $5 to $7                     |
+| Managed Node host | Always-on API                            | Paid      | $3                           |
 | Stripe            | Payments                                 | Test mode | $0                           |
-| **Total**         |                                          |           | **about $5 to $7 per month** |
+| **Total**         |                                          |           | **about $3 per month**       |
 
 The one paid line is deliberate. An always-on instance avoids the cold-start delay of free sleeping
 tiers. The cost consciously not paid is an HLS or transcode pipeline (see [Roadmap](#roadmap)).
@@ -325,7 +325,7 @@ tiers. The cost consciously not paid is an HLS or transcode pipeline (see [Roadm
 
 **Frontend**
 
-- Vitest with Testing Library. 74 test files across components, hooks, and pages.
+- Vitest with Testing Library. 85 test files across components, hooks, and pages.
 
 **Continuous integration**
 
