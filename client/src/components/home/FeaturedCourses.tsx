@@ -10,11 +10,13 @@ import Loader from "@/components/Loader";
 import LoadFailed from "@/components/common/LoadFailed";
 import EmptyStatePlaceholder from "@/components/ui/empty-state-placeholder";
 
-const FEATURED_LIMIT = 6;
+const FEATURED_LIMIT = 3;
 
 const FeaturedCourses = () => {
 	const { data, isLoading, isError, refetch } = useListPublishedCourses();
-	const courses = (data?.data ?? []).slice(0, FEATURED_LIMIT);
+	const allCourses = data?.data ?? [];
+	const courses = allCourses.slice(0, FEATURED_LIMIT);
+	const hasMoreCourses = allCourses.length > FEATURED_LIMIT;
 
 	return (
 		<section className="mx-auto max-w-6xl px-5 py-16">
@@ -31,12 +33,14 @@ const FeaturedCourses = () => {
 					</p>
 				</div>
 
-				<Link
-					to={ROUTES.CATALOG}
-					className="text-sm text-primary hover:underline"
-				>
-					Browse all courses →
-				</Link>
+				{hasMoreCourses && (
+					<Link
+						to={ROUTES.CATALOG}
+						className="text-sm text-primary hover:underline"
+					>
+						Browse all courses →
+					</Link>
+				)}
 			</div>
 
 			{isLoading ? (

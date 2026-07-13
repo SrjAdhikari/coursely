@@ -23,6 +23,14 @@ const makeCourse = (over: Record<string, unknown>) => ({
 	...over,
 });
 
+const mockCourses = (courses: ReturnType<typeof makeCourse>[]) =>
+	mockUseListPublishedCourses.mockReturnValue({
+		data: { data: courses },
+		isLoading: false,
+		isError: false,
+		refetch: vi.fn(),
+	});
+
 const renderIt = () =>
 	render(
 		<MemoryRouter>
@@ -31,22 +39,40 @@ const renderIt = () =>
 	);
 
 describe("FeaturedCourses", () => {
-	it("renders a card per course and a Browse-all link", () => {
-		mockUseListPublishedCourses.mockReturnValue({
-			data: {
-				data: [
-					makeCourse({ _id: "1", title: "HTML Foundations", slug: "html" }),
-					makeCourse({ _id: "2", title: "JS Essentials", slug: "js" }),
-				],
-			},
-			isLoading: false,
-			isError: false,
-			refetch: vi.fn(),
-		});
+	it("shows only the first 3 courses and the Browse-all link when there are more than 3", () => {
+		mockCourses([
+			makeCourse({ _id: "1", title: "Course One", slug: "one" }),
+			makeCourse({ _id: "2", title: "Course Two", slug: "two" }),
+			makeCourse({ _id: "3", title: "Course Three", slug: "three" }),
+			makeCourse({ _id: "4", title: "Course Four", slug: "four" }),
+			makeCourse({ _id: "5", title: "Course Five", slug: "five" }),
+		]);
 		renderIt();
-		expect(screen.getByText("HTML Foundations")).toBeInTheDocument();
-		expect(screen.getByText("JS Essentials")).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: /browse all/i })).toHaveAttribute("href", "/courses");
+
+		expect(screen.getByText("Course One")).toBeInTheDocument();
+		expect(screen.getByText("Course Two")).toBeInTheDocument();
+		expect(screen.getByText("Course Three")).toBeInTheDocument();
+		expect(screen.queryByText("Course Four")).not.toBeInTheDocument();
+		expect(screen.queryByText("Course Five")).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: /browse all/i }),
+		).toHaveAttribute("href", "/courses");
+	});
+
+	it("renders every course and hides the Browse-all link when there are 3 or fewer", () => {
+		mockCourses([
+			makeCourse({ _id: "1", title: "Course One", slug: "one" }),
+			makeCourse({ _id: "2", title: "Course Two", slug: "two" }),
+			makeCourse({ _id: "3", title: "Course Three", slug: "three" }),
+		]);
+		renderIt();
+
+		expect(screen.getByText("Course One")).toBeInTheDocument();
+		expect(screen.getByText("Course Two")).toBeInTheDocument();
+		expect(screen.getByText("Course Three")).toBeInTheDocument();
+		expect(
+			screen.queryByRole("link", { name: /browse all/i }),
+		).not.toBeInTheDocument();
 	});
 
 	it("shows a loader while loading", () => {
