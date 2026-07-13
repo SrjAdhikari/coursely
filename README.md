@@ -69,7 +69,7 @@ with security and running cost treated as first-class design inputs rather than 
   cross-site CSRF guard.
 - Automated quality gates: CI runs lint, typecheck, build, and tests for both packages on every push,
   plus an automated code review on every pull request and a job that triages CodeRabbit's findings.
-- 46 backend and 74 frontend automated test files.
+- 46 backend and 85 frontend automated test files.
 
 ---
 
@@ -78,7 +78,7 @@ with security and running cost treated as first-class design inputs rather than 
 | Layer                 | Choices                                                                                                                                                      |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Frontend**          | React 19, Vite, TypeScript, TanStack Query (server state), axios, React Router, React Hook Form with zod, shadcn and Radix on Tailwind, lucide-react, sonner |
-| **Backend**           | Express 5, TypeScript (Node 20), Mongoose, zod, bcrypt, Stripe SDK, AWS S3 SDK pointed at Cloudflare R2, Helmet, express-rate-limit                     |
+| **Backend**           | Express 5, TypeScript (Node 20), Mongoose, zod, bcryptjs, Stripe SDK, AWS S3 SDK pointed at Cloudflare R2, Helmet, express-rate-limit                     |
 | **Database**          | MongoDB Atlas (managed)                                                                                                                                      |
 | **Storage and video** | Cloudflare R2 (S3-compatible, private bucket, presigned URLs)                                                                                                |
 | **Payments**          | Stripe (hosted Checkout and webhooks)                                                                                                                        |
@@ -325,7 +325,7 @@ tiers. The cost consciously not paid is an HLS or transcode pipeline (see [Roadm
 
 **Frontend**
 
-- Vitest with Testing Library. 74 test files across components, hooks, and pages.
+- Vitest with Testing Library. 85 test files across components, hooks, and pages.
 
 **Continuous integration**
 
