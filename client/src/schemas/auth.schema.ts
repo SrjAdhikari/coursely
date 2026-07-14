@@ -2,6 +2,8 @@
 
 import { z } from "zod";
 
+const nameRule = /^\p{L}[\p{L}\p{M}]*(?:[ '-]\p{L}[\p{L}\p{M}]*)*$/u;
+
 /**
  * Validation schema for the register form.
  */
@@ -10,7 +12,11 @@ const registerSchema = z.object({
 		.string()
 		.trim()
 		.min(3, "Name must be at least 3 characters")
-		.max(100, "Name must be at most 100 characters"),
+		.max(50, "Name must be at most 50 characters")
+		.regex(
+			nameRule,
+			"Name must start with a letter and contain only letters, spaces, hyphens, and apostrophes",
+		),
 
 	email: z.email("Please enter a valid email address"),
 

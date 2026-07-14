@@ -20,12 +20,18 @@ const password = z
 		"Password must contain at least one special character",
 	);
 
+const nameRule = /^\p{L}[\p{L}\p{M}]*(?:[ '-]\p{L}[\p{L}\p{M}]*)*$/u;
+
 const registerSchema = z.object({
 	name: z
 		.string()
 		.trim()
 		.min(3, "Name must be at least 3 characters")
-		.max(100, "Name must be at most 100 characters"),
+		.max(50, "Name must be at most 50 characters")
+		.regex(
+			nameRule,
+			"Name must start with a letter and contain only letters, spaces, hyphens, and apostrophes",
+		),
 	email,
 	password,
 });

@@ -76,4 +76,33 @@ describe("User model", () => {
 			role: "admin",
 		});
 	});
+
+	describe("name validation", () => {
+		it.each([
+			["all digits", "12313213"],
+			["punctuation only", "..."],
+			["an email address", "peyij91811@duvips.com"],
+			["a name containing a period", "John A. Smith"],
+			["a name with a double space", "Mary  Jane"],
+			["a name starting with a special character", "'tHooft"],
+		])("rejects a name that is %s", async (_label, name) => {
+			// Rejected on validation, so the email is never persisted — safe to reuse.
+			await expect(
+				User.create({
+					name,
+					email: "reject-name@example.com",
+					password: "Password123",
+				}),
+			).rejects.toThrow();
+		});
+
+		it.each([
+			["accented / non-ASCII letters", "José Müller", "jose@example.com"],
+			["an apostrophe", "O'Brien", "obrien@example.com"],
+			["a hyphenated compound name", "Jean-Luc Picard", "jeanluc@example.com"],
+		])("accepts %s", async (_label, name, email) => {
+			const user = await User.create({ name, email, password: "Password123" });
+			expect(user.name).toBe(name);
+		});
+	});
 });

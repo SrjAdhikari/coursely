@@ -26,7 +26,7 @@ let courseCounter = 0;
 const createTestUser = async (overrides: UserOverrides = {}) => {
 	counter += 1;
 	return User.create({
-		name: overrides.name ?? `Test User ${counter}`,
+		name: overrides.name ?? "Test User",
 		email: overrides.email ?? `user-${counter}@example.com`,
 		password: overrides.password ?? "Password123",
 		role: overrides.role ?? "student",
