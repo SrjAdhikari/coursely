@@ -32,7 +32,13 @@ export interface PublicUser {
 
 const userSchema = new Schema<UserDocument, UserModel, UserMethods>(
 	{
-		name: { type: String, required: true, trim: true, maxlength: 100 },
+		name: {
+			type: String,
+			required: true,
+			trim: true,
+			maxlength: 50,
+			match: /^\p{L}[\p{L}\p{M}]*(?:[ '-]\p{L}[\p{L}\p{M}]*)*$/u,
+		},
 		email: {
 			type: String,
 			required: true,
