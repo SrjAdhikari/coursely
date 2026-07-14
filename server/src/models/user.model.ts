@@ -36,6 +36,7 @@ const userSchema = new Schema<UserDocument, UserModel, UserMethods>(
 			type: String,
 			required: true,
 			trim: true,
+			minlength: 3,
 			maxlength: 50,
 			match: /^\p{L}[\p{L}\p{M}]*(?:[ '-]\p{L}[\p{L}\p{M}]*)*$/u,
 		},
