@@ -11,7 +11,7 @@ import appErrorCode from "./constants/appErrorCode";
 
 import AppError from "./errors/AppError";
 import globalErrorHandler from "./middlewares/error.middleware";
-import { globalLimiter } from "./middlewares/rateLimit.middleware";
+import { globalLimiter, webhookLimiter } from "./middlewares/rateLimit.middleware";
 import verifyRequestOrigin from "./middlewares/csrf.middleware";
 
 import routes from "./routes/index";
@@ -55,6 +55,7 @@ app.use(
 // the stream). It is server-to-server, authenticated by signature — no session.
 app.use(
 	"/api/webhooks/stripe",
+	webhookLimiter,
 	express.raw({ type: "application/json" }),
 	stripeWebhookRouter,
 );

@@ -102,6 +102,90 @@ describe("POST /api/checkout", () => {
 	});
 });
 
+describe("payment & webhook rate-limit tiers", () => {
+	it("applies the tighter payment tier to checkout (not just the 1000/15m global tier)", async () => {
+		const { agent } = await studentAgent();
+		const course = await createTestCourse({ price: 49900 });
+		vi.spyOn(stripe.checkout.sessions, "create").mockResolvedValue({
+			url: "https://stripe.test/cs_ratelimit",
+		} as never);
+
+		const res = await agent
+			.post("/api/checkout")
+			.send({ courseId: course._id.toString() });
+
+		expect(res.headers["ratelimit-limit"]).toBe("50");
+	});
+
+	it("applies a separate, more generous tier to checkout-status polling", async () => {
+		const { agent, user } = await studentAgent();
+		const course = await createTestCourse({ price: 49900 });
+		vi.spyOn(stripe.checkout.sessions, "retrieve").mockResolvedValue({
+			id: "cs_status_ratelimit",
+			payment_status: "paid",
+			amount_total: 49900,
+			currency: "inr",
+			metadata: {
+				userId: user._id.toString(),
+				courseId: course._id.toString(),
+				expectedAmount: "49900",
+				expectedCurrency: "inr",
+			},
+		} as never);
+
+		const res = await agent.get("/api/checkout/cs_status_ratelimit/status");
+
+		expect(res.headers["ratelimit-limit"]).toBe("200");
+	});
+
+	it("rate-limits the Stripe webhook mount", async () => {
+		const user = await createTestUser({ email: "wh-limit@example.com" });
+		const course = await createTestCourse({ price: 49900 });
+		const { payload, header } = signedWebhook({
+			metadata: {
+				userId: user._id.toString(),
+				courseId: course._id.toString(),
+			},
+		});
+
+		const res = await request(app)
+			.post("/api/webhooks/stripe")
+			.set("Content-Type", "application/json")
+			.set("stripe-signature", header)
+			.send(payload);
+
+		expect(res.headers["ratelimit-limit"]).toBe("300");
+	});
+
+	it("does not spend the webhook budget on legit, verified events", async () => {
+		// skipSuccessfulRequests refunds 2xx webhooks, so a run of real Stripe
+		// events never depletes the bucket (only forged 4xx requests count).
+		const sendValidWebhook = async (email: string) => {
+			const user = await createTestUser({ email });
+			const course = await createTestCourse({ price: 49900 });
+			const { payload, header } = signedWebhook({
+				metadata: {
+					userId: user._id.toString(),
+					courseId: course._id.toString(),
+				},
+			});
+			return request(app)
+				.post("/api/webhooks/stripe")
+				.set("Content-Type", "application/json")
+				.set("stripe-signature", header)
+				.send(payload);
+		};
+
+		const first = await sendValidWebhook("wh-skip-1@example.com");
+		const second = await sendValidWebhook("wh-skip-2@example.com");
+
+		expect(first.headers["ratelimit-remaining"]).toBeDefined();
+		expect(second.headers["ratelimit-remaining"]).toBe(
+			first.headers["ratelimit-remaining"],
+		);
+	});
+});
+
 describe("POST /api/webhooks/stripe", () => {
 	it("enrolls on a valid, paid, correctly-priced event", async () => {
 		const user = await createTestUser({ email: "wh@example.com" });

@@ -15,6 +15,10 @@ import {
 
 import authenticate from "../middlewares/auth.middleware";
 import validateBody from "../middlewares/validate.middleware";
+import {
+	paymentLimiter,
+	paymentStatusLimiter,
+} from "../middlewares/rateLimit.middleware";
 
 import { createCheckoutSchema } from "../validators/payment.validator";
 
@@ -31,6 +35,7 @@ const stripeWebhookRouter = Router();
 paymentRouter.post(
 	"/",
 	authenticate,
+	paymentLimiter,
 	validateBody(createCheckoutSchema),
 	createCheckoutHandler,
 );
@@ -39,7 +44,12 @@ paymentRouter.post(
  * Reconcile a Checkout session (own session only)
  * @route GET /api/checkout/:sessionId/status
  */
-paymentRouter.get("/:sessionId/status", authenticate, getCheckoutStatusHandler);
+paymentRouter.get(
+	"/:sessionId/status",
+	authenticate,
+	paymentStatusLimiter,
+	getCheckoutStatusHandler,
+);
 
 /**
  * Stripe webhook — signature-verified, server-to-server
