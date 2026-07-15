@@ -86,6 +86,11 @@ describe("StudentManagePage", () => {
 		expect(screen.getByText(/rahul@example\.com/)).toBeInTheDocument();
 	});
 
+	it("renders the student's initials in the header avatar", async () => {
+		renderPage();
+		expect(await screen.findByText("RV")).toBeInTheDocument();
+	});
+
 	it("shows the enrollments section with the student's real enrollments", () => {
 		renderPage();
 		expect(
