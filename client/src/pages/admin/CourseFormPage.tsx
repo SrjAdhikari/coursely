@@ -36,6 +36,7 @@ const CourseFormPage = () => {
 		title,
 		isPublished,
 		setPublished,
+		canPublish,
 		pending,
 		submitForm,
 	} = useCourseForm(id);
@@ -140,7 +141,11 @@ const CourseFormPage = () => {
 						{...register("priceRupees")}
 					/>
 
-					<StatusSegment value={isPublished} onChange={setPublished} />
+					<StatusSegment
+						value={isPublished}
+						onChange={setPublished}
+						liveDisabled={!canPublish && !isPublished}
+					/>
 				</div>
 
 				<div className="mt-6 flex items-center gap-3 border-t border-border pt-5">

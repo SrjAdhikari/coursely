@@ -388,6 +388,95 @@ describe("course.service — thumbnail serialization", () => {
 	});
 });
 
+describe("course.service — publish guard", () => {
+	it("422s publishing a course with no lessons", async () => {
+		const course = await createTestCourse({ isPublished: false });
+		await expect(
+			updateCourse(course._id.toString(), { isPublished: true }),
+		).rejects.toMatchObject({
+			statusCode: 422,
+			errorCode: "COURSE_NOT_PUBLISHABLE",
+		});
+	});
+
+	it("422s publishing when the only lesson has no videoKey", async () => {
+		const course = await createTestCourse({ isPublished: false });
+		const section = await createTestSection(course._id);
+		await createTestLesson(section._id, course._id); // no videoKey
+
+		await expect(
+			updateCourse(course._id.toString(), { isPublished: true }),
+		).rejects.toMatchObject({
+			statusCode: 422,
+			errorCode: "COURSE_NOT_PUBLISHABLE",
+		});
+	});
+
+	it("publishes a course that has at least one video-bearing lesson", async () => {
+		const course = await createTestCourse({ isPublished: false });
+		const section = await createTestSection(course._id);
+		await createTestLesson(section._id, course._id, {
+			videoKey: "lessons/x/source.mp4",
+		});
+
+		const updated = await updateCourse(course._id.toString(), {
+			isPublished: true,
+		});
+		expect(updated.isPublished).toBe(true);
+	});
+
+	it("always allows unpublishing, even with no video-bearing lesson", async () => {
+		const course = await createTestCourse({ isPublished: true });
+
+		const updated = await updateCourse(course._id.toString(), {
+			isPublished: false,
+		});
+		expect(updated.isPublished).toBe(false);
+	});
+
+	it("never gates a content-only edit that omits isPublished", async () => {
+		const course = await createTestCourse({ isPublished: false });
+
+		const updated = await updateCourse(course._id.toString(), {
+			title: "Renamed",
+		});
+		expect(updated.title).toBe("Renamed");
+	});
+
+	it("never gates re-saving an already-live course, even with no video-bearing lesson", async () => {
+		// Already published (its video may since have been removed). Re-sending
+		// isPublished:true is not a Draft→Live transition, so it must pass.
+		const course = await createTestCourse({ isPublished: true });
+
+		const updated = await updateCourse(course._id.toString(), {
+			isPublished: true,
+			title: "Renamed",
+		});
+		expect(updated.isPublished).toBe(true);
+		expect(updated.title).toBe("Renamed");
+	});
+
+	it("404s (not 422) when publishing a course that does not exist", async () => {
+		await expect(
+			updateCourse(new mongoose.Types.ObjectId().toString(), {
+				isPublished: true,
+			}),
+		).rejects.toMatchObject({
+			statusCode: 404,
+			errorCode: "COURSE_NOT_FOUND",
+		});
+	});
+
+	it("422s creating a course as published (a new course has no lessons)", async () => {
+		await expect(
+			createCourse({ ...NEW_COURSE, isPublished: true }),
+		).rejects.toMatchObject({
+			statusCode: 422,
+			errorCode: "COURSE_NOT_PUBLISHABLE",
+		});
+	});
+});
+
 describe("course.service — lesson stats aggregation", () => {
 	it("folds lessonCount and totalDuration into each listed course", async () => {
 		const withLessons = await createTestCourse({ slug: "with-lessons" });
