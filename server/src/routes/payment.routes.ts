@@ -15,7 +15,10 @@ import {
 
 import authenticate from "../middlewares/auth.middleware";
 import validateBody from "../middlewares/validate.middleware";
-import { paymentLimiter } from "../middlewares/rateLimit.middleware";
+import {
+	paymentLimiter,
+	paymentStatusLimiter,
+} from "../middlewares/rateLimit.middleware";
 
 import { createCheckoutSchema } from "../validators/payment.validator";
 
@@ -44,7 +47,7 @@ paymentRouter.post(
 paymentRouter.get(
 	"/:sessionId/status",
 	authenticate,
-	paymentLimiter,
+	paymentStatusLimiter,
 	getCheckoutStatusHandler,
 );
 

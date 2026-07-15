@@ -46,9 +46,10 @@ const RATE_LIMITS = {
 	global: { windowMs: FIFTEEN_MINUTES_MS, limit: 1000 },
 	auth: { windowMs: FIFTEEN_MINUTES_MS, limit: 10 },
 	payment: { windowMs: FIFTEEN_MINUTES_MS, limit: 50 },
+	paymentStatus: { windowMs: FIFTEEN_MINUTES_MS, limit: 200 },
 	webhook: {
 		windowMs: FIFTEEN_MINUTES_MS,
-		limit: 50,
+		limit: 300,
 		skipSuccessfulRequests: true,
 	},
 } satisfies Record<string, RateLimitConfig>;
@@ -71,6 +72,7 @@ const createLimiter = ({
 const globalLimiter = createLimiter(RATE_LIMITS.global);
 const authLimiter = createLimiter(RATE_LIMITS.auth);
 const paymentLimiter = createLimiter(RATE_LIMITS.payment);
+const paymentStatusLimiter = createLimiter(RATE_LIMITS.paymentStatus);
 const webhookLimiter = createLimiter(RATE_LIMITS.webhook);
 
 export {
@@ -79,5 +81,6 @@ export {
 	globalLimiter,
 	authLimiter,
 	paymentLimiter,
+	paymentStatusLimiter,
 	webhookLimiter,
 };

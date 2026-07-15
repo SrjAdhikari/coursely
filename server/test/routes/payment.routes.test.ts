@@ -117,6 +117,27 @@ describe("payment & webhook rate-limit tiers", () => {
 		expect(res.headers["ratelimit-limit"]).toBe("50");
 	});
 
+	it("applies a separate, more generous tier to checkout-status polling", async () => {
+		const { agent, user } = await studentAgent();
+		const course = await createTestCourse({ price: 49900 });
+		vi.spyOn(stripe.checkout.sessions, "retrieve").mockResolvedValue({
+			id: "cs_status_ratelimit",
+			payment_status: "paid",
+			amount_total: 49900,
+			currency: "inr",
+			metadata: {
+				userId: user._id.toString(),
+				courseId: course._id.toString(),
+				expectedAmount: "49900",
+				expectedCurrency: "inr",
+			},
+		} as never);
+
+		const res = await agent.get("/api/checkout/cs_status_ratelimit/status");
+
+		expect(res.headers["ratelimit-limit"]).toBe("200");
+	});
+
 	it("rate-limits the Stripe webhook mount", async () => {
 		const user = await createTestUser({ email: "wh-limit@example.com" });
 		const course = await createTestCourse({ price: 49900 });
@@ -133,7 +154,7 @@ describe("payment & webhook rate-limit tiers", () => {
 			.set("stripe-signature", header)
 			.send(payload);
 
-		expect(res.headers["ratelimit-limit"]).toBe("50");
+		expect(res.headers["ratelimit-limit"]).toBe("300");
 	});
 
 	it("does not spend the webhook budget on legit, verified events", async () => {
