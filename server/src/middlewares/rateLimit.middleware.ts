@@ -15,17 +15,11 @@ const { RATE_LIMITED } = appErrorCode;
 
 type RateLimitConfig = { windowMs: number; limit: number };
 
-/**
- * Tiered key: authenticated users get their own bucket (by id); anonymous
- * traffic buckets by the real client IP (Cloudflare header → req.ip), IPv6-safe
- * (IPv6 masked to a /56 so a single user's rotating addresses share a bucket).
- */
+// Tiered key: authed users by id, anonymous by req.ip (trust-proxy-safe,
+// not the spoofable cf-connecting-ip header; IPv6 masked to /56).
 const clientKey = (req: Request): string => {
 	if (req.user?.id) return req.user.id;
-
-	const cfIp = req.headers["cf-connecting-ip"];
-	const ip = (Array.isArray(cfIp) ? cfIp[0] : cfIp) ?? req.ip ?? "unknown";
-	return ipKeyGenerator(ip, 56);
+	return ipKeyGenerator(req.ip ?? "unknown", 56);
 };
 
 /**
