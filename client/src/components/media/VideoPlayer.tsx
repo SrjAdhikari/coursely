@@ -1,7 +1,7 @@
 //* src/components/media/VideoPlayer.tsx
 
 import { useLessonPlaybackUrl } from "@/hooks/useMedia";
-import Loader from "@/components/Loader";
+import VideoLoading from "@/components/media/VideoLoading";
 import VideoSurface from "@/components/media/VideoSurface";
 import { Button } from "@/components/ui/button";
 import type { ReportPositionHandler } from "@/hooks/useVideoControls";
@@ -27,7 +27,7 @@ const VideoPlayer = ({
 	const { data, isLoading, isError, error, refetch } =
 		useLessonPlaybackUrl(lessonId);
 
-	if (isLoading) return <Loader className="aspect-video" />;
+	if (isLoading) return <VideoLoading />;
 
 	if (isError || !data) {
 		// A missing video isn't retryable; only offer retry for transient failures.
