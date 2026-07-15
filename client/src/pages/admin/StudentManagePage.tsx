@@ -11,10 +11,12 @@ import type { StudentEnrollmentPayload } from "@/types/student.types";
 
 import Loader from "@/components/Loader";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import DataTable, { type Column } from "@/components/common/DataTable";
 import LoadFailed from "@/components/common/LoadFailed";
 import DeactivateDialog from "@/components/admin/DeactivateDialog";
 
+import getInitials from "@/lib/getInitials";
 import { formatPrice } from "@/lib/currency";
 import { STUDENTS_KEY, studentKey } from "@/lib/queryKeys";
 
@@ -120,7 +122,12 @@ const StudentManagePage = () => {
 			</div>
 
 			<div className="mb-7 flex items-center gap-3.5">
-				<span className="size-12 rounded-full bg-linear-to-br from-muted to-input" />
+				<Avatar className="size-12 shrink-0">
+					<AvatarFallback className="bg-primary/10 font-medium text-primary">
+						{getInitials(student.name)}
+					</AvatarFallback>
+				</Avatar>
+
 				<div>
 					<h1 className="font-heading text-2xl font-semibold">
 						{student.name}
