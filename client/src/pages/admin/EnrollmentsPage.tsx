@@ -62,7 +62,7 @@ const EnrollmentsPage = () => {
 	const totalPages = result?.pagination.totalPages ?? 1;
 	const total = result?.pagination.total ?? 0;
 
-	if (isLoading) return <Loader className="min-h-[80vh]" />;
+	if (isLoading) return <Loader />;
 	if (isError)
 		return (
 			<LoadFailed

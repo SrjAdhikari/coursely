@@ -41,7 +41,7 @@ const CourseFormPage = () => {
 		submitForm,
 	} = useCourseForm(id);
 
-	if (isLoading) return <Loader className="min-h-[60vh]" />;
+	if (isLoading) return <Loader />;
 	if (isError)
 		return (
 			<LoadFailed

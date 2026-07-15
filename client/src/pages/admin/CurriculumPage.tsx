@@ -74,7 +74,7 @@ const CurriculumPage = () => {
 		});
 	};
 
-	if (isLoading) return <Loader className="min-h-[60vh]" />;
+	if (isLoading) return <Loader />;
 	if (isError || !course)
 		return (
 			<LoadFailed

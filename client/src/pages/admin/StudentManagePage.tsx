@@ -65,7 +65,7 @@ const StudentManagePage = () => {
 	const { mutate: updateStudent, isPending } = useUpdateStudent();
 	const [confirmingDeactivate, setConfirmingDeactivate] = useState(false);
 
-	if (isLoading) return <Loader className="min-h-[60vh]" />;
+	if (isLoading) return <Loader />;
 	if (isError || !data)
 		return (
 			<LoadFailed

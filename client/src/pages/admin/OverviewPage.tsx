@@ -154,7 +154,7 @@ const OverviewPage = () => {
 	);
 
 	if (coursesLoading || studentsLoading || enrollmentsLoading)
-		return <Loader className="min-h-[80vh]" />;
+		return <Loader />;
 
 	if (coursesError || studentsError || enrollmentsError)
 		return (

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Play } from "lucide-react";
 
 import { useCourseTrailerUrl } from "@/hooks/useMedia";
-import Loader from "@/components/Loader";
+import VideoLoading from "@/components/media/VideoLoading";
 import VideoSurface from "@/components/media/VideoSurface";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,7 +70,7 @@ const CourseTrailerMedia = ({
 	if (!hasTrailer) return poster;
 
 	const trailerBody = isFetching ? (
-		<Loader className="aspect-video rounded-lg border border-border bg-black" />
+		<VideoLoading className="border border-border" />
 	) : isError || !data ? (
 		<div
 			role="alert"
