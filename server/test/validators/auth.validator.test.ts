@@ -48,3 +48,30 @@ describe("auth validators — registerSchema name rule", () => {
 		);
 	});
 });
+
+describe("auth validators — registerSchema name sanitization", () => {
+	it("strips HTML from the name and accepts the cleaned value", () => {
+		const parsed = registerSchema.parse({
+			...validCredentials,
+			name: "<b>Asha</b>",
+		});
+		expect(parsed.name).toBe("Asha");
+	});
+
+	it("leaves valid names (apostrophes, hyphens, accents) unchanged", () => {
+		const parsed = registerSchema.parse({
+			...validCredentials,
+			name: "  José O'Brien-Smith  ",
+		});
+		expect(parsed.name).toBe("José O'Brien-Smith");
+	});
+
+	it("still rejects a name that is only markup (collapses below min length)", () => {
+		expect(
+			registerSchema.safeParse({
+				...validCredentials,
+				name: "<script>x</script>",
+			}).success,
+		).toBe(false);
+	});
+});

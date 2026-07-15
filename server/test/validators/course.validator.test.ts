@@ -4,6 +4,7 @@ import { describe, it, expect } from "vitest";
 import {
 	createCourseSchema,
 	updateCourseSchema,
+	createSectionSchema,
 	createLessonSchema,
 	updateSectionSchema,
 	updateLessonSchema,
@@ -87,6 +88,55 @@ describe("course validators", () => {
 
 	it("accepts a minimal lesson (order/isPreview/duration default at the model layer)", () => {
 		expect(createLessonSchema.safeParse({ title: "L1" }).success).toBe(true);
+	});
+});
+
+describe("course validators — input sanitization (XSS defense-in-depth)", () => {
+	const validCourse = {
+		title: "Intro",
+		description: "A real description",
+		instructorName: "Asha",
+		price: 49900,
+		category: "Web Development",
+	};
+
+	it("strips HTML tags from course free-text fields, keeping visible text", () => {
+		const parsed = createCourseSchema.parse({
+			...validCourse,
+			title: "  <b>Clean</b> Title  ",
+			description: "<script>alert('xss')</script>Real description",
+			instructorName: "<i>Asha</i>",
+			category: "<span>Web Development</span>",
+		});
+		expect(parsed.title).toBe("Clean Title");
+		expect(parsed.description).toBe("Real description");
+		expect(parsed.instructorName).toBe("Asha");
+		expect(parsed.category).toBe("Web Development");
+	});
+
+	it("measures length on the CLEANED value (markup can't pad a too-short title)", () => {
+		// "<b>Al</b>" sanitizes to "Al" (2 chars) → below the min-3 gate.
+		expect(
+			createCourseSchema.safeParse({ ...validCourse, title: "<b>Al</b>" })
+				.success,
+		).toBe(false);
+	});
+
+	it("sanitizes each learningOutcomes entry", () => {
+		const parsed = createCourseSchema.parse({
+			...validCourse,
+			learningOutcomes: ["<b>Build apps</b>", "Deploy to prod"],
+		});
+		expect(parsed.learningOutcomes).toEqual(["Build apps", "Deploy to prod"]);
+	});
+
+	it("strips tags from section and lesson titles", () => {
+		expect(createSectionSchema.parse({ title: "<b>Intro</b>" }).title).toBe(
+			"Intro",
+		);
+		expect(
+			createLessonSchema.parse({ title: "<script>x</script>Lesson 1" }).title,
+		).toBe("Lesson 1");
 	});
 });
 

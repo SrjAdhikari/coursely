@@ -1,6 +1,21 @@
 //* src/validators/auth.validator.ts
 
 import { z } from "zod";
+import sanitizeInput from "../utils/sanitizeInput";
+
+const nameRegex = /^\p{L}[\p{L}\p{M}]*(?:[ '-]\p{L}[\p{L}\p{M}]*)*$/u;
+const name = z
+	.string()
+	.trim()
+	.transform(sanitizeInput)
+	.refine(
+		(value) => value.length >= 3 && value.length <= 50,
+		"Name must be between 3 and 50 characters",
+	)
+	.refine(
+		(value) => nameRegex.test(value),
+		"Name must start with a letter and contain only letters, spaces, hyphens, and apostrophes",
+	);
 
 const email = z
 	.string()
@@ -20,18 +35,8 @@ const password = z
 		"Password must contain at least one special character",
 	);
 
-const nameRule = /^\p{L}[\p{L}\p{M}]*(?:[ '-]\p{L}[\p{L}\p{M}]*)*$/u;
-
 const registerSchema = z.object({
-	name: z
-		.string()
-		.trim()
-		.min(3, "Name must be at least 3 characters")
-		.max(50, "Name must be at most 50 characters")
-		.regex(
-			nameRule,
-			"Name must start with a letter and contain only letters, spaces, hyphens, and apostrophes",
-		),
+	name,
 	email,
 	password,
 });
