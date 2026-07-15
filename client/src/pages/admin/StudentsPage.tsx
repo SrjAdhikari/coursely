@@ -49,7 +49,7 @@ const StudentsPage = () => {
 		PAGE_SIZE,
 	);
 
-	if (isLoading) return <Loader className="min-h-[80vh]" />;
+	if (isLoading) return <Loader />;
 	if (isError)
 		return (
 			<LoadFailed

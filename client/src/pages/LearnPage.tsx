@@ -43,8 +43,7 @@ const LearnPage = () => {
 		refetchProgress,
 	} = useLearnPage(courseSlug, lessonId);
 
-	if (isCourseLoading || isEnrollmentsLoading)
-		return <Loader className="min-h-screen" />;
+	if (isCourseLoading || isEnrollmentsLoading) return <Loader />;
 
 	if (isCourseError || !course)
 		return (
@@ -76,7 +75,7 @@ const LearnPage = () => {
 		return <Navigate to={ROUTES.COURSE_DETAIL(course.slug)} replace />;
 
 	// No lesson in the URL: wait for progress before auto-picking the lesson.
-	if (!lessonId && isProgressLoading) return <Loader className="min-h-screen" />;
+	if (!lessonId && isProgressLoading) return <Loader />;
 
 	// URL lesson id not in this course → not-found (don't swap to lesson 1).
 	if (lessonId && !currentLesson)
