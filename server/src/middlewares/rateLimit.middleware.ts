@@ -13,7 +13,11 @@ import { FIFTEEN_MINUTES_MS } from "../utils/date";
 const { TOO_MANY_REQUESTS } = httpStatus;
 const { RATE_LIMITED } = appErrorCode;
 
-type RateLimitConfig = { windowMs: number; limit: number };
+type RateLimitConfig = {
+	windowMs: number;
+	limit: number;
+	skipSuccessfulRequests?: boolean;
+};
 
 // Tiered key: authed users by id, anonymous by req.ip (trust-proxy-safe,
 // not the spoofable cf-connecting-ip header; IPv6 masked to /56).
@@ -41,12 +45,23 @@ const rateLimitExceededHandler: RequestHandler = (_req, _res, next) => {
 const RATE_LIMITS = {
 	global: { windowMs: FIFTEEN_MINUTES_MS, limit: 1000 },
 	auth: { windowMs: FIFTEEN_MINUTES_MS, limit: 10 },
-};
+	payment: { windowMs: FIFTEEN_MINUTES_MS, limit: 50 },
+	webhook: {
+		windowMs: FIFTEEN_MINUTES_MS,
+		limit: 50,
+		skipSuccessfulRequests: true,
+	},
+} satisfies Record<string, RateLimitConfig>;
 
-const createLimiter = ({ windowMs, limit }: RateLimitConfig) =>
+const createLimiter = ({
+	windowMs,
+	limit,
+	skipSuccessfulRequests = false,
+}: RateLimitConfig) =>
 	rateLimit({
 		windowMs,
 		limit,
+		skipSuccessfulRequests,
 		standardHeaders: true,
 		legacyHeaders: false,
 		keyGenerator: clientKey,
@@ -55,5 +70,14 @@ const createLimiter = ({ windowMs, limit }: RateLimitConfig) =>
 
 const globalLimiter = createLimiter(RATE_LIMITS.global);
 const authLimiter = createLimiter(RATE_LIMITS.auth);
+const paymentLimiter = createLimiter(RATE_LIMITS.payment);
+const webhookLimiter = createLimiter(RATE_LIMITS.webhook);
 
-export { clientKey, rateLimitExceededHandler, globalLimiter, authLimiter };
+export {
+	clientKey,
+	rateLimitExceededHandler,
+	globalLimiter,
+	authLimiter,
+	paymentLimiter,
+	webhookLimiter,
+};
