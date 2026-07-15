@@ -86,6 +86,11 @@ const useCourseForm = (id?: string) => {
 	const title = useWatch({ control, name: "title" });
 	const isPublished = useWatch({ control, name: "isPublished" });
 
+	// A course may go live only with ≥1 video-bearing lesson
+	const sections = existing?.data?.sections ?? [];
+	const lessons = sections.flatMap((section) => section.lessons);
+	const canPublish = lessons.some((lesson) => Boolean(lesson.videoKey));
+
 	const submitCourse = (values: CourseFormData) => {
 		const payload = buildCoursePayload(values);
 
@@ -124,6 +129,7 @@ const useCourseForm = (id?: string) => {
 		isValid,
 		title,
 		isPublished,
+		canPublish,
 		setPublished: (value: boolean) =>
 			setValue("isPublished", value, { shouldValidate: true }),
 		pending: creating || updating,

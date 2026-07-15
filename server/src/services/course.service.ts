@@ -17,8 +17,9 @@ import type {
 	UpdateCourseInput,
 } from "../validators/course.validator";
 
-const { NOT_FOUND, CONFLICT } = httpStatus;
-const { COURSE_NOT_FOUND, COURSE_HAS_ENROLLMENTS } = appErrorCode;
+const { NOT_FOUND, CONFLICT, UNPROCESSABLE_ENTITY } = httpStatus;
+const { COURSE_NOT_FOUND, COURSE_HAS_ENROLLMENTS, COURSE_NOT_PUBLISHABLE } =
+	appErrorCode;
 
 /**
  * Public list cards never expose trailerKey/videoKey. thumbnailKey is projected
@@ -203,6 +204,15 @@ const generateUniqueSlug = async (title: string): Promise<string> => {
  * @returns The created course document.
  */
 const createCourse = async (input: CreateCourseInput) => {
+	// A new course has no lessons yet, so it can never be publishable on create.
+	if (input.isPublished === true) {
+		throw new AppError(
+			"Add at least one lesson with a video before publishing.",
+			UNPROCESSABLE_ENTITY,
+			COURSE_NOT_PUBLISHABLE,
+		);
+	}
+
 	const slug = await generateUniqueSlug(input.title);
 	return Course.create({ ...input, slug });
 };
@@ -212,6 +222,27 @@ const createCourse = async (input: CreateCourseInput) => {
  * @throws {AppError} 404 COURSE_NOT_FOUND if the course does not exist.
  */
 const updateCourse = async (id: string, input: UpdateCourseInput) => {
+	// Publish gate: only the Draft→Live transition requires ≥1 video-bearing lesson.
+	if (input.isPublished === true) {
+		const current = await Course.findById(id);
+		if (!current) {
+			throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
+		}
+
+		const videoBearingLessonCount = await Lesson.countDocuments({
+			courseId: id,
+			videoKey: { $type: "string", $ne: "" },
+		});
+
+		if (!current.isPublished && videoBearingLessonCount === 0) {
+			throw new AppError(
+				"Add at least one lesson with a video before publishing.",
+				UNPROCESSABLE_ENTITY,
+				COURSE_NOT_PUBLISHABLE,
+			);
+		}
+	}
+
 	const course = await Course.findByIdAndUpdate(id, input, {
 		returnDocument: "after",
 		runValidators: true,
@@ -219,6 +250,7 @@ const updateCourse = async (id: string, input: UpdateCourseInput) => {
 	if (!course) {
 		throw new AppError("Course not found", NOT_FOUND, COURSE_NOT_FOUND);
 	}
+
 	return course;
 };
 

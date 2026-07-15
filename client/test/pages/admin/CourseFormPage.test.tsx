@@ -67,6 +67,38 @@ const loadedCourse = {
 	refetch: vi.fn(),
 };
 
+/** The loaded course with a given curriculum + publish state, for the gate cases. */
+const loadedCourseWithSections = (sections: unknown[], isPublished = true) => ({
+	data: { data: { ...loadedCourse.data.data, sections, isPublished } },
+	isLoading: false,
+	isError: false,
+	refetch: vi.fn(),
+});
+
+const sectionWithVideoLesson = {
+	_id: "s1",
+	courseId: "c1",
+	title: "Intro",
+	order: 0,
+	lessons: [
+		{
+			_id: "l1",
+			sectionId: "s1",
+			courseId: "c1",
+			title: "Welcome",
+			order: 0,
+			isPreview: false,
+			videoKey: "lessons/x/source.mp4",
+			duration: 60,
+		},
+	],
+};
+
+const sectionWithoutVideoLesson = {
+	...sectionWithVideoLesson,
+	lessons: [{ ...sectionWithVideoLesson.lessons[0], videoKey: undefined }],
+};
+
 describe("CourseFormPage (create)", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
@@ -346,6 +378,45 @@ describe("CourseFormPage (edit)", () => {
 		).toBeInTheDocument();
 		expect(
 			screen.queryByRole("button", { name: /edit curriculum/i }),
+		).not.toBeInTheDocument();
+	});
+
+	it("enables the Live status when a lesson carries a video", async () => {
+		mockGetCourse.mockReturnValue(
+			loadedCourseWithSections([sectionWithVideoLesson]),
+		);
+		renderAt("/admin/courses/c1/edit");
+		await screen.findByDisplayValue("Old Title");
+
+		expect(screen.getByRole("button", { name: /live/i })).toBeEnabled();
+		expect(
+			screen.queryByText(/upload at least one lesson video/i),
+		).not.toBeInTheDocument();
+	});
+
+	it("disables the Live status and shows a hint when a draft has no video", async () => {
+		mockGetCourse.mockReturnValue(
+			loadedCourseWithSections([sectionWithoutVideoLesson], false),
+		);
+		renderAt("/admin/courses/c1/edit");
+		await screen.findByDisplayValue("Old Title");
+
+		expect(screen.getByRole("button", { name: /live/i })).toBeDisabled();
+		expect(
+			screen.getByText(/upload at least one lesson video/i),
+		).toBeInTheDocument();
+	});
+
+	it("keeps the Live status enabled for an already-live course even with no video", async () => {
+		mockGetCourse.mockReturnValue(
+			loadedCourseWithSections([sectionWithoutVideoLesson], true),
+		);
+		renderAt("/admin/courses/c1/edit");
+		await screen.findByDisplayValue("Old Title");
+
+		expect(screen.getByRole("button", { name: /live/i })).toBeEnabled();
+		expect(
+			screen.queryByText(/upload at least one lesson video/i),
 		).not.toBeInTheDocument();
 	});
 });
