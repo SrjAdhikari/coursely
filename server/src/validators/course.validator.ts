@@ -1,18 +1,24 @@
 //* src/validators/course.validator.ts
 
 import { z } from "zod";
+import sanitizeInput from "../utils/sanitizeInput";
 
 // currency/isPublished/order/isPreview/duration default at the model layer, so
 // they stay optional here and update = a plain `.partial()` that can't clobber.
 
+// Free-text fields: strip HTML/script FIRST, then length-gate the CLEANED value
+const cleanText = (lengthGate: z.ZodString) =>
+	z.string().transform(sanitizeInput).pipe(lengthGate);
+
 const createCourseSchema = z.object({
-	title: z
-		.string()
-		.trim()
-		.min(3, "Title must be at least 3 characters")
-		.max(200, "Title must be at most 200 characters"),
-	description: z.string().trim().min(1, "Description is required"),
-	instructorName: z.string().trim().min(1, "Instructor name is required"),
+	title: cleanText(
+		z
+			.string()
+			.min(3, "Title must be at least 3 characters")
+			.max(200, "Title must be at most 200 characters"),
+	),
+	description: cleanText(z.string().min(1, "Description is required")),
+	instructorName: cleanText(z.string().min(1, "Instructor name is required")),
 	thumbnailUrl: z
 		.url({
 			protocol: /^https?$/,
@@ -25,8 +31,8 @@ const createCourseSchema = z.object({
 		.min(0, "Price cannot be negative"),
 	currency: z.enum(["INR"]).optional(),
 	isPublished: z.boolean().optional(),
-	category: z.string().min(1).max(60),
-	learningOutcomes: z.array(z.string().min(1)).max(12).optional(),
+	category: cleanText(z.string().min(1).max(60)),
+	learningOutcomes: z.array(cleanText(z.string().min(1))).max(12).optional(),
 });
 
 const updateCourseSchema = createCourseSchema
@@ -36,11 +42,12 @@ const updateCourseSchema = createCourseSchema
 	});
 
 const createSectionSchema = z.object({
-	title: z
-		.string()
-		.trim()
-		.min(1, "Section title is required")
-		.max(200, "Section title must be at most 200 characters"),
+	title: cleanText(
+		z
+			.string()
+			.min(1, "Section title is required")
+			.max(200, "Section title must be at most 200 characters"),
+	),
 	order: z
 		.number()
 		.int("Order must be an integer")
@@ -55,11 +62,12 @@ const updateSectionSchema = createSectionSchema
 	});
 
 const createLessonSchema = z.object({
-	title: z
-		.string()
-		.trim()
-		.min(1, "Lesson title is required")
-		.max(200, "Lesson title must be at most 200 characters"),
+	title: cleanText(
+		z
+			.string()
+			.min(1, "Lesson title is required")
+			.max(200, "Lesson title must be at most 200 characters"),
+	),
 	order: z
 		.number()
 		.int("Order must be an integer")
