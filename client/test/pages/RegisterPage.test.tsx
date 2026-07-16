@@ -6,9 +6,11 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const mockMutate = vi.fn();
+const mockRegister = vi.fn();
+const mockLogin = vi.fn();
 vi.mock("@/hooks/useAuth", () => ({
-	useRegister: () => ({ mutate: mockMutate, isPending: false }),
+	useRegister: () => ({ mutate: mockRegister, isPending: false }),
+	useLogin: () => ({ mutate: mockLogin, isPending: false }),
 }));
 
 import RegisterPage from "@/pages/RegisterPage";
@@ -21,6 +23,13 @@ const renderPage = () =>
 			</MemoryRouter>
 		</QueryClientProvider>,
 	);
+
+const fillValidForm = async (user: ReturnType<typeof userEvent.setup>) => {
+	await user.type(screen.getByLabelText(/name/i), "Asha Rai");
+	await user.type(screen.getByLabelText(/email/i), "asha@example.com");
+	await user.type(screen.getByLabelText("Password"), "Password1!");
+	await user.click(screen.getByRole("button", { name: /create account/i }));
+};
 
 describe("RegisterPage", () => {
 	beforeEach(() => vi.clearAllMocks());
@@ -37,20 +46,16 @@ describe("RegisterPage", () => {
 		expect(
 			await screen.findByText(/password must contain/i),
 		).toBeInTheDocument();
-		expect(mockMutate).not.toHaveBeenCalled();
+		expect(mockRegister).not.toHaveBeenCalled();
 	});
 
 	it("calls the register mutation with a valid strong password", async () => {
 		const user = userEvent.setup();
 		renderPage();
-
-		await user.type(screen.getByLabelText(/name/i), "Asha Rai");
-		await user.type(screen.getByLabelText(/email/i), "asha@example.com");
-		await user.type(screen.getByLabelText("Password"), "Password1!");
-		await user.click(screen.getByRole("button", { name: /create account/i }));
+		await fillValidForm(user);
 
 		await waitFor(() =>
-			expect(mockMutate).toHaveBeenCalledWith(
+			expect(mockRegister).toHaveBeenCalledWith(
 				{
 					name: "Asha Rai",
 					email: "asha@example.com",
@@ -61,21 +66,57 @@ describe("RegisterPage", () => {
 		);
 	});
 
-	it("shows a form-level error when the email is already taken", async () => {
-		mockMutate.mockImplementation((_values, options) =>
-			options.onError({
-				message: "An account with this email already exists",
-				code: "USER_ALREADY_EXISTS",
-			}),
+	it("performs a silent login with the same credentials after register succeeds", async () => {
+		mockRegister.mockImplementation((_values, options) => options.onSuccess());
+		const user = userEvent.setup();
+		renderPage();
+		await fillValidForm(user);
+
+		await waitFor(() =>
+			expect(mockLogin).toHaveBeenCalledWith(
+				{ email: "asha@example.com", password: "Password1!" },
+				expect.any(Object),
+			),
+		);
+	});
+
+	it("surfaces a generic error when the silent login fails", async () => {
+		mockRegister.mockImplementation((_values, options) => options.onSuccess());
+		mockLogin.mockImplementation((_credentials, options) =>
+			options.onError({ message: "Invalid email or password" }),
 		);
 		const user = userEvent.setup();
 		renderPage();
+		await fillValidForm(user);
 
-		await user.type(screen.getByLabelText(/name/i), "Asha Rai");
-		await user.type(screen.getByLabelText(/email/i), "dupe@example.com");
-		await user.type(screen.getByLabelText("Password"), "Password1!");
-		await user.click(screen.getByRole("button", { name: /create account/i }));
+		expect(
+			await screen.findByText(/invalid email or password/i),
+		).toBeInTheDocument();
+	});
 
-		expect(await screen.findByText(/already exists/i)).toBeInTheDocument();
+	it("clears the form once register and the silent login both succeed", async () => {
+		mockRegister.mockImplementation((_values, options) => options.onSuccess());
+		mockLogin.mockImplementation((_credentials, options) => options.onSuccess());
+		const user = userEvent.setup();
+		renderPage();
+		await fillValidForm(user);
+
+		await waitFor(() =>
+			expect(screen.getByLabelText(/name/i)).toHaveValue(""),
+		);
+	});
+
+	it("surfaces the error and skips the login when register itself fails", async () => {
+		mockRegister.mockImplementation((_values, options) =>
+			options.onError({ message: "Something went wrong" }),
+		);
+		const user = userEvent.setup();
+		renderPage();
+		await fillValidForm(user);
+
+		expect(
+			await screen.findByText(/something went wrong/i),
+		).toBeInTheDocument();
+		expect(mockLogin).not.toHaveBeenCalled();
 	});
 });

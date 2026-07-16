@@ -16,12 +16,18 @@ const VALID = {
 };
 
 describe("auth routes", () => {
-	it("register sets a session cookie and GET /me returns the user", async () => {
+	it("register creates the account without a cookie; a follow-up login logs in and GET /me returns the user", async () => {
 		const agent = request.agent(app).set("Origin", APP_ORIGIN);
 
 		const register = await agent.post("/api/auth/register").send(VALID);
 		expect(register.status).toBe(201);
-		expect(register.headers["set-cookie"]?.[0]).toMatch(/sid=/);
+		expect(register.headers["set-cookie"]).toBeUndefined();
+
+		const login = await agent
+			.post("/api/auth/login")
+			.send({ email: VALID.email, password: VALID.password });
+		expect(login.status).toBe(200);
+		expect(login.headers["set-cookie"]?.[0]).toMatch(/sid=/);
 
 		const me = await agent.get("/api/auth/me");
 		expect(me.status).toBe(200);
@@ -30,6 +36,25 @@ describe("auth routes", () => {
 			email: "asha@example.com",
 			role: "student",
 		});
+	});
+
+	it("returns an identical generic response for a new and an already-registered email (no enumeration)", async () => {
+		await createTestUser({ email: "taken@example.com" });
+
+		const freshEmail = await request(app)
+			.post("/api/auth/register")
+			.set("Origin", APP_ORIGIN)
+			.send({ ...VALID, email: "fresh@example.com" });
+
+		const takenEmail = await request(app)
+			.post("/api/auth/register")
+			.set("Origin", APP_ORIGIN)
+			.send({ ...VALID, email: "taken@example.com" });
+
+		expect(takenEmail.status).toBe(freshEmail.status);
+		expect(takenEmail.body).toEqual(freshEmail.body);
+		expect(freshEmail.headers["set-cookie"]).toBeUndefined();
+		expect(takenEmail.headers["set-cookie"]).toBeUndefined();
 	});
 
 	it("rejects a wrong password with a generic 401 (no enumeration)", async () => {
@@ -55,6 +80,9 @@ describe("auth routes", () => {
 		await agent
 			.post("/api/auth/register")
 			.send({ ...VALID, email: "bye@example.com" });
+		await agent
+			.post("/api/auth/login")
+			.send({ email: "bye@example.com", password: VALID.password });
 
 		const logout = await agent.post("/api/auth/logout");
 		expect(logout.status).toBe(200);

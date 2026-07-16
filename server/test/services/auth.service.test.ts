@@ -1,6 +1,6 @@
 //* test/services/auth.service.test.ts
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 
 import {
 	registerUser,
@@ -13,12 +13,13 @@ import { createTestUser } from "../helpers/factories";
 
 describe("auth.service", () => {
 	describe("registerUser", () => {
-		it("creates a student with a hashed password and a session", async () => {
-			const sessionId = await registerUser(
+		it("creates a student with a hashed password and issues no session (login mints the session)", async () => {
+			const result = await registerUser(
 				"Asha",
 				"asha@example.com",
 				"Password123",
 			);
+			expect(result).toBeUndefined();
 
 			const stored = await User.findOne({ email: "asha@example.com" }).select(
 				"+password",
@@ -26,30 +27,17 @@ describe("auth.service", () => {
 			expect(stored?.name).toBe("Asha");
 			expect(stored?.role).toBe("student");
 			expect(stored?.password).not.toBe("Password123");
-			expect(await Session.findById(sessionId)).not.toBeNull();
+			expect(await Session.countDocuments({ userId: stored?._id })).toBe(0);
 		});
 
-		it("rejects a duplicate email with 409 USER_ALREADY_EXISTS", async () => {
+		it("does not throw or create a duplicate for a taken email (no enumeration)", async () => {
 			await createTestUser({ email: "dupe@example.com" });
-			await expect(
-				registerUser("X", "dupe@example.com", "Password123"),
-			).rejects.toMatchObject({
-				statusCode: 409,
-				errorCode: "USER_ALREADY_EXISTS",
-			});
-		});
-
-		it("rolls back the created user if session creation fails (atomic)", async () => {
-			const spy = vi
-				.spyOn(Session.prototype, "save")
-				.mockRejectedValueOnce(new Error("session save failed"));
 
 			await expect(
-				registerUser("Rollback", "rollback@example.com", "Password123"),
-			).rejects.toThrow();
-			expect(await User.findOne({ email: "rollback@example.com" })).toBeNull();
+				registerUser("Dupe User", "dupe@example.com", "Password123"),
+			).resolves.toBeUndefined();
 
-			spy.mockRestore();
+			expect(await User.countDocuments({ email: "dupe@example.com" })).toBe(1);
 		});
 	});
 
@@ -103,11 +91,8 @@ describe("auth.service", () => {
 
 	describe("logoutUser", () => {
 		it("deletes the session document server-side", async () => {
-			const sessionId = await registerUser(
-				"Bye",
-				"bye@example.com",
-				"Password123",
-			);
+			await createTestUser({ email: "bye@example.com", password: "Password123" });
+			const sessionId = await loginUser("bye@example.com", "Password123");
 			await logoutUser(sessionId);
 			expect(await Session.findById(sessionId)).toBeNull();
 		});

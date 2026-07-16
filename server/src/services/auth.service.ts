@@ -10,44 +10,31 @@ import AppError from "../errors/AppError";
 import httpStatus from "../constants/httpStatus";
 import appErrorCode from "../constants/appErrorCode";
 
-const { CONFLICT, UNAUTHORIZED, FORBIDDEN } = httpStatus;
-const { USER_ALREADY_EXISTS, INVALID_CREDENTIALS, ACCOUNT_DEACTIVATED } =
-	appErrorCode;
+const { UNAUTHORIZED, FORBIDDEN } = httpStatus;
+const { INVALID_CREDENTIALS, ACCOUNT_DEACTIVATED } = appErrorCode;
+
+/** A unique-index violation specifically on the email field (email taken). */
+const isEmailAlreadyTaken = (error: unknown): boolean =>
+	error instanceof mongoose.mongo.MongoServerError &&
+	error.code === 11000 &&
+	error.keyPattern?.email !== undefined;
 
 /**
- * Create a student account + a fresh session atomically (one transaction —
- * either both commit or neither, so a failure can't orphan an account).
- * Returns the new session id (the value carried in the auth cookie).
+ * Create a student account (no session — the client logs in next). The reply is
+ * identical for a new vs. a taken email, so it can't be used to enumerate accounts.
  */
 const registerUser = async (
 	name: string,
 	email: string,
 	password: string,
-): Promise<string> => {
-	const existing = await User.findOne({ email });
-	if (existing) {
-		throw new AppError(
-			"An account with this email already exists",
-			CONFLICT,
-			USER_ALREADY_EXISTS,
-		);
-	}
-
-	const dbSession = await mongoose.startSession();
+): Promise<void> => {
 	try {
-		let sessionId = "";
-		await dbSession.withTransaction(async () => {
-			const user = new User({ name, email, password });
-			await user.save({ session: dbSession });
-
-			const authSession = new Session({ userId: user._id });
-			await authSession.save({ session: dbSession });
-
-			sessionId = authSession._id.toString();
-		});
-		return sessionId;
-	} finally {
-		await dbSession.endSession();
+		await User.create({ name, email, password });
+	} catch (error) {
+		// Taken email → swallow to keep the reply generic. Any other error (incl. a
+		// duplicate on a different unique index) still throws to the error handler.
+		if (isEmailAlreadyTaken(error)) return;
+		throw error;
 	}
 };
 
