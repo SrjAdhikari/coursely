@@ -26,7 +26,7 @@ const usersSchema = {
 			},
 			email: {
 				bsonType: "string",
-				pattern: "^\\w+([.-]?\\w+)*@\\w+([.-]?\\w+)*(\\.\\w{2,})+$",
+				pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
 				description: "Unique login email",
 			},
 			password: {

@@ -43,6 +43,22 @@ describe("users collection validator", () => {
 		).resolves.toBeDefined();
 	});
 
+	it("accepts a plus-tagged email (aligned with the model + z.email)", async () => {
+		await expect(
+			db
+				.collection(collectionName)
+				.insertOne({ ...validUser(), email: "user+tag@example.com" }),
+		).resolves.toBeDefined();
+	});
+
+	it("rejects a raw insert with a malformed email (code 121)", async () => {
+		await expect(
+			db
+				.collection(collectionName)
+				.insertOne({ ...validUser(), email: "not-an-email" }),
+		).rejects.toMatchObject({ code: 121 });
+	});
+
 	it.each([
 		["all digits", "12313213"],
 		["an email address", "peyij91811@duvips.com"],
