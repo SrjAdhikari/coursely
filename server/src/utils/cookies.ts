@@ -16,8 +16,8 @@ const baseOptions: CookieOptions = {
 	path: "/",
 };
 
-const setSessionCookie = (res: Response, sessionId: string): void => {
-	res.cookie(SESSION_COOKIE_NAME, sessionId, {
+const setSessionCookie = (res: Response, sessionToken: string): void => {
+	res.cookie(SESSION_COOKIE_NAME, sessionToken, {
 		...baseOptions,
 		maxAge: SEVEN_DAYS_MS,
 	});

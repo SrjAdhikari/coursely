@@ -14,7 +14,7 @@ export default defineConfig({
 			NODE_ENV: "test",
 			PORT: "8080",
 			MONGODB_URI: "mongodb://127.0.0.1:27017/coursely-test",
-			COOKIE_SECRET: "test-cookie-secret-0123456789",
+			COOKIE_SECRET: "test-cookie-secret-0123456789abcdef",
 			APP_ORIGIN: "http://localhost:5173",
 			R2_ACCOUNT_ID: "test-account",
 			R2_ACCESS_KEY_ID: "test-access-key",

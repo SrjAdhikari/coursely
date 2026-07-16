@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import User from "../models/user.model";
 import Session from "../models/session.model";
 
+import { createSessionToken } from "../utils/sessionToken";
 import AppError from "../errors/AppError";
 
 import httpStatus from "../constants/httpStatus";
@@ -38,10 +39,7 @@ const registerUser = async (
 	}
 };
 
-/**
- * Verify credentials and mint a NEW session (id regenerated → fixation defense).
- * Returns the new session id.
- */
+/** Verify credentials and mint a fresh session token (only its hash is stored). */
 const loginUser = async (email: string, password: string): Promise<string> => {
 	const user = await User.findOne({ email }).select("+password");
 
@@ -62,8 +60,10 @@ const loginUser = async (email: string, password: string): Promise<string> => {
 		);
 	}
 
-	const session = await Session.create({ userId: user._id });
-	return session._id.toString();
+	const { token, tokenHash } = createSessionToken();
+	await Session.create({ userId: user._id, tokenHash });
+
+	return token;
 };
 
 /** Destroy a session server-side (logout). No-op if it is already gone. */

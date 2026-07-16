@@ -23,9 +23,9 @@ const registerHandler: RequestHandler = async (req, res) => {
 
 const loginHandler: RequestHandler = async (req, res) => {
 	const { email, password } = req.body;
-	const sessionId = await loginUser(email, password);
+	const sessionToken = await loginUser(email, password);
 
-	setSessionCookie(res, sessionId);
+	setSessionCookie(res, sessionToken);
 
 	res.status(OK).json({
 		success: true,
