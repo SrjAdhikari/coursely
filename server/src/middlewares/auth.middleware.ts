@@ -6,6 +6,7 @@ import Session from "../models/session.model";
 import { toPublicUser, type UserDocument } from "../models/user.model";
 
 import { SESSION_COOKIE_NAME, clearSessionCookie } from "../utils/cookies";
+import { hashSessionToken } from "../utils/sessionToken";
 
 import AppError from "../errors/AppError";
 
@@ -21,9 +22,9 @@ type SessionUser = Pick<
 	"_id" | "name" | "email" | "role" | "isActive"
 >;
 
-/** Load a session with its user populated in one round-trip (never the password). */
-const findSessionWithUser = (sessionId: string) =>
-	Session.findById(sessionId)
+/** Load a session by its token hash, user populated (never the password). */
+const findSessionWithUser = (token: string) =>
+	Session.findOne({ tokenHash: hashSessionToken(token) })
 		.populate<{
 			userId: SessionUser | null;
 		}>("userId", "name email role isActive")
@@ -36,11 +37,9 @@ const findSessionWithUser = (sessionId: string) =>
  * `expiresAt` is also checked explicitly.)
  */
 const authenticate: RequestHandler = async (req, res, next) => {
-	const sessionId = req.signedCookies[SESSION_COOKIE_NAME] as
-		| string
-		| undefined;
+	const token = req.signedCookies[SESSION_COOKIE_NAME] as string | undefined;
 
-	if (!sessionId) {
+	if (!token) {
 		throw new AppError(
 			"Authentication required",
 			UNAUTHORIZED,
@@ -48,7 +47,7 @@ const authenticate: RequestHandler = async (req, res, next) => {
 		);
 	}
 
-	const session = await findSessionWithUser(sessionId);
+	const session = await findSessionWithUser(token);
 
 	// Missing/expired session, or a user that no longer exists.
 	if (
@@ -87,13 +86,11 @@ const authenticate: RequestHandler = async (req, res, next) => {
  * (e.g. lesson playback: preview is ungated, paid is enrollment-gated).
  */
 const optionalAuth: RequestHandler = async (req, _res, next) => {
-	const sessionId = req.signedCookies[SESSION_COOKIE_NAME] as
-		| string
-		| undefined;
-	if (!sessionId) return next();
+	const token = req.signedCookies[SESSION_COOKIE_NAME] as string | undefined;
+	if (!token) return next();
 
 	try {
-		const session = await findSessionWithUser(sessionId);
+		const session = await findSessionWithUser(token);
 
 		if (
 			session &&

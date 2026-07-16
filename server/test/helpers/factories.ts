@@ -6,6 +6,8 @@ import Section from "../../src/models/section.model";
 import Lesson from "../../src/models/lesson.model";
 import Enrollment from "../../src/models/enrollment.model";
 import Progress from "../../src/models/progress.model";
+import Session from "../../src/models/session.model";
+import { createSessionToken } from "../../src/utils/sessionToken";
 import type { Types } from "mongoose";
 
 interface UserOverrides {
@@ -32,6 +34,16 @@ const createTestUser = async (overrides: UserOverrides = {}) => {
 		role: overrides.role ?? "student",
 		isActive: overrides.isActive ?? true,
 	});
+};
+
+/** Create a session for a user; returns the doc + the raw token (cookie value). */
+const createTestSession = async (
+	userId: Types.ObjectId,
+	overrides: Record<string, unknown> = {},
+) => {
+	const { token, tokenHash } = createSessionToken();
+	const session = await Session.create({ userId, tokenHash, ...overrides });
+	return { session, token };
 };
 
 const createTestCourse = (overrides: Record<string, unknown> = {}) => {
@@ -82,6 +94,7 @@ const createTestProgress = (
 
 export {
 	createTestUser,
+	createTestSession,
 	createTestCourse,
 	createTestSection,
 	createTestLesson,

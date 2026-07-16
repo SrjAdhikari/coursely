@@ -9,7 +9,8 @@ import {
 } from "../../src/services/auth.service";
 import User from "../../src/models/user.model";
 import Session from "../../src/models/session.model";
-import { createTestUser } from "../helpers/factories";
+import { hashSessionToken } from "../../src/utils/sessionToken";
+import { createTestUser, createTestSession } from "../helpers/factories";
 
 describe("auth.service", () => {
 	describe("registerUser", () => {
@@ -42,10 +43,19 @@ describe("auth.service", () => {
 	});
 
 	describe("loginUser", () => {
-		it("returns a session id on correct credentials", async () => {
+		it("returns a random session token backed by a hash-only session", async () => {
 			await createTestUser({ email: "ok@example.com", password: "Password123" });
-			const sessionId = await loginUser("ok@example.com", "Password123");
-			expect(await Session.findById(sessionId)).not.toBeNull();
+			const token = await loginUser("ok@example.com", "Password123");
+
+			// A high-entropy token, NOT a Mongo ObjectId.
+			expect(token).not.toMatch(/^[a-f0-9]{24}$/);
+
+			// Only the hash is persisted; the raw token is never stored.
+			const stored = await Session.findOne({
+				tokenHash: hashSessionToken(token),
+			});
+			expect(stored).not.toBeNull();
+			expect(stored?.tokenHash).not.toBe(token);
 		});
 
 		it("rejects a wrong password with a generic 401 INVALID_CREDENTIALS", async () => {
@@ -81,7 +91,7 @@ describe("auth.service", () => {
 			});
 		});
 
-		it("regenerates the session id on every login (fixation defense, R2.1)", async () => {
+		it("mints a distinct token on every login (fixation defense, R2.1)", async () => {
 			await createTestUser({ email: "re@example.com", password: "Password123" });
 			const first = await loginUser("re@example.com", "Password123");
 			const second = await loginUser("re@example.com", "Password123");
@@ -91,10 +101,10 @@ describe("auth.service", () => {
 
 	describe("logoutUser", () => {
 		it("deletes the session document server-side", async () => {
-			await createTestUser({ email: "bye@example.com", password: "Password123" });
-			const sessionId = await loginUser("bye@example.com", "Password123");
-			await logoutUser(sessionId);
-			expect(await Session.findById(sessionId)).toBeNull();
+			const user = await createTestUser({ email: "bye@example.com" });
+			const { session } = await createTestSession(user._id);
+			await logoutUser(session._id.toString());
+			expect(await Session.findById(session._id)).toBeNull();
 		});
 	});
 });

@@ -6,6 +6,7 @@ import { sevenDaysFromNow } from "../utils/date";
 export interface SessionDocument {
 	_id: Types.ObjectId;
 	userId: Types.ObjectId;
+	tokenHash: string;
 	expiresAt: Date;
 	createdAt: Date;
 }
@@ -17,6 +18,11 @@ const sessionSchema = new Schema<SessionDocument>(
 			ref: "User",
 			required: true,
 			index: true,
+		},
+		tokenHash: {
+			type: String,
+			required: true,
+			unique: true,
 		},
 		createdAt: {
 			type: Date,

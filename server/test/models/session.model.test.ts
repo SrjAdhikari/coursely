@@ -11,7 +11,7 @@ describe("Session model", () => {
 	it("assigns an ObjectId _id and defaults expiresAt to ~7 days out", async () => {
 		const userId = new Types.ObjectId();
 		const before = Date.now();
-		const session = await Session.create({ userId });
+		const session = await Session.create({ userId, tokenHash: "hash-a" });
 		const after = Date.now();
 
 		expect(session._id).toBeInstanceOf(Types.ObjectId);
@@ -24,15 +24,24 @@ describe("Session model", () => {
 		);
 	});
 
-	it("issues a distinct _id per session (fixation-defense building block)", async () => {
-		const userId = new Types.ObjectId();
-		const a = await Session.create({ userId });
-		const b = await Session.create({ userId });
-		expect(a._id.toString()).not.toBe(b._id.toString());
+	it("requires userId", async () => {
+		await expect(Session.create({ tokenHash: "hash-b" })).rejects.toThrow(
+			/userId/i,
+		);
 	});
 
-	it("requires userId", async () => {
-		await expect(Session.create({})).rejects.toThrow(/userId/i);
+	it("requires tokenHash", async () => {
+		const userId = new Types.ObjectId();
+		await expect(Session.create({ userId })).rejects.toThrow(/tokenHash/i);
+	});
+
+	it("rejects a duplicate tokenHash (unique index)", async () => {
+		await Session.init(); // ensure the unique index is built before inserting
+		const userId = new Types.ObjectId();
+		await Session.create({ userId, tokenHash: "dupe-hash" });
+		await expect(
+			Session.create({ userId, tokenHash: "dupe-hash" }),
+		).rejects.toThrow();
 	});
 
 	it("declares a TTL index on expiresAt (expireAfterSeconds: 0)", async () => {
