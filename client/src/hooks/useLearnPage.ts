@@ -1,17 +1,21 @@
 //* src/hooks/useLearnPage.ts
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 
 import { useGetCourseBySlug } from "@/hooks/useCourses";
 import { useMyEnrollments } from "@/hooks/useEnrollments";
 import { useCourseProgress, useSaveProgress } from "@/hooks/useProgress";
+import type { ReportPositionHandler } from "@/hooks/useVideoControls";
 
+import ROUTES from "@/routes/paths";
 import { courseProgressKey } from "@/lib/queryKeys";
 import {
 	indexProgressByLesson,
 	courseCompletionPercent,
 } from "@/lib/courseProgress";
+import { getNextLesson } from "@/lib/navigation";
 
 /**
  * Controller for the learner watch page: owns data fetching, progress
@@ -19,6 +23,7 @@ import {
  */
 export const useLearnPage = (courseSlug: string, lessonId?: string) => {
 	const queryClient = useQueryClient();
+	const navigate = useNavigate();
 
 	const {
 		data: courseResponse,
@@ -113,8 +118,14 @@ export const useLearnPage = (courseSlug: string, lessonId?: string) => {
 	const resumePositionSeconds =
 		progressByLesson.get(currentLesson?._id ?? "")?.positionSeconds ?? 0;
 
-	const handleReportPosition = useCallback(
-		(seconds: number) => {
+	// Advance once per lesson; reset the flag when the lesson changes.
+	const hasAutoAdvancedRef = useRef(false);
+	useEffect(() => {
+		hasAutoAdvancedRef.current = false;
+	}, [currentLessonId]);
+
+	const handleReportPosition = useCallback<ReportPositionHandler>(
+		(seconds, meta) => {
 			if (!currentLesson || !course) return;
 			saveProgress(
 				{
@@ -129,8 +140,25 @@ export const useLearnPage = (courseSlug: string, lessonId?: string) => {
 					},
 				},
 			);
+
+			// On video end, advance to the next lesson.
+			if (meta.reason === "ended" && !hasAutoAdvancedRef.current) {
+				const nextLesson = getNextLesson(sections, currentLesson._id);
+				if (nextLesson) {
+					hasAutoAdvancedRef.current = true;
+					navigate(ROUTES.LEARN_LESSON(courseSlug, nextLesson._id));
+				}
+			}
 		},
-		[currentLesson, course, saveProgress, queryClient],
+		[
+			currentLesson,
+			course,
+			saveProgress,
+			queryClient,
+			sections,
+			courseSlug,
+			navigate,
+		],
 	);
 
 	return {
