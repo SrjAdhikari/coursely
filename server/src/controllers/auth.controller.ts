@@ -11,10 +11,10 @@ const { OK, CREATED } = httpStatus;
 
 const registerHandler: RequestHandler = async (req, res) => {
 	const { name, email, password } = req.body;
-	const sessionId = await registerUser(name, email, password);
+	await registerUser(name, email, password);
 
-	setSessionCookie(res, sessionId);
-
+	// No session cookie here — the client logs in next, so the register response
+	// is identical for a new and an already-registered email (no enumeration).
 	res.status(CREATED).json({
 		success: true,
 		message: "Account created successfully",

@@ -10,11 +10,13 @@ import { GraduationCap } from "lucide-react";
 import FormField from "@/components/form/FormField";
 import { Button } from "@/components/ui/button";
 import AlertBanner from "@/components/ui/alert-banner";
+
 import { cn } from "@/lib/utils";
-import { useRegister } from "@/hooks/useAuth";
-import { registerSchema, type RegisterFormData } from "@/schemas/auth.schema";
 import { CURRENT_USER_KEY } from "@/lib/queryKeys";
+
 import ROUTES from "@/routes/paths";
+import { useRegister, useLogin } from "@/hooks/useAuth";
+import { registerSchema, type RegisterFormData } from "@/schemas/auth.schema";
 
 const tabClass = (active: boolean) =>
 	cn(
@@ -25,7 +27,9 @@ const tabClass = (active: boolean) =>
 	);
 
 const RegisterPage = () => {
-	const { mutate, isPending } = useRegister();
+	const { mutate: registerUser, isPending: isRegistering } = useRegister();
+	const { mutate: loginUser, isPending: isLoggingIn } = useLogin();
+
 	const queryClient = useQueryClient();
 	const [authError, setAuthError] = useState<string | null>(null);
 
@@ -39,16 +43,28 @@ const RegisterPage = () => {
 		resolver: zodResolver(registerSchema),
 	});
 
+	// Register never logs the user in (its response is identical for a new vs an
+	// existing email — no enumeration), so log in with the same credentials to
+	// keep signup a one-click, instant-login experience.
 	const onSubmit = (values: RegisterFormData) => {
 		setAuthError(null);
-		mutate(values, {
-			onSuccess: () => {
-				reset();
-				queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
-			},
+		registerUser(values, {
+			onSuccess: () =>
+				loginUser(
+					{ email: values.email, password: values.password },
+					{
+						onSuccess: () => {
+							reset();
+							queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
+						},
+						onError: (error) => setAuthError(error.message),
+					},
+				),
 			onError: (error) => setAuthError(error.message),
 		});
 	};
+
+	const isSubmitting = isRegistering || isLoggingIn;
 
 	return (
 		<div className="w-full max-w-100 rounded-xl border border-input bg-card p-8">
@@ -109,11 +125,11 @@ const RegisterPage = () => {
 
 				<Button
 					type="submit"
-					disabled={isPending || !isValid}
+					disabled={isSubmitting || !isValid}
 					className="w-full h-11 font-mono cursor-pointer disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
 				>
 					<span className="text-base font-medium">
-						{isPending ? "Creating account..." : "Create account"}
+						{isSubmitting ? "Creating account..." : "Create account"}
 					</span>
 				</Button>
 			</form>
