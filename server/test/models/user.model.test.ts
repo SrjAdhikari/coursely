@@ -105,4 +105,40 @@ describe("User model", () => {
 			expect(user.name).toBe(name);
 		});
 	});
+
+	describe("email validation", () => {
+		it("accepts a well-formed email and rejects a malformed one", () => {
+			const good = new User({
+				name: "Asha Rai",
+				email: "asha@example.com",
+				password: "Password123",
+			});
+			expect(good.validateSync()?.errors.email).toBeUndefined();
+
+			const bad = new User({
+				name: "Asha Rai",
+				email: "not-an-email",
+				password: "Password123",
+			});
+			expect(bad.validateSync()?.errors.email).toBeDefined();
+		});
+
+		it("validates a backtracking-crafted email without catastrophic slowdown (m15 ReDoS)", () => {
+			// No "@": forces a nested-quantifier regex to explore ~2^N splits before
+			// failing. A linear pattern rejects it instantly; a ReDoS regex hangs.
+			const redosPayload = "a".repeat(28);
+			const user = new User({
+				name: "Asha Rai",
+				email: redosPayload,
+				password: "Password123",
+			});
+
+			const start = performance.now();
+			const error = user.validateSync();
+			const elapsed = performance.now() - start;
+
+			expect(error?.errors.email).toBeDefined();
+			expect(elapsed).toBeLessThan(100);
+		}, 30000);
+	});
 });
