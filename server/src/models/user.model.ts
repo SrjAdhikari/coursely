@@ -46,7 +46,7 @@ const userSchema = new Schema<UserDocument, UserModel, UserMethods>(
 			trim: true,
 			lowercase: true,
 			unique: true,
-			match: /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/,
+			match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
 		},
 		password: { type: String, required: true, minlength: 8, select: false },
 		role: { type: String, enum: ["student", "admin"], default: "student" },
