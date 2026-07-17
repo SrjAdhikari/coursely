@@ -110,8 +110,9 @@ const loginOrCreateGoogleUser = async (
 	// Reuse the existing Google user, or create one on a first-time sign-in.
 	let user = existingUser;
 	if (!user) {
+		const displayName = sanitizeInput(name).slice(0, 50);
 		user = await User.create({
-			name: sanitizeInput(name),
+			name: displayName,
 			email,
 			provider: "google",
 			avatarUrl,
