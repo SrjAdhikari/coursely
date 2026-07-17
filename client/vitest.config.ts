@@ -16,6 +16,9 @@ export default defineConfig({
 		include: ["test/**/*.test.{ts,tsx}"],
 		// Hermetic API base URL so tests that import axiosClient don't depend on
 		// the gitignored .env.local (keeps CI green without secrets).
-		env: { VITE_API_URL: "http://localhost:8080/api" },
+		env: {
+			VITE_API_URL: "http://localhost:8080/api",
+			VITE_GOOGLE_CLIENT_ID: "test-google-client-id.apps.googleusercontent.com",
+		},
 	},
 });
