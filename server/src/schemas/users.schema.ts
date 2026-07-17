@@ -3,16 +3,7 @@
 const usersSchema = {
 	$jsonSchema: {
 		bsonType: "object",
-		required: [
-			"_id",
-			"name",
-			"email",
-			"password",
-			"role",
-			"isActive",
-			"createdAt",
-			"updatedAt",
-		],
+		required: ["_id", "name", "email"],
 		properties: {
 			_id: {
 				bsonType: "objectId",
@@ -32,7 +23,16 @@ const usersSchema = {
 			password: {
 				bsonType: "string",
 				minLength: 8,
-				description: "Bcrypt password hash",
+				description: "Password must be at least 8 characters long",
+			},
+			provider: {
+				bsonType: "string",
+				enum: ["email", "google"],
+				description: "Provider must be one of email, or google",
+			},
+			avatarUrl: {
+				bsonType: "string",
+				description: "Profile picture URL (Google accounts)",
 			},
 			role: {
 				bsonType: "string",
