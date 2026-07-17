@@ -31,7 +31,7 @@ const tabClass = (active: boolean) =>
 const LoginPage = () => {
 	const { mutate, isPending } = useLogin();
 	const { mutate: googleSignIn } = useGoogleSignIn();
-	
+
 	const queryClient = useQueryClient();
 	const [authError, setAuthError] = useState<string | null>(null);
 

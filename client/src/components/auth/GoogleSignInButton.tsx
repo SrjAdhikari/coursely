@@ -23,6 +23,7 @@ const GoogleSignInButton = ({
 			<button
 				type="button"
 				tabIndex={-1}
+				aria-hidden="true"
 				className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-background text-sm font-medium text-foreground transition-colors hover:bg-muted group-focus-within:ring-2 group-focus-within:ring-ring/40"
 			>
 				<GoogleIcon className="size-5" />
