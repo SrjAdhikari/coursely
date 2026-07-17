@@ -1,11 +1,17 @@
 //* test/services/auth.service.test.ts
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+const { verifyGoogleIdTokenMock } = vi.hoisted(() => ({
+	verifyGoogleIdTokenMock: vi.fn(),
+}));
+vi.mock("../../src/lib/googleAuth", () => ({ default: verifyGoogleIdTokenMock }));
 
 import {
 	registerUser,
 	loginUser,
 	logoutUser,
+	loginOrCreateGoogleUser,
 } from "../../src/services/auth.service";
 import User from "../../src/models/user.model";
 import Session from "../../src/models/session.model";
@@ -105,6 +111,96 @@ describe("auth.service", () => {
 			const { session } = await createTestSession(user._id);
 			await logoutUser(session._id.toString());
 			expect(await Session.findById(session._id)).toBeNull();
+		});
+	});
+});
+
+describe("loginOrCreateGoogleUser", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	const identity = (over = {}) => ({
+		email: "asha@example.com",
+		name: "Asha Rai",
+		emailVerified: true,
+		avatarUrl: "https://lh3.googleusercontent.com/a/pic",
+		...over,
+	});
+
+	it("creates a new Google user (with avatar) and mints a session", async () => {
+		verifyGoogleIdTokenMock.mockResolvedValue(identity());
+
+		const result = await loginOrCreateGoogleUser("tok");
+
+		expect(result.isNewUser).toBe(true);
+		const user = await User.findOne({ email: "asha@example.com" });
+		expect(user?.provider).toBe("google");
+		expect(user?.avatarUrl).toBe("https://lh3.googleusercontent.com/a/pic");
+		expect(
+			await Session.findOne({ tokenHash: hashSessionToken(result.token) }),
+		).not.toBeNull();
+	});
+
+	it("logs in a returning Google user (isNewUser=false)", async () => {
+		await User.create({
+			name: "Asha Rai",
+			email: "asha@example.com",
+			provider: "google",
+		});
+		verifyGoogleIdTokenMock.mockResolvedValue(identity());
+
+		const result = await loginOrCreateGoogleUser("tok");
+
+		expect(result.isNewUser).toBe(false);
+		expect(await User.countDocuments({ email: "asha@example.com" })).toBe(1);
+	});
+
+	it("rejects a Google sign-in on a password account with 409 PROVIDER_MISMATCH", async () => {
+		await createTestUser({ email: "asha@example.com", password: "Password123" });
+		verifyGoogleIdTokenMock.mockResolvedValue(identity());
+
+		await expect(loginOrCreateGoogleUser("tok")).rejects.toMatchObject({
+			statusCode: 409,
+			errorCode: "PROVIDER_MISMATCH",
+		});
+		expect(await Session.countDocuments()).toBe(0);
+	});
+
+	it("rejects an unverified Google email with 403 GOOGLE_EMAIL_NOT_VERIFIED", async () => {
+		verifyGoogleIdTokenMock.mockResolvedValue(identity({ emailVerified: false }));
+		await expect(loginOrCreateGoogleUser("tok")).rejects.toMatchObject({
+			statusCode: 403,
+			errorCode: "GOOGLE_EMAIL_NOT_VERIFIED",
+		});
+		expect(await User.countDocuments()).toBe(0);
+	});
+
+	it("blocks a deactivated Google account with 403 ACCOUNT_DEACTIVATED", async () => {
+		await User.create({
+			name: "Asha Rai",
+			email: "asha@example.com",
+			provider: "google",
+			isActive: false,
+		});
+		verifyGoogleIdTokenMock.mockResolvedValue(identity());
+		await expect(loginOrCreateGoogleUser("tok")).rejects.toMatchObject({
+			statusCode: 403,
+			errorCode: "ACCOUNT_DEACTIVATED",
+		});
+	});
+});
+
+describe("loginUser on a Google-only account", () => {
+	it("fails generically with 401 INVALID_CREDENTIALS (no password stored)", async () => {
+		await User.create({
+			name: "Asha Rai",
+			email: "asha@example.com",
+			provider: "google",
+		});
+		await expect(
+			loginUser("asha@example.com", "AnyPassword1"),
+		).rejects.toMatchObject({
+			statusCode: 401,
+			errorCode: "INVALID_CREDENTIALS",
 		});
 	});
 });
