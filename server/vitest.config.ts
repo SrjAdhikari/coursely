@@ -16,6 +16,7 @@ export default defineConfig({
 			MONGODB_URI: "mongodb://127.0.0.1:27017/coursely-test",
 			COOKIE_SECRET: "test-cookie-secret-0123456789abcdef",
 			APP_ORIGIN: "http://localhost:5173",
+			GOOGLE_CLIENT_ID: "test-google-client-id.apps.googleusercontent.com",
 			R2_ACCOUNT_ID: "test-account",
 			R2_ACCESS_KEY_ID: "test-access-key",
 			R2_SECRET_ACCESS_KEY: "test-secret-key",
