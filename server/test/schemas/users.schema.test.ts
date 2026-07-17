@@ -15,6 +15,7 @@ const validUser = () => ({
 	name: "Asha Rai",
 	email: "asha@example.com",
 	password: "hashed_pw_1234",
+	provider: "email",
 	role: "student",
 	isActive: true,
 	createdAt: new Date(),
@@ -56,6 +57,14 @@ describe("users collection validator", () => {
 			db
 				.collection(collectionName)
 				.insertOne({ ...validUser(), email: "not-an-email" }),
+		).rejects.toMatchObject({ code: 121 });
+	});
+
+	it("rejects a raw insert missing a Mongoose-defaulted field like provider (code 121)", async () => {
+		const rawUser = validUser();
+		delete (rawUser as { provider?: string }).provider;
+		await expect(
+			db.collection(collectionName).insertOne(rawUser),
 		).rejects.toMatchObject({ code: 121 });
 	});
 });

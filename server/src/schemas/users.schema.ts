@@ -3,7 +3,16 @@
 const usersSchema = {
 	$jsonSchema: {
 		bsonType: "object",
-		required: ["_id", "name", "email"],
+		required: [
+			"_id",
+			"name",
+			"email",
+			"provider",
+			"role",
+			"isActive",
+			"createdAt",
+			"updatedAt",
+		],
 		properties: {
 			_id: {
 				bsonType: "objectId",
