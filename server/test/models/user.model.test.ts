@@ -142,3 +142,43 @@ describe("User model", () => {
 		}, 30000);
 	});
 });
+
+describe("user.model provider + avatarUrl", () => {
+	it("creates a Google user with no password", async () => {
+		const user = await User.create({
+			name: "Asha Rai",
+			email: "asha@example.com",
+			provider: "google",
+			avatarUrl: "https://lh3.googleusercontent.com/a/pic",
+		});
+		expect(user.provider).toBe("google");
+		expect(user.avatarUrl).toBe("https://lh3.googleusercontent.com/a/pic");
+		expect(user.password).toBeUndefined();
+	});
+
+	it("requires a password for an email-provider user", async () => {
+		await expect(
+			User.create({ name: "No Pass", email: "nopass@example.com" }),
+		).rejects.toThrow(/password/i);
+	});
+
+	it("defaults provider to 'email'", async () => {
+		const user = await User.create({
+			name: "Pw User",
+			email: "pw@example.com",
+			password: "Password123",
+		});
+		expect(user.provider).toBe("email");
+	});
+
+	it("toPublicUser surfaces avatarUrl", () => {
+		const publicUser = toPublicUser({
+			_id: { toString: () => "abc" } as never,
+			name: "Asha",
+			email: "asha@example.com",
+			role: "student",
+			avatarUrl: "https://x/pic",
+		});
+		expect(publicUser.avatarUrl).toBe("https://x/pic");
+	});
+});
