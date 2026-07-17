@@ -6,13 +6,20 @@ import User from "../models/user.model";
 import Session from "../models/session.model";
 
 import { createSessionToken } from "../utils/sessionToken";
+import verifyGoogleIdToken from "../lib/googleAuth";
+import sanitizeInput from "../utils/sanitizeInput";
 import AppError from "../errors/AppError";
 
 import httpStatus from "../constants/httpStatus";
 import appErrorCode from "../constants/appErrorCode";
 
-const { UNAUTHORIZED, FORBIDDEN } = httpStatus;
-const { INVALID_CREDENTIALS, ACCOUNT_DEACTIVATED } = appErrorCode;
+const { UNAUTHORIZED, FORBIDDEN, CONFLICT } = httpStatus;
+const {
+	INVALID_CREDENTIALS,
+	ACCOUNT_DEACTIVATED,
+	GOOGLE_EMAIL_NOT_VERIFIED,
+	PROVIDER_MISMATCH,
+} = appErrorCode;
 
 /** A unique-index violation specifically on the email field (email taken). */
 const isEmailAlreadyTaken = (error: unknown): boolean =>
@@ -66,6 +73,58 @@ const loginUser = async (email: string, password: string): Promise<string> => {
 	return token;
 };
 
+/** Sign in or sign up with a verified Google identity; refuses password accounts. */
+const loginOrCreateGoogleUser = async (
+	idToken: string,
+): Promise<{ token: string; isNewUser: boolean }> => {
+	const { email, name, emailVerified, avatarUrl } =
+		await verifyGoogleIdToken(idToken);
+
+	if (!emailVerified) {
+		throw new AppError(
+			"Your Google email address is not verified",
+			FORBIDDEN,
+			GOOGLE_EMAIL_NOT_VERIFIED,
+		);
+	}
+
+	const existingUser = await User.findOne({ email });
+
+	// A same-email password account isn't linked automatically (pre-hijacking guard).
+	if (existingUser && existingUser.provider !== "google") {
+		throw new AppError(
+			"This email is registered with a password. Please log in with your password.",
+			CONFLICT,
+			PROVIDER_MISMATCH,
+		);
+	}
+
+	if (existingUser && !existingUser.isActive) {
+		throw new AppError(
+			"Your account has been deactivated",
+			FORBIDDEN,
+			ACCOUNT_DEACTIVATED,
+		);
+	}
+
+	// Reuse the existing Google user, or create one on a first-time sign-in.
+	let user = existingUser;
+	if (!user) {
+		const displayName = sanitizeInput(name).slice(0, 50);
+		user = await User.create({
+			name: displayName,
+			email,
+			provider: "google",
+			avatarUrl,
+		});
+	}
+
+	const { token, tokenHash } = createSessionToken();
+	await Session.create({ userId: user._id, tokenHash });
+
+	return { token, isNewUser: !existingUser };
+};
+
 /** Destroy a session server-side (logout). No-op if it is already gone. */
 const logoutUser = async (sessionId: string): Promise<void> => {
 	if (sessionId) {
@@ -73,4 +132,4 @@ const logoutUser = async (sessionId: string): Promise<void> => {
 	}
 };
 
-export { registerUser, loginUser, logoutUser };
+export { registerUser, loginUser, logoutUser, loginOrCreateGoogleUser };

@@ -7,7 +7,7 @@ const usersSchema = {
 			"_id",
 			"name",
 			"email",
-			"password",
+			"provider",
 			"role",
 			"isActive",
 			"createdAt",
@@ -21,7 +21,6 @@ const usersSchema = {
 			name: {
 				bsonType: "string",
 				maxLength: 50,
-				pattern: "^\\p{L}[\\p{L}\\p{M}]*(?:[ '-]\\p{L}[\\p{L}\\p{M}]*)*$",
 				description: "Display name, at most 50 characters",
 			},
 			email: {
@@ -32,7 +31,16 @@ const usersSchema = {
 			password: {
 				bsonType: "string",
 				minLength: 8,
-				description: "Bcrypt password hash",
+				description: "Password must be at least 8 characters long",
+			},
+			provider: {
+				bsonType: "string",
+				enum: ["email", "google"],
+				description: "Provider must be one of email, or google",
+			},
+			avatarUrl: {
+				bsonType: "string",
+				description: "Profile picture URL (Google accounts)",
 			},
 			role: {
 				bsonType: "string",

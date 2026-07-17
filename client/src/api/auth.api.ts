@@ -6,6 +6,7 @@ import type {
 	UserPayload,
 	RegisterPayload,
 	LoginPayload,
+	GoogleSignInPayload,
 } from "@/types/auth.types";
 
 /**
@@ -42,4 +43,13 @@ const logout = async () => {
 	return data;
 };
 
-export { getCurrentUser, register, login, logout };
+/** Signs in (or up) with a Google ID token; the server sets the session cookie. */
+const signInWithGoogle = async (payload: GoogleSignInPayload) => {
+	const { data } = await axiosClient.post<ApiSuccessResponse>(
+		"/auth/google",
+		payload,
+	);
+	return data;
+};
+
+export { getCurrentUser, register, login, logout, signInWithGoogle };

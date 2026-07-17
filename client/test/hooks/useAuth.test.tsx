@@ -10,10 +10,11 @@ vi.mock("@/api/auth.api", () => ({
 	login: vi.fn(),
 	register: vi.fn(),
 	logout: vi.fn(),
+	signInWithGoogle: vi.fn(),
 }));
 
-import { getCurrentUser, login } from "@/api/auth.api";
-import { useCurrentUser, useLogin } from "@/hooks/useAuth";
+import { getCurrentUser, login, signInWithGoogle } from "@/api/auth.api";
+import { useCurrentUser, useLogin, useGoogleSignIn } from "@/hooks/useAuth";
 
 const wrapper = ({ children }: { children: ReactNode }) => {
 	const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -53,6 +54,25 @@ describe("useAuth", () => {
 			// TanStack Query invokes the mutationFn as (variables, context).
 			expect(login).toHaveBeenCalledWith(
 				{ email: "asha@example.com", password: "Password1!" },
+				expect.any(Object),
+			);
+		});
+	});
+
+	describe("useGoogleSignIn", () => {
+		it("calls signInWithGoogle with the id token", async () => {
+			vi.mocked(signInWithGoogle).mockResolvedValue({
+				success: true,
+				message: "Logged in successfully",
+				data: undefined,
+			});
+
+			const { result } = renderHook(() => useGoogleSignIn(), { wrapper });
+			result.current.mutate({ idToken: "google-id-token" });
+
+			await waitFor(() => expect(result.current.isSuccess).toBe(true));
+			expect(signInWithGoogle).toHaveBeenCalledWith(
+				{ idToken: "google-id-token" },
 				expect.any(Object),
 			);
 		});

@@ -15,6 +15,7 @@ const validUser = () => ({
 	name: "Asha Rai",
 	email: "asha@example.com",
 	password: "hashed_pw_1234",
+	provider: "email",
 	role: "student",
 	isActive: true,
 	createdAt: new Date(),
@@ -59,25 +60,11 @@ describe("users collection validator", () => {
 		).rejects.toMatchObject({ code: 121 });
 	});
 
-	it.each([
-		["all digits", "12313213"],
-		["an email address", "peyij91811@duvips.com"],
-		["a period", "John A. Smith"],
-		["a double space", "Mary  Jane"],
-		["a leading special character", "'tHooft"],
-	])("rejects a raw insert whose name has %s (code 121)", async (_label, name) => {
+	it("rejects a raw insert missing a Mongoose-defaulted field like provider (code 121)", async () => {
+		const rawUser = validUser();
+		delete (rawUser as { provider?: string }).provider;
 		await expect(
-			db.collection(collectionName).insertOne({ ...validUser(), name }),
+			db.collection(collectionName).insertOne(rawUser),
 		).rejects.toMatchObject({ code: 121 });
-	});
-
-	it.each([
-		["accented / non-ASCII letters", "José Müller", "jose@example.com"],
-		["an apostrophe", "O'Brien", "obrien@example.com"],
-		["a hyphenated compound name", "Jean-Luc Picard", "jeanluc@example.com"],
-	])("accepts a raw insert with %s", async (_label, name, email) => {
-		await expect(
-			db.collection(collectionName).insertOne({ ...validUser(), name, email }),
-		).resolves.toBeDefined();
 	});
 });

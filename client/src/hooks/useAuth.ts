@@ -1,7 +1,13 @@
 //* src/hooks/useAuth.ts
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getCurrentUser, register, login, logout } from "@/api/auth.api";
+import {
+	getCurrentUser,
+	register,
+	login,
+	logout,
+	signInWithGoogle,
+} from "@/api/auth.api";
 import { CURRENT_USER_KEY } from "@/lib/queryKeys";
 
 /**
@@ -34,4 +40,9 @@ const useLogout = () => {
 	return useMutation({ mutationFn: logout });
 };
 
-export { useCurrentUser, useRegister, useLogin, useLogout };
+/** Mutation hook for signing in with Google. */
+const useGoogleSignIn = () => {
+	return useMutation({ mutationFn: signInWithGoogle });
+};
+
+export { useCurrentUser, useRegister, useLogin, useLogout, useGoogleSignIn };

@@ -12,7 +12,7 @@ import { CURRENT_USER_KEY } from "@/lib/queryKeys";
 import ROUTES from "@/routes/paths";
 import type { UserPayload } from "@/types/auth.types";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -55,6 +55,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
 					className="cursor-pointer rounded-full ring-1 ring-border transition hover:ring-1 hover:ring-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					<Avatar>
+						<AvatarImage src={user.avatarUrl} alt={user.name} />
 						<AvatarFallback className="bg-primary/10 font-medium text-primary">
 							{getInitials(user?.name)}
 						</AvatarFallback>

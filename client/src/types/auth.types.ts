@@ -8,6 +8,7 @@ export interface UserPayload {
 	name: string;
 	email: string;
 	role: UserRole;
+	avatarUrl?: string;
 }
 
 /** Request body for `POST /api/auth/register`. */
@@ -21,4 +22,9 @@ export interface RegisterPayload {
 export interface LoginPayload {
 	email: string;
 	password: string;
+}
+
+/** Request body for `POST /api/auth/google`. */
+export interface GoogleSignInPayload {
+	idToken: string;
 }

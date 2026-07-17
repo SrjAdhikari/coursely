@@ -19,7 +19,7 @@ const { UNAUTHORIZED_ACCESS, ACCOUNT_DEACTIVATED } = appErrorCode;
 /** The user fields the auth middlewares need from the session — never the password. */
 type SessionUser = Pick<
 	UserDocument,
-	"_id" | "name" | "email" | "role" | "isActive"
+	"_id" | "name" | "email" | "role" | "isActive" | "avatarUrl"
 >;
 
 /** Load a session by its token hash, user populated (never the password). */
@@ -27,7 +27,7 @@ const findSessionWithUser = (token: string) =>
 	Session.findOne({ tokenHash: hashSessionToken(token) })
 		.populate<{
 			userId: SessionUser | null;
-		}>("userId", "name email role isActive")
+		}>("userId", "name email role isActive avatarUrl")
 		.lean();
 
 /**
