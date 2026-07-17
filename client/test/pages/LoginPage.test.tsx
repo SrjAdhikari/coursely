@@ -13,10 +13,10 @@ vi.mock("@/hooks/useAuth", () => ({
 
 import LoginPage from "@/pages/LoginPage";
 
-const renderPage = () =>
+const renderPage = (initialEntry = "/login") =>
 	render(
 		<QueryClientProvider client={new QueryClient()}>
-			<MemoryRouter>
+			<MemoryRouter initialEntries={[initialEntry]}>
 				<LoginPage />
 			</MemoryRouter>
 		</QueryClientProvider>,
@@ -50,6 +50,15 @@ describe("LoginPage", () => {
 				{ email: "asha@example.com", password: "Password1!" },
 				expect.any(Object),
 			),
+		);
+	});
+
+	it("carries the ?redirect param onto the Sign up tab link", () => {
+		renderPage("/login?redirect=%2Fcourses%2Freact-basics");
+
+		expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute(
+			"href",
+			"/signup?redirect=%2Fcourses%2Freact-basics",
 		);
 	});
 

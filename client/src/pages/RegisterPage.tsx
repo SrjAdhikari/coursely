@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { GraduationCap } from "lucide-react";
 
-import FormField from "@/components/form/FormField";
 import { Button } from "@/components/ui/button";
+import FormField from "@/components/form/FormField";
 import AlertBanner from "@/components/ui/alert-banner";
 
 import { cn } from "@/lib/utils";
@@ -32,6 +32,12 @@ const RegisterPage = () => {
 
 	const queryClient = useQueryClient();
 	const [authError, setAuthError] = useState<string | null>(null);
+
+	// Preserve any post-auth redirect target when switching between the tabs.
+	const [searchParams] = useSearchParams();
+	const redirect = searchParams.get("redirect");
+	const withRedirect = (path: string) =>
+		redirect ? `${path}?redirect=${encodeURIComponent(redirect)}` : path;
 
 	const {
 		register,
@@ -74,10 +80,10 @@ const RegisterPage = () => {
 			</div>
 
 			<div className="mb-8 flex gap-1 rounded-full border bg-background p-1">
-				<Link to={ROUTES.LOGIN} className={tabClass(false)}>
+				<Link to={withRedirect(ROUTES.LOGIN)} className={tabClass(false)}>
 					Log in
 				</Link>
-				<Link to={ROUTES.REGISTER} className={tabClass(true)}>
+				<Link to={withRedirect(ROUTES.REGISTER)} className={tabClass(true)}>
 					Sign up
 				</Link>
 			</div>
