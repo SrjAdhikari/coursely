@@ -2,11 +2,13 @@
 
 import { GoogleLogin } from "@react-oauth/google";
 import GoogleIcon from "@/components/icons/GoogleIcon";
+import { cn } from "@/lib/utils";
 
 interface GoogleSignInButtonProps {
 	onSuccess: (idToken: string) => void;
 	onError: () => void;
 	label?: string;
+	disabled?: boolean;
 }
 
 /**
@@ -17,9 +19,15 @@ const GoogleSignInButton = ({
 	onSuccess,
 	onError,
 	label = "Continue with Google",
+	disabled = false,
 }: GoogleSignInButtonProps) => {
 	return (
-		<div className="group relative w-full">
+		<div
+			className={cn(
+				"group relative w-full",
+				disabled && "pointer-events-none opacity-50",
+			)}
+		>
 			<button
 				type="button"
 				tabIndex={-1}
@@ -30,8 +38,8 @@ const GoogleSignInButton = ({
 				<span>{label}</span>
 			</button>
 
-			{/* Invisible Google widget — catches clicks and triggers the ID-token popup. */}
-			<div className="absolute inset-0 opacity-0 [&>div]:h-full!">
+			{/* Invisible Google widget — clipped to the button so it can't catch phantom clicks past its edge. */}
+			<div className="absolute inset-0 overflow-hidden opacity-0 [&>div]:h-full!">
 				<GoogleLogin
 					onSuccess={(credentialResponse) => {
 						if (credentialResponse.credential) {

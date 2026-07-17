@@ -18,11 +18,13 @@ vi.mock("@/hooks/useAuth", () => ({
 vi.mock("@/components/auth/GoogleSignInButton", () => ({
 	default: ({
 		onSuccess,
+		disabled,
 	}: {
 		onSuccess: (idToken: string) => void;
 		onError: () => void;
+		disabled?: boolean;
 	}) => (
-		<button onClick={() => onSuccess("google-id-token")}>
+		<button disabled={disabled} onClick={() => onSuccess("google-id-token")}>
 			Sign up with Google
 		</button>
 	),

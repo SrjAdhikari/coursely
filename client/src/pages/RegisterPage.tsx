@@ -31,7 +31,8 @@ const tabClass = (active: boolean) =>
 const RegisterPage = () => {
 	const { mutate: registerUser, isPending: isRegistering } = useRegister();
 	const { mutate: loginUser, isPending: isLoggingIn } = useLogin();
-	const { mutate: googleSignIn } = useGoogleSignIn();
+	const { mutate: googleSignIn, isPending: isGooglePending } =
+		useGoogleSignIn();
 
 	const queryClient = useQueryClient();
 	const [authError, setAuthError] = useState<string | null>(null);
@@ -89,7 +90,7 @@ const RegisterPage = () => {
 		setAuthError("Google sign-in didn't complete. Please try again.");
 	};
 
-	const isSubmitting = isRegistering || isLoggingIn;
+	const isSubmitting = isRegistering || isLoggingIn || isGooglePending;
 
 	return (
 		<div className="w-full max-w-100 rounded-xl border border-input bg-card p-8">
@@ -111,6 +112,7 @@ const RegisterPage = () => {
 				onSuccess={handleGoogleSuccess}
 				onError={handleGoogleError}
 				label="Sign up with Google"
+				disabled={isSubmitting}
 			/>
 
 			<AuthDivider />

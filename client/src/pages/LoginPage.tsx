@@ -29,8 +29,10 @@ const tabClass = (active: boolean) =>
 	);
 
 const LoginPage = () => {
-	const { mutate, isPending } = useLogin();
-	const { mutate: googleSignIn } = useGoogleSignIn();
+	const { mutate, isPending: isLoggingIn } = useLogin();
+	const { mutate: googleSignIn, isPending: isGooglePending } =
+		useGoogleSignIn();
+	const isSubmitting = isLoggingIn || isGooglePending;
 
 	const queryClient = useQueryClient();
 	const [authError, setAuthError] = useState<string | null>(null);
@@ -98,6 +100,7 @@ const LoginPage = () => {
 			<GoogleSignInButton
 				onSuccess={handleGoogleSuccess}
 				onError={handleGoogleError}
+				disabled={isSubmitting}
 			/>
 
 			<AuthDivider />
@@ -135,11 +138,11 @@ const LoginPage = () => {
 
 				<Button
 					type="submit"
-					disabled={isPending || !isValid}
+					disabled={isSubmitting || !isValid}
 					className="w-full h-11 font-mono cursor-pointer disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
 				>
 					<span className="text-base font-medium">
-						{isPending ? "Signing in..." : "Sign in"}
+						{isLoggingIn ? "Signing in..." : "Sign in"}
 					</span>
 				</Button>
 			</form>
