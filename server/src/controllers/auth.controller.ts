@@ -2,7 +2,12 @@
 
 import type { RequestHandler } from "express";
 
-import { registerUser, loginUser, logoutUser } from "../services/auth.service";
+import {
+	registerUser,
+	loginUser,
+	logoutUser,
+	loginOrCreateGoogleUser,
+} from "../services/auth.service";
 import { setSessionCookie, clearSessionCookie } from "../utils/cookies";
 
 import httpStatus from "../constants/httpStatus";
@@ -33,6 +38,20 @@ const loginHandler: RequestHandler = async (req, res) => {
 	});
 };
 
+const googleOAuthHandler: RequestHandler = async (req, res) => {
+	const { idToken } = req.body;
+	const { token, isNewUser } = await loginOrCreateGoogleUser(idToken);
+
+	setSessionCookie(res, token);
+
+	res.status(isNewUser ? CREATED : OK).json({
+		success: true,
+		message: isNewUser
+			? "Account created successfully"
+			: "Logged in successfully",
+	});
+};
+
 const logoutHandler: RequestHandler = async (req, res) => {
 	// `authenticate` runs first and attaches the validated session id.
 	if (req.sessionId) await logoutUser(req.sessionId);
@@ -50,4 +69,10 @@ const getCurrentUserHandler: RequestHandler = (req, res) => {
 	});
 };
 
-export { registerHandler, loginHandler, logoutHandler, getCurrentUserHandler };
+export {
+	registerHandler,
+	loginHandler,
+	googleOAuthHandler,
+	logoutHandler,
+	getCurrentUserHandler,
+};

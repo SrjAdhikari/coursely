@@ -46,8 +46,13 @@ const loginSchema = z.object({
 	password: z.string().trim().nonempty("Password is required"),
 });
 
+const googleOAuthSchema = z.object({
+	idToken: z.string().trim().nonempty("Google credential is required"),
+});
+
 type RegisterInput = z.infer<typeof registerSchema>;
 type LoginInput = z.infer<typeof loginSchema>;
+type GoogleOAuthInput = z.infer<typeof googleOAuthSchema>;
 
-export { registerSchema, loginSchema };
-export type { RegisterInput, LoginInput };
+export { registerSchema, loginSchema, googleOAuthSchema };
+export type { RegisterInput, LoginInput, GoogleOAuthInput };
