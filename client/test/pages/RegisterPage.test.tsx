@@ -8,9 +8,24 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const mockRegister = vi.fn();
 const mockLogin = vi.fn();
+const mockGoogleMutate = vi.fn();
 vi.mock("@/hooks/useAuth", () => ({
 	useRegister: () => ({ mutate: mockRegister, isPending: false }),
 	useLogin: () => ({ mutate: mockLogin, isPending: false }),
+	useGoogleSignIn: () => ({ mutate: mockGoogleMutate, isPending: false }),
+}));
+
+vi.mock("@/components/auth/GoogleSignInButton", () => ({
+	default: ({
+		onSuccess,
+	}: {
+		onSuccess: (idToken: string) => void;
+		onError: () => void;
+	}) => (
+		<button onClick={() => onSuccess("google-id-token")}>
+			Sign up with Google
+		</button>
+	),
 }));
 
 import RegisterPage from "@/pages/RegisterPage";
@@ -127,5 +142,39 @@ describe("RegisterPage", () => {
 			await screen.findByText(/something went wrong/i),
 		).toBeInTheDocument();
 		expect(mockLogin).not.toHaveBeenCalled();
+	});
+
+	it("signs up with Google using the returned credential", async () => {
+		const user = userEvent.setup();
+		renderPage();
+
+		await user.click(
+			screen.getByRole("button", { name: /sign up with google/i }),
+		);
+
+		expect(mockGoogleMutate).toHaveBeenCalledWith(
+			{ idToken: "google-id-token" },
+			expect.any(Object),
+		);
+	});
+
+	it("surfaces a provider-mismatch error from Google sign-up", async () => {
+		mockGoogleMutate.mockImplementation((_payload, options) =>
+			options.onError({
+				message:
+					"This email is registered with a password. Please log in with your password.",
+				code: "PROVIDER_MISMATCH",
+			}),
+		);
+		const user = userEvent.setup();
+		renderPage();
+
+		await user.click(
+			screen.getByRole("button", { name: /sign up with google/i }),
+		);
+
+		expect(
+			await screen.findByText(/registered with a password/i),
+		).toBeInTheDocument();
 	});
 });
