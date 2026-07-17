@@ -8,6 +8,7 @@ export interface UserPayload {
 	name: string;
 	email: string;
 	role: UserRole;
+	avatarUrl?: string;
 }
 
 /** Request body for `POST /api/auth/register`. */

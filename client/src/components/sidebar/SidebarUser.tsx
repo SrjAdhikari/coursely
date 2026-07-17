@@ -10,7 +10,7 @@ import getInitials from "@/lib/getInitials";
 import { useCurrentUser, useLogout } from "@/hooks/useAuth";
 import { CURRENT_USER_KEY } from "@/lib/queryKeys";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
 	DropdownMenu,
@@ -57,6 +57,7 @@ const SidebarUser = () => {
 						className="group flex w-full items-center gap-2.5 rounded-md p-1.5 text-left transition hover:bg-muted aria-expanded:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 					>
 						<Avatar className="size-9 shrink-0">
+							<AvatarImage src={user?.avatarUrl} alt={user?.name} />
 							<AvatarFallback className="bg-primary/10 font-medium text-primary">
 								{getInitials(user?.name)}
 							</AvatarFallback>
