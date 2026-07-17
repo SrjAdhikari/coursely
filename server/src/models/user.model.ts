@@ -33,15 +33,22 @@ export interface PublicUser {
 	avatarUrl?: string;
 }
 
+const NAME_PATTERN = /^\p{L}[\p{L}\p{M}]*(?:[ '-]\p{L}[\p{L}\p{M}]*)*$/u;
 const userSchema = new Schema<UserDocument, UserModel, UserMethods>(
 	{
 		name: {
 			type: String,
 			required: true,
 			trim: true,
-			minlength: 3,
 			maxlength: 50,
-			match: /^\p{L}[\p{L}\p{M}]*(?:[ '-]\p{L}[\p{L}\p{M}]*)*$/u,
+			validate: {
+				validator(value: string) {
+					if ((this as unknown as UserDocument).provider !== "email")
+						return true;
+					return value.length >= 3 && NAME_PATTERN.test(value);
+				},
+				message: "Name must be 3-50 letters, spaces, hyphens, or apostrophes",
+			},
 		},
 		email: {
 			type: String,

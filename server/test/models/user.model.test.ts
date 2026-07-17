@@ -77,7 +77,7 @@ describe("User model", () => {
 		});
 	});
 
-	describe("name validation", () => {
+	describe("name validation (email provider only)", () => {
 		it.each([
 			["all digits", "12313213"],
 			["punctuation only", "..."],
@@ -85,7 +85,8 @@ describe("User model", () => {
 			["a name containing a period", "John A. Smith"],
 			["a name with a double space", "Mary  Jane"],
 			["a name starting with a special character", "'tHooft"],
-		])("rejects a name that is %s", async (_label, name) => {
+			["shorter than 3 characters", "Al"],
+		])("rejects an email user whose name is %s", async (_label, name) => {
 			// Rejected on validation, so the email is never persisted — safe to reuse.
 			await expect(
 				User.create({
@@ -100,9 +101,20 @@ describe("User model", () => {
 			["accented / non-ASCII letters", "José Müller", "jose@example.com"],
 			["an apostrophe", "O'Brien", "obrien@example.com"],
 			["a hyphenated compound name", "Jean-Luc Picard", "jeanluc@example.com"],
-		])("accepts %s", async (_label, name, email) => {
+		])("accepts an email user named %s", async (_label, name, email) => {
 			const user = await User.create({ name, email, password: "Password123" });
 			expect(user.name).toBe(name);
+		});
+
+		it("does NOT enforce the format rules for a Google user", async () => {
+			// A Google display name may hold periods/digits the email pattern forbids.
+			const user = await User.create({
+				name: "John A. Smith",
+				email: "john.google@example.com",
+				provider: "google",
+				avatarUrl: "https://lh3.googleusercontent.com/a/pic",
+			});
+			expect(user.name).toBe("John A. Smith");
 		});
 	});
 

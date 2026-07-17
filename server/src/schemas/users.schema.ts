@@ -12,7 +12,6 @@ const usersSchema = {
 			name: {
 				bsonType: "string",
 				maxLength: 50,
-				pattern: "^\\p{L}[\\p{L}\\p{M}]*(?:[ '-]\\p{L}[\\p{L}\\p{M}]*)*$",
 				description: "Display name, at most 50 characters",
 			},
 			email: {

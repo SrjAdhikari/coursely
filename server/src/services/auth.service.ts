@@ -7,6 +7,7 @@ import Session from "../models/session.model";
 
 import { createSessionToken } from "../utils/sessionToken";
 import verifyGoogleIdToken from "../lib/googleAuth";
+import sanitizeInput from "../utils/sanitizeInput";
 import AppError from "../errors/AppError";
 
 import httpStatus from "../constants/httpStatus";
@@ -108,15 +109,19 @@ const loginOrCreateGoogleUser = async (
 
 	// Reuse the existing Google user, or create one on a first-time sign-in.
 	let user = existingUser;
-	const isNewUser = !existingUser;
 	if (!user) {
-		user = await User.create({ name, email, provider: "google", avatarUrl });
+		user = await User.create({
+			name: sanitizeInput(name),
+			email,
+			provider: "google",
+			avatarUrl,
+		});
 	}
 
 	const { token, tokenHash } = createSessionToken();
 	await Session.create({ userId: user._id, tokenHash });
 
-	return { token, isNewUser };
+	return { token, isNewUser: !existingUser };
 };
 
 /** Destroy a session server-side (logout). No-op if it is already gone. */

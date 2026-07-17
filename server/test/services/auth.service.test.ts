@@ -187,6 +187,19 @@ describe("loginOrCreateGoogleUser", () => {
 			errorCode: "ACCOUNT_DEACTIVATED",
 		});
 	});
+
+	it("sanitizes the Google name and accepts formats the email rules forbid", async () => {
+		verifyGoogleIdTokenMock.mockResolvedValue(
+			identity({ name: "<b>J. R.</b> Smith" }),
+		);
+
+		const result = await loginOrCreateGoogleUser("tok");
+
+		expect(result.isNewUser).toBe(true);
+		const user = await User.findOne({ email: "asha@example.com" });
+		// HTML stripped; the period (forbidden for email names) is kept for Google.
+		expect(user?.name).toBe("J. R. Smith");
+	});
 });
 
 describe("loginUser on a Google-only account", () => {
