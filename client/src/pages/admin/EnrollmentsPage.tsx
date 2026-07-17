@@ -85,7 +85,7 @@ const EnrollmentsPage = () => {
 			</div>
 
 			<div className="overflow-hidden rounded-xl border border-border bg-card">
-				{enrollments.length === 0 ? (
+				{total === 0 ? (
 					<EmptyStatePlaceholder
 						icon={ClipboardList}
 						title="No enrollments yet"

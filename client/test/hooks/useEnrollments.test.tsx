@@ -59,4 +59,48 @@ describe("enrollment hooks", () => {
 		await waitFor(() => expect(result.current.isSuccess).toBe(true));
 		expect(listEnrollments).toHaveBeenCalledWith({ page: 1, limit: 10 });
 	});
+
+	it("keeps the previous page's data while the next page loads", async () => {
+		const pageResponse = (page: number) =>
+			({
+				success: true,
+				message: "ok",
+				data: {
+					items: [{ _id: `e-p${page}` }],
+					pagination: { page, limit: 10, total: 23, totalPages: 3 },
+				},
+			}) as never;
+
+		let resolvePage2!: (value: unknown) => void;
+		const page2Pending = new Promise((resolve) => {
+			resolvePage2 = resolve;
+		});
+		vi.mocked(listEnrollments).mockImplementation((params: {
+			page: number;
+			limit: number;
+		}) =>
+			params.page === 1
+				? (Promise.resolve(pageResponse(1)) as never)
+				: (page2Pending as never),
+		);
+
+		const { result, rerender } = renderHook(
+			({ page }) => useListEnrollments(page, 10),
+			{ wrapper, initialProps: { page: 1 } },
+		);
+		await waitFor(() =>
+			expect(result.current.data?.data.pagination.page).toBe(1),
+		);
+
+		// Switch to page 2 while it is still in flight.
+		rerender({ page: 2 });
+		expect(result.current.data?.data.pagination.page).toBe(1);
+		expect(result.current.isPlaceholderData).toBe(true);
+
+		resolvePage2(pageResponse(2));
+		await waitFor(() =>
+			expect(result.current.data?.data.pagination.page).toBe(2),
+		);
+		expect(result.current.isPlaceholderData).toBe(false);
+	});
 });

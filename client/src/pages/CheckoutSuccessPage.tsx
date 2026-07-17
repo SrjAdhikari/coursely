@@ -1,6 +1,6 @@
 //* src/pages/CheckoutSuccessPage.tsx
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, XCircle } from "lucide-react";
@@ -10,8 +10,7 @@ import { useCheckoutStatus } from "@/hooks/usePayments";
 import { Button } from "@/components/ui/button";
 import { MY_ENROLLMENTS_KEY } from "@/lib/queryKeys";
 
-// Auto-retry cadence, then fall back to a manual "Check again" (6 × 1.5s ≈ 9s).
-const POLL_INTERVAL_MS = 1500;
+// After this many settled poll attempts, fall back to a manual "Check again".
 const MAX_POLL_ATTEMPTS = 6;
 
 type ResultTone = "neutral" | "success" | "danger";
@@ -61,23 +60,24 @@ const CheckoutSuccessPage = () => {
 	const queryClient = useQueryClient();
 
 	const pollDeadlinePassed = attempts >= MAX_POLL_ATTEMPTS;
-	const { data, isError, refetch } = useCheckoutStatus(
-		sessionId,
-		!!sessionId && !pollDeadlinePassed,
-	);
+	const { data, isError, refetch, dataUpdatedAt, errorUpdatedAt } =
+		useCheckoutStatus(sessionId, !!sessionId && !pollDeadlinePassed);
 	const checkoutStatus = data?.data;
 	const enrolled = checkoutStatus?.enrolled ?? false;
 
-	// Drive the retry counter; the hook itself stops the network polling once
-	// enrolled (or when we pass poll=false at the deadline).
+	// When the latest check finished — the more recent of the last success and
+	// the last failure. This time only ever moves forward.
+	const lastSettledAt = Math.max(dataUpdatedAt ?? 0, errorUpdatedAt ?? 0);
+
+	// Add one attempt each time a check actually finishes: step up only when this
+	// time is newer than the last one we counted, so a re-render alone won't.
+	const lastSettledAtRef = useRef(lastSettledAt);
 	useEffect(() => {
-		if (!sessionId || pollDeadlinePassed) return;
-		const retryTicker = setInterval(
-			() => setAttempts((current) => current + 1),
-			POLL_INTERVAL_MS,
-		);
-		return () => clearInterval(retryTicker);
-	}, [sessionId, pollDeadlinePassed]);
+		if (lastSettledAt > lastSettledAtRef.current) {
+			lastSettledAtRef.current = lastSettledAt;
+			setAttempts((current) => current + 1);
+		}
+	}, [lastSettledAt]);
 
 	useEffect(() => {
 		if (enrolled)

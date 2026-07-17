@@ -15,10 +15,10 @@ vi.mock("@/hooks/useAuth", () => ({
 
 import RegisterPage from "@/pages/RegisterPage";
 
-const renderPage = () =>
+const renderPage = (initialEntry = "/signup") =>
 	render(
 		<QueryClientProvider client={new QueryClient()}>
-			<MemoryRouter>
+			<MemoryRouter initialEntries={[initialEntry]}>
 				<RegisterPage />
 			</MemoryRouter>
 		</QueryClientProvider>,
@@ -33,6 +33,15 @@ const fillValidForm = async (user: ReturnType<typeof userEvent.setup>) => {
 
 describe("RegisterPage", () => {
 	beforeEach(() => vi.clearAllMocks());
+
+	it("carries the ?redirect param onto the Log in tab link", () => {
+		renderPage("/signup?redirect=%2Fcourses%2Freact-basics");
+
+		expect(screen.getByRole("link", { name: /log in/i })).toHaveAttribute(
+			"href",
+			"/login?redirect=%2Fcourses%2Freact-basics",
+		);
+	});
 
 	it("rejects a weak password and does not submit", async () => {
 		const user = userEvent.setup();

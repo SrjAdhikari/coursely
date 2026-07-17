@@ -144,6 +144,25 @@ describe("admin EnrollmentsPage", () => {
 		expect(mockRefetch).toHaveBeenCalledOnce();
 	});
 
+	it("keeps the paginator (not the empty state) when a page is empty but enrollments exist", () => {
+		mockUseListEnrollments.mockReturnValue({
+			data: {
+				data: {
+					items: [],
+					pagination: { page: 3, limit: 10, total: 23, totalPages: 3 },
+				},
+			},
+			isLoading: false,
+			isError: false,
+			refetch: mockRefetch,
+		});
+		render(<EnrollmentsPage />);
+		expect(screen.queryByText(/no enrollments yet/i)).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /previous/i }),
+		).toBeInTheDocument();
+	});
+
 	it("shows the empty state when there are no enrollments", () => {
 		mockUseListEnrollments.mockReturnValue({
 			data: {

@@ -4,17 +4,19 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { GraduationCap } from "lucide-react";
 
-import FormField from "@/components/form/FormField";
 import { Button } from "@/components/ui/button";
+import FormField from "@/components/form/FormField";
 import AlertBanner from "@/components/ui/alert-banner";
+
 import { cn } from "@/lib/utils";
+import { CURRENT_USER_KEY } from "@/lib/queryKeys";
+
+import ROUTES from "@/routes/paths";
 import { useLogin } from "@/hooks/useAuth";
 import { loginSchema, type LoginFormData } from "@/schemas/auth.schema";
-import { CURRENT_USER_KEY } from "@/lib/queryKeys";
-import ROUTES from "@/routes/paths";
 
 const tabClass = (active: boolean) =>
 	cn(
@@ -28,6 +30,12 @@ const LoginPage = () => {
 	const { mutate, isPending } = useLogin();
 	const queryClient = useQueryClient();
 	const [authError, setAuthError] = useState<string | null>(null);
+
+	// Preserve any post-auth redirect target when switching between the tabs.
+	const [searchParams] = useSearchParams();
+	const redirect = searchParams.get("redirect");
+	const withRedirect = (path: string) =>
+		redirect ? `${path}?redirect=${encodeURIComponent(redirect)}` : path;
 
 	const {
 		register,
@@ -58,11 +66,11 @@ const LoginPage = () => {
 			</div>
 
 			<div className="mb-8 flex gap-1 rounded-full border bg-background p-1">
-				<Link to={ROUTES.LOGIN} className={tabClass(true)}>
+				<Link to={withRedirect(ROUTES.LOGIN)} className={tabClass(true)}>
 					Log in
 				</Link>
 
-				<Link to={ROUTES.REGISTER} className={tabClass(false)}>
+				<Link to={withRedirect(ROUTES.REGISTER)} className={tabClass(false)}>
 					Sign up
 				</Link>
 			</div>
