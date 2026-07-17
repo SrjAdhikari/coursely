@@ -10,8 +10,9 @@ Conceptual → logical → physical for MongoDB (Atlas). Seven collections, **re
 (not embedded), chosen so lessons are first-class documents that progress and signed-URL
 playback can address by `_id`.
 
-> **Implementation note.** One clarification on the running system: **`sessions._id` is a Mongo
-> `ObjectId`** (the cookie carries its `.toString()`), not a custom string. The live `users` /
+> **Implementation note.** One clarification on the running system: the login cookie carries a
+> **random token**, not the session's `_id`. The `sessions` collection stores only a hashed copy of
+> that token (`tokenHash`) — never the token itself. The live `users` /
 > `sessions` / `courses` / `sections` / `lessons` / `enrollments` / `progress` shapes match the
 > Mongoose models documented in
 > [`architecture/database-schema.md`](./architecture/database-schema.md).
@@ -43,14 +44,15 @@ would force array-digging inside a course doc on every playback. The curriculum 
 
 | Field | Type | Notes |
 |---|---|---|
-| `_id` | ObjectId | the session id - its `.toString()` is the value stored in the signed `httpOnly` cookie |
+| `_id` | ObjectId | internal only - **never** sent to the browser |
 | `userId` | ObjectId → users | session owner |
+| `tokenHash` | string | **unique** - a hashed copy of the random token in the cookie; login looks the session up by this, so the real token is never stored |
 | `expiresAt` | Date | **TTL index** - Mongo auto-expires the row; logout deletes it explicitly |
 | `createdAt` | Date | |
 
-Custom session store (not `express-session`): one document per active login, addressed by the
-opaque `_id` carried in the cookie; a fresh `_id` is issued
-on each login (session-fixation defense, `06`).
+Custom session store (not `express-session`): one document per active login. The cookie carries a
+random token; the server keeps only its hash and finds the session by that hash. A fresh token is
+issued on each login (session-fixation defense, `06`).
 
 ### courses
 

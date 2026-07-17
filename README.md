@@ -125,9 +125,9 @@ model rationale in `docs/04-data-model.md`.
 
 **Server-side sessions, not JWT**
 
-- A signed httpOnly cookie carries only a session id backed by a Mongo TTL record, so a session can be
-  revoked instantly on logout or account deactivation, and every active session is visible in one place.
-  A stateless JWT cannot be reliably cancelled early.
+- A signed httpOnly cookie carries a random session token (the database stores only its hash) backed by
+  a Mongo TTL record, so a session can be revoked instantly on logout or account deactivation, and every
+  active session is visible in one place. A stateless JWT cannot be reliably cancelled early.
 
 **Payment is the single source of truth for access**
 
@@ -172,7 +172,7 @@ Seven referenced collections. Money is stored as integer paise, timestamps in UT
 | Collection    | Purpose                    | Notable constraints and indexes                                            |
 | ------------- | -------------------------- | -------------------------------------------------------------------------- |
 | `users`       | Accounts and role          | `email` unique; bcrypt password (not selected by default)                  |
-| `sessions`    | Server-side login sessions | `expiresAt` TTL for auto-expiry; `userId` to log out everywhere            |
+| `sessions`    | Server-side login sessions | `tokenHash` unique (login lookup); `expiresAt` TTL for auto-expiry; `userId` to log out everywhere |
 | `courses`     | Catalog entry              | `slug` unique; text index on title, description, and instructor for search |
 | `sections`    | Curriculum groups          | `courseId`                                                                 |
 | `lessons`     | Individual video lessons   | `courseId`, `sectionId`; storage key never exposed                         |
