@@ -40,10 +40,11 @@ Card data never crosses our boundaries - it lives entirely inside Stripe Checkou
 ## 2. STRIDE
 
 ### S - Spoofing (authentication)
-- *Impersonating a user / forging a session.* → Opaque server-side session IDs stored in
-  Mongo (not guessable, not JWT-decodable); cookie is `httpOnly` (JS can't read it, so XSS
-  can't steal it) + `Secure` (HTTPS only). Passwords bcrypt-hashed (FR-6). **Session is
-  regenerated on login** to prevent session fixation. Logout and admin-deactivate
+- *Impersonating a user / forging a session.* → The cookie carries a **high-entropy random token**;
+  the server stores only its hash, so even a leaked database can't reveal a live token. The cookie is
+  `httpOnly` (JS can't read it, so XSS can't steal it) + `Secure` (HTTPS only) + signed with
+  `COOKIE_SECRET` (whose length is checked at startup). Passwords bcrypt-hashed (FR-6). **A fresh
+  token is issued on each login** to prevent session fixation. Logout and admin-deactivate
   (`isActive=false`) invalidate the session server-side immediately.
 - *Credential stuffing / brute force on login.* → Per-IP rate limiting on auth routes (NFR-6).
 - *Forged payment event* - attacker POSTs a fake `checkout.session.completed` to grant
@@ -97,8 +98,9 @@ Card data never crosses our boundaries - it lives entirely inside Stripe Checkou
 - *Secrets leaking* (Stripe/R2 keys, session secret, DB URI). → Env-only config on
   the hosting platforms; `.env` git-ignored; never in the client bundle; R2 keys scoped to the
   bucket; Stripe keys are test-mode (NFR-5).
-- *User enumeration* via auth responses. → Login/signup return **generic** failure
-  messages that don't reveal whether an email exists.
+- *User enumeration* via auth responses. → Login uses one **generic** error for a wrong email or a
+  wrong password, and register returns the **same** reply whether the email is new or already taken —
+  so neither reveals which emails exist.
 - *Internal detail in errors.* → Consistent `{ error: { code, message } }` shape; stack
   traces and secret-bearing text never reach the client.
 - *PII/passwords in logs.* → Passwords never logged; bcrypt only; request logging excludes

@@ -42,7 +42,9 @@ primary evidence of access-control design (NFR-1).
 ## 2. Resource Routes
 
 ### Auth
-- `POST /api/auth/signup` - create student account, start session.
+- `POST /api/auth/register` - create a student account. The reply is the **same** whether the email
+  is new or already taken (so it can't reveal which emails exist); the session is started by the
+  login that follows.
 - `POST /api/auth/login` - verify bcrypt, start session (rate-limited).
 - `POST /api/auth/logout` - destroy session server-side.
 - `GET  /api/auth/me` - current user `{ id, name, email, role }`.
