@@ -10,12 +10,14 @@ import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FormField from "@/components/form/FormField";
 import AlertBanner from "@/components/ui/alert-banner";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import AuthDivider from "@/components/auth/AuthDivider";
 
 import { cn } from "@/lib/utils";
 import { CURRENT_USER_KEY } from "@/lib/queryKeys";
 
 import ROUTES from "@/routes/paths";
-import { useLogin } from "@/hooks/useAuth";
+import { useLogin, useGoogleSignIn } from "@/hooks/useAuth";
 import { loginSchema, type LoginFormData } from "@/schemas/auth.schema";
 
 const tabClass = (active: boolean) =>
@@ -28,6 +30,8 @@ const tabClass = (active: boolean) =>
 
 const LoginPage = () => {
 	const { mutate, isPending } = useLogin();
+	const { mutate: googleSignIn } = useGoogleSignIn();
+	
 	const queryClient = useQueryClient();
 	const [authError, setAuthError] = useState<string | null>(null);
 
@@ -58,6 +62,22 @@ const LoginPage = () => {
 		});
 	};
 
+	const handleGoogleSuccess = (idToken: string) => {
+		setAuthError(null);
+		googleSignIn(
+			{ idToken },
+			{
+				onSuccess: () =>
+					queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY }),
+				onError: (error) => setAuthError(error.message),
+			},
+		);
+	};
+
+	const handleGoogleError = () => {
+		setAuthError("Google sign-in didn't complete. Please try again.");
+	};
+
 	return (
 		<div className="w-full max-w-100 rounded-xl border border-input bg-card p-8">
 			<div className="mb-6 flex items-center justify-center gap-2 font-heading text-2xl font-bold">
@@ -74,6 +94,13 @@ const LoginPage = () => {
 					Sign up
 				</Link>
 			</div>
+
+			<GoogleSignInButton
+				onSuccess={handleGoogleSuccess}
+				onError={handleGoogleError}
+			/>
+
+			<AuthDivider />
 
 			{authError && (
 				<AlertBanner variant="error" className="mb-4">
