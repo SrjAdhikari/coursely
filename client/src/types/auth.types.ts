@@ -22,3 +22,8 @@ export interface LoginPayload {
 	email: string;
 	password: string;
 }
+
+/** Request body for `POST /api/auth/google`. */
+export interface GoogleSignInPayload {
+	idToken: string;
+}
