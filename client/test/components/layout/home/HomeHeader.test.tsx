@@ -62,7 +62,7 @@ describe("HomeHeader", () => {
 	it("links the logo to home when logged out", () => {
 		mockUseCurrentUser.mockReturnValue({ data: undefined });
 		renderHeader();
-		expect(screen.getByRole("link", { name: /coursely/i })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: /manakuru/i })).toHaveAttribute(
 			"href",
 			"/",
 		);
@@ -71,7 +71,7 @@ describe("HomeHeader", () => {
 	it("links the logo to the dashboard when logged in", () => {
 		mockUseCurrentUser.mockReturnValue({ data: { data: loggedInUser } });
 		renderHeader();
-		expect(screen.getByRole("link", { name: /coursely/i })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: /manakuru/i })).toHaveAttribute(
 			"href",
 			"/dashboard",
 		);
