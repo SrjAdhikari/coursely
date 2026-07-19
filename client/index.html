@@ -1,20 +1,111 @@
 <!doctype html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="preconnect" href="https://api.fontshare.com" />
-    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap"
-    />
+		<!-- ─── Primary SEO ─── -->
+		<title>Manakuru - Full-Featured LMS for both learners and instructors</title>
+		<meta
+			name="description"
+			content="Manakuru is a full-featured learning management system (LMS) for learners and instructors. Build real apps with hands-on practice - buy once, own forever."
+		/>
+		<link rel="canonical" href="https://manakuru.srjdev.com/" />
+		<meta
+			name="robots"
+			content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+		/>
+		<meta name="theme-color" content="#0e1319" />
+		<meta name="application-name" content="Manakuru" />
 
-    <title>Coursely</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+		<!-- Icons / PWA -->
+		<link rel="icon" href="/favicon.ico" sizes="any" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/site.webmanifest" />
+
+		<!-- Open Graph (Facebook, LinkedIn, Slack, Discord…) -->
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Manakuru" />
+		<meta property="og:locale" content="en_US" />
+		<meta
+			property="og:title"
+			content="Manakuru - Full-Featured LMS for both learners and instructors"
+		/>
+		<meta
+			property="og:description"
+			content="A full-featured LMS for learners and instructors - build real apps with hands-on practice. Buy a course once and own it forever."
+		/>
+		<meta property="og:url" content="https://manakuru.srjdev.com/" />
+		<meta property="og:image" content="https://manakuru.srjdev.com/og-image.png?v=2" />
+		<meta property="og:image:type" content="image/png" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta
+			property="og:image:alt"
+			content="Manakuru - a full-featured LMS for learners and instructors"
+		/>
+
+		<!-- Twitter / X -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta
+			name="twitter:title"
+			content="Manakuru - Full-Featured LMS for both learners and instructors"
+		/>
+		<meta
+			name="twitter:description"
+			content="A full-featured LMS for learners and instructors - build real apps with hands-on practice. Buy a course once and own it forever."
+		/>
+		<meta
+			name="twitter:image"
+			content="https://manakuru.srjdev.com/og-image.png?v=2"
+		/>
+
+		<!-- ─── Mobile / iOS ─── -->
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta
+			name="apple-mobile-web-app-status-bar-style"
+			content="black-translucent"
+		/>
+		<meta name="apple-mobile-web-app-title" content="Manakuru" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="format-detection" content="telephone=no" />
+
+		<!-- Structured data (JSON-LD) -->
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@type": "EducationalOrganization",
+						"@id": "https://manakuru.srjdev.com/#organization",
+						"name": "Manakuru",
+						"url": "https://manakuru.srjdev.com/",
+						"logo": "https://manakuru.srjdev.com/android-chrome-512x512.png",
+						"description": "Manakuru is a full-featured learning management system (LMS) for learners and instructors. Build real apps with hands-on practice - buy a course once and own it forever."
+					},
+					{
+						"@type": "WebSite",
+						"@id": "https://manakuru.srjdev.com/#website",
+						"name": "Manakuru",
+						"url": "https://manakuru.srjdev.com/",
+						"publisher": { "@id": "https://manakuru.srjdev.com/#organization" },
+						"potentialAction": {
+							"@type": "SearchAction",
+							"target": {
+								"@type": "EntryPoint",
+								"urlTemplate": "https://manakuru.srjdev.com/courses?q={search_term_string}"
+							},
+							"query-input": "required name=search_term_string"
+						}
+					}
+				]
+			}
+		</script>
+	</head>
+	<body>
+		<div id="root"></div>
+		<script type="module" src="/src/main.tsx"></script>
+	</body>
 </html>

@@ -45,8 +45,7 @@ const HomeFooter = () => {
 				<div className="space-y-3">
 					<AppLogo />
 					<p className="max-w-xs text-sm text-muted-foreground">
-						Project-driven web development courses. Buy once, own forever, learn
-						at your own pace.
+					Manakuru is a full-featured learning management system (LMS) for learners and instructors. Build real apps with hands-on practice - buy once, own forever.
 					</p>
 				</div>
 
@@ -72,7 +71,7 @@ const HomeFooter = () => {
 			</div>
 
 			<div className="border-t border-border px-5 py-5 text-center text-xs text-muted-foreground">
-				&copy; 2026 Coursely. All rights reserved.
+				&copy; 2026 Manakuru. All rights reserved.
 			</div>
 		</footer>
 	);

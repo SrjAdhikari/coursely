@@ -1,0 +1,10 @@
+# https://manakuru.srjdev.com robots
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /my-courses
+Disallow: /learn
+Disallow: /checkout
+
+Sitemap: https://manakuru.srjdev.com/sitemap.xml

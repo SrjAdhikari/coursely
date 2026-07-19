@@ -1,7 +1,7 @@
 //* src/components/common/AppLogo.tsx
 
-import { GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo.png";
 
 interface AppLogoProps {
 	className?: string;
@@ -15,11 +15,14 @@ const AppLogo = ({ className, iconClassName }: AppLogoProps) => (
 			className,
 		)}
 	>
-		<GraduationCap
+		<img
+			src={logo}
+			alt="manakuru logo"
 			aria-hidden
-			className={cn("size-7 text-primary", iconClassName)}
+			decoding="async"
+			className={cn("size-8 shrink-0", iconClassName)}
 		/>
-		Coursely
+		Manakuru
 	</div>
 );
 

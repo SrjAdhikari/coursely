@@ -11,7 +11,7 @@ const faqItems = [
 	{
 		question: "Is this a new platform?",
 		answer:
-			"Yes. Coursely is newly built, and I'd rather be upfront than fake a crowd. That's exactly why every course has free preview lessons: watch real lessons before you decide. Payment is one-time with lifetime access, so there's no recurring commitment. Live today: the full catalog, the video player with saved progress, secure Stripe checkout, and your personal course library. On the roadmap: lesson notes, in-lesson resources, and Q&A.",
+			"Yes. Manakuru is newly built, and I'd rather be upfront than fake a crowd. That's exactly why every course has free preview lessons: watch real lessons before you decide. Payment is one-time with lifetime access, so there's no recurring commitment. Live today: the full catalog, the video player with saved progress, secure Stripe checkout, and your personal course library. On the roadmap: lesson notes, in-lesson resources, and Q&A.",
 	},
 	{
 		question: "Do I pay once or subscribe?",
@@ -31,7 +31,7 @@ const faqItems = [
 	{
 		question: "Is checkout secure?",
 		answer:
-			"Payments are processed end-to-end by Stripe. Your card details go straight to Stripe. Coursely never sees or stores them.",
+			"Payments are processed end-to-end by Stripe. Your card details go straight to Stripe. Manakuru never sees or stores them.",
 	},
 	{
 		question: "How long do I keep access?",

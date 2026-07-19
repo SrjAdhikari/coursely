@@ -5,9 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
-import { GraduationCap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import AppLogo from "@/components/common/AppLogo";
 import FormField from "@/components/form/FormField";
 import AlertBanner from "@/components/ui/alert-banner";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
@@ -82,10 +82,7 @@ const LoginPage = () => {
 
 	return (
 		<div className="w-full max-w-100 rounded-xl border border-input bg-card p-8">
-			<div className="mb-6 flex items-center justify-center gap-2 font-heading text-2xl font-bold">
-				<GraduationCap className="size-7 text-primary" />
-				Coursely
-			</div>
+			<AppLogo className="mb-6 justify-center" />
 
 			<div className="mb-8 flex gap-1 rounded-full border bg-background p-1">
 				<Link to={withRedirect(ROUTES.LOGIN)} className={tabClass(true)}>

@@ -389,7 +389,7 @@ const showcaseFeatures: ShowcaseFeature[] = [
 			"Track completed lessons per course",
 			"Everything you own in one library",
 		],
-		url: "coursely.app/dashboard",
+		url: "manakuru.srjdev.com/dashboard",
 		Mock: DashboardMock,
 	},
 	{
@@ -404,7 +404,7 @@ const showcaseFeatures: ShowcaseFeature[] = [
 			"Curriculum and progress side by side",
 			"Picks up on the exact lesson you left",
 		],
-		url: "coursely.app/learn/react-from-scratch",
+		url: "manakuru.srjdev.com/learn/react-from-scratch",
 		Mock: LearnMock,
 	},
 	{
@@ -419,7 +419,7 @@ const showcaseFeatures: ShowcaseFeature[] = [
 			"Filter by topic, not by hype",
 			"Prices shown up front",
 		],
-		url: "coursely.app/courses",
+		url: "manakuru.srjdev.com/courses",
 		Mock: CatalogMock,
 	},
 ];
@@ -464,7 +464,7 @@ const ProductShowcase = () => {
 		<section className="mx-auto max-w-6xl px-5 py-16">
 			<div className="mx-auto mb-10 max-w-xl text-center">
 				<p className="text-xs uppercase tracking-widest text-primary">
-					inside coursely
+					inside Manakuru
 				</p>
 
 				<h2 className="mt-3 text-4xl">A calm place to learn</h2>
@@ -479,7 +479,7 @@ const ProductShowcase = () => {
 				<div
 					className="showcase-tablist"
 					role="tablist"
-					aria-label="Explore the Coursely app"
+					aria-label="Explore the Manakuru app"
 					aria-orientation="vertical"
 				>
 					{showcaseFeatures.map((feature, index) => {

@@ -18,7 +18,7 @@ describe("AuthLayout", () => {
 			</MemoryRouter>,
 		);
 
-		expect(screen.getByRole("link", { name: /coursely/i })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: /manakuru/i })).toHaveAttribute(
 			"href",
 			"/",
 		);

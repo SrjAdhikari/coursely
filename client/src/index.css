@@ -2,11 +2,12 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/space-grotesk";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-	--font-heading: "Clash Display", ui-sans-serif, system-ui, sans-serif;
+	--font-heading: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
 	--font-mono:
 		"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 	--color-sidebar-ring: var(--sidebar-ring);
