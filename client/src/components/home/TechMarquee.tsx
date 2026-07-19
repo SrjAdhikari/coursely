@@ -15,17 +15,17 @@ const techStack = [
 // Seamless loop: two identical tracks translated -50%. Under reduced-motion the
 // animation is disabled and the row reflows to a static, centered, wrapped list.
 const marqueeCss = `
-.coursely-marquee{
+.manakuru-marquee{
 	-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
 	mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
 }
-.coursely-marquee-track{animation:coursely-marquee-scroll 32s linear infinite}
-@keyframes coursely-marquee-scroll{to{transform:translateX(-50%)}}
+.manakuru-marquee-track{animation:manakuru-marquee-scroll 32s linear infinite}
+@keyframes manakuru-marquee-scroll{to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){
-	.coursely-marquee{-webkit-mask-image:none;mask-image:none}
-	.coursely-marquee-track{animation:none;width:auto;flex-wrap:wrap;justify-content:center;gap:.5rem 1.75rem}
-	.coursely-marquee-item{margin-right:0}
-	.coursely-marquee-dup{display:none}
+	.manakuru-marquee{-webkit-mask-image:none;mask-image:none}
+	.manakuru-marquee-track{animation:none;width:auto;flex-wrap:wrap;justify-content:center;gap:.5rem 1.75rem}
+	.manakuru-marquee-item{margin-right:0}
+	.manakuru-marquee-dup{display:none}
 }
 `;
 
@@ -38,8 +38,8 @@ const MarqueeItem = ({ label, duplicate }: MarqueeItemProps) => (
 	<span
 		aria-hidden={duplicate || undefined}
 		className={cn(
-			"coursely-marquee-item mr-10 inline-flex items-center gap-2 whitespace-nowrap text-base font-medium text-muted-foreground/80",
-			duplicate && "coursely-marquee-dup",
+			"manakuru-marquee-item mr-10 inline-flex items-center gap-2 whitespace-nowrap text-base font-medium text-muted-foreground/80",
+			duplicate && "manakuru-marquee-dup",
 		)}
 	>
 		<span className="size-1.5 shrink-0 rotate-45 bg-primary/75" />
@@ -55,10 +55,10 @@ const TechMarquee = () => (
 			</p>
 
 			<div
-				className="coursely-marquee overflow-hidden"
-				aria-label="Technology stack Coursely is built on"
+				className="manakuru-marquee overflow-hidden"
+				aria-label="Technology stack Manakuru is built on"
 			>
-				<div className="coursely-marquee-track flex w-max">
+				<div className="manakuru-marquee-track flex w-max">
 					{techStack.map((tech) => (
 						<MarqueeItem key={tech} label={tech} />
 					))}

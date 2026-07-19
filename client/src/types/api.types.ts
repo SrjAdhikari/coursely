@@ -15,7 +15,7 @@ export interface ApiSuccessResponse<T = undefined> {
 }
 
 /**
- * Structured error envelope returned by the Coursely API.                
+ * Structured error envelope returned by the Manakuru API.                
  * Mirrors the backend shape: { status, error: { code, message } }.       
  */
 export interface ApiErrorResponse {

@@ -34,7 +34,7 @@ const ValueProps = () => (
 	<section id="why" className="mx-auto max-w-6xl px-5 py-16">
 		<div className="mx-auto mb-9 max-w-xl text-center">
 			<p className="text-xs uppercase tracking-widest text-primary">
-				why coursely
+				why Manakuru
 			</p>
 
 			<h2 className="mt-3 text-4xl">

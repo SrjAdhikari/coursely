@@ -31,7 +31,7 @@ describe("HomeFooter", () => {
 		renderHomeFooter();
 		expect(screen.getByRole("contentinfo")).toBeInTheDocument();
 		// Brand shows in both the logo and the copyright line, so allow multiple.
-		expect(screen.getAllByText(/coursely/i).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/manakuru/i).length).toBeGreaterThan(0);
 	});
 
 	it("links to the catalog regardless of auth state", () => {

@@ -17,14 +17,14 @@ const FounderNote = () => (
 			</span>
 
 			<p className="mt-3 text-xs uppercase tracking-widest text-primary">
-				why I built coursely
+				why I built Manakuru
 			</p>
 
 			<blockquote className="mt-4 space-y-4">
 				<p className="text-lg leading-relaxed text-foreground">
 					Most platforms rent you access. Stop paying and your courses
 					disappear. I wanted the opposite: buy a course once, own it for good,
-					and learn at your own pace. So Coursely is built around project-based
+					and learn at your own pace. So Manakuru is built around project-based
 					lessons and a player that remembers exactly where you stopped.
 				</p>
 
