@@ -94,7 +94,7 @@ describe("StoreHeader", () => {
 	it("links the logo to home when logged out", () => {
 		mockUseCurrentUser.mockReturnValue({ data: undefined });
 		renderHeaderAt();
-		expect(screen.getByRole("link", { name: /coursely/i })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: /manakuru/i })).toHaveAttribute(
 			"href",
 			"/",
 		);
@@ -103,7 +103,7 @@ describe("StoreHeader", () => {
 	it("links the logo to the dashboard when logged in", () => {
 		loggedIn();
 		renderHeaderAt();
-		expect(screen.getByRole("link", { name: /coursely/i })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: /manakuru/i })).toHaveAttribute(
 			"href",
 			"/dashboard",
 		);
