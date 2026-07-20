@@ -43,6 +43,8 @@ const envConfig = Object.freeze({
 	R2_BUCKET: getEnv("R2_BUCKET"),
 	STRIPE_SECRET_KEY: getEnv("STRIPE_SECRET_KEY"),
 	STRIPE_WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET"),
+	EMAIL_FROM: getEnv("EMAIL_FROM"),
+	RESEND_API_KEY: getEnv("RESEND_API_KEY"),
 });
 
 export default envConfig;
