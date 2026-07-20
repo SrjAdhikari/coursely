@@ -8,24 +8,24 @@ import Session from "../models/session.model";
 import { createToken } from "../utils/token";
 import verifyGoogleIdToken from "../lib/googleAuth";
 import sanitizeInput from "../utils/sanitizeInput";
+import createAppLink from "../utils/createAppLink";
 import AppError from "../errors/AppError";
 
 import { issueToken, consumeToken, isTokenOnCooldown } from "./token.service";
-import { sendVerificationEmail } from "./email.service";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./email.service";
 import { ONE_MINUTE_MS } from "../utils/date";
 
-import envConfig from "../constants/env";
 import httpStatus from "../constants/httpStatus";
 import appErrorCode from "../constants/appErrorCode";
 
-const { APP_ORIGIN } = envConfig;
-const { UNAUTHORIZED, FORBIDDEN, CONFLICT } = httpStatus;
+const { UNAUTHORIZED, FORBIDDEN, CONFLICT, BAD_REQUEST } = httpStatus;
 const {
 	INVALID_CREDENTIALS,
 	ACCOUNT_DEACTIVATED,
 	GOOGLE_EMAIL_NOT_VERIFIED,
 	PROVIDER_MISMATCH,
 	EMAIL_NOT_VERIFIED,
+	INVALID_OR_EXPIRED_TOKEN,
 } = appErrorCode;
 
 /** A unique-index violation specifically on the email field (email taken). */
@@ -33,10 +33,6 @@ const isEmailAlreadyTaken = (error: unknown): boolean =>
 	error instanceof mongoose.mongo.MongoServerError &&
 	error.code === 11000 &&
 	error.keyPattern?.email !== undefined;
-
-/** Build the client-side link that carries a one-time verification token. */
-const buildVerifyLink = (rawToken: string): string =>
-	`${APP_ORIGIN}/verify-email?token=${rawToken}`;
 
 /**
  * Create an unverified student account, then email a verification link. The reply
@@ -59,7 +55,11 @@ const registerUser = async (
 	}
 
 	const rawToken = await issueToken(user._id, "email_verification");
-	await sendVerificationEmail(name, email, buildVerifyLink(rawToken));
+	await sendVerificationEmail(
+		name,
+		email,
+		createAppLink("verify-email", rawToken),
+	);
 };
 
 /** Verify credentials and mint a fresh session token (only its hash is stored). */
@@ -177,7 +177,66 @@ const resendVerificationLink = async (email: string): Promise<void> => {
 	if (onCooldown) return;
 
 	const rawToken = await issueToken(user._id, "email_verification");
-	await sendVerificationEmail(user.name, email, buildVerifyLink(rawToken));
+	await sendVerificationEmail(
+		user.name,
+		email,
+		createAppLink("verify-email", rawToken),
+	);
+};
+
+/** Send a password-reset link if the user exists and signed up with a password. */
+const forgotPassword = async (email: string): Promise<void> => {
+	const user = await User.findOne({ email });
+	if (!user || user.provider !== "email") return;
+
+	// Don't send a new link if one is already on cooldown.
+	const onCooldown = await isTokenOnCooldown(
+		user._id,
+		"password_reset",
+		ONE_MINUTE_MS,
+	);
+	if (onCooldown) return;
+
+	const rawToken = await issueToken(user._id, "password_reset");
+	await sendPasswordResetEmail(
+		user.name,
+		email,
+		createAppLink("reset-password", rawToken),
+	);
+};
+
+/**
+ * Reset a user's password from a password-reset token (single-use). 
+ * This also verifies the account and destroys all existing sessions.
+ */
+const resetPassword = async (
+	token: string,
+	newPassword: string,
+): Promise<void> => {
+	const session = await mongoose.startSession();
+
+	try {
+		await session.withTransaction(async () => {
+			const userId = await consumeToken(token, "password_reset", session);
+
+			const user = await User.findById(userId).session(session);
+			if (!user) {
+				throw new AppError(
+					"This link is invalid or has expired",
+					BAD_REQUEST,
+					INVALID_OR_EXPIRED_TOKEN,
+				);
+			}
+
+			user.password = newPassword;
+			user.isVerified = true;
+
+			await user.save({ session });
+			await Session.deleteMany({ userId }, { session });
+		});
+	} finally {
+		await session.endSession();
+	}
 };
 
 export {
@@ -187,4 +246,6 @@ export {
 	loginOrCreateGoogleUser,
 	verifyEmail,
 	resendVerificationLink,
+	forgotPassword,
+	resetPassword,
 };
