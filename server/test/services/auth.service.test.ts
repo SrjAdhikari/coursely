@@ -136,6 +136,20 @@ describe("auth.service", () => {
 			});
 		});
 
+		it("blocks an unverified account with 403 EMAIL_NOT_VERIFIED after a correct password", async () => {
+			await createTestUser({
+				email: "unver@example.com",
+				password: "Password123",
+				isVerified: false,
+			});
+			await expect(
+				loginUser("unver@example.com", "Password123"),
+			).rejects.toMatchObject({
+				statusCode: 403,
+				errorCode: "EMAIL_NOT_VERIFIED",
+			});
+		});
+
 		it("mints a distinct token on every login (fixation defense, R2.1)", async () => {
 			await createTestUser({ email: "re@example.com", password: "Password123" });
 			const first = await loginUser("re@example.com", "Password123");
@@ -177,6 +191,15 @@ describe("loginOrCreateGoogleUser", () => {
 		expect(
 			await Session.findOne({ tokenHash: hashToken(result.token) }),
 		).not.toBeNull();
+	});
+
+	it("creates Google users pre-verified", async () => {
+		verifyGoogleIdTokenMock.mockResolvedValue(identity());
+
+		await loginOrCreateGoogleUser("tok");
+
+		const user = await User.findOne({ email: "asha@example.com" });
+		expect(user?.isVerified).toBe(true);
 	});
 
 	it("logs in a returning Google user (isNewUser=false)", async () => {

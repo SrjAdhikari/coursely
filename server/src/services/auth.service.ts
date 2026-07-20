@@ -25,6 +25,7 @@ const {
 	ACCOUNT_DEACTIVATED,
 	GOOGLE_EMAIL_NOT_VERIFIED,
 	PROVIDER_MISMATCH,
+	EMAIL_NOT_VERIFIED,
 } = appErrorCode;
 
 /** A unique-index violation specifically on the email field (email taken). */
@@ -82,6 +83,14 @@ const loginUser = async (email: string, password: string): Promise<string> => {
 		);
 	}
 
+	if (!user.isVerified) {
+		throw new AppError(
+			"Please verify your email address",
+			FORBIDDEN,
+			EMAIL_NOT_VERIFIED,
+		);
+	}
+
 	const { token, tokenHash } = createToken();
 	await Session.create({ userId: user._id, tokenHash });
 
@@ -131,6 +140,7 @@ const loginOrCreateGoogleUser = async (
 			email,
 			provider: "google",
 			avatarUrl,
+			isVerified: true,
 		});
 	}
 
