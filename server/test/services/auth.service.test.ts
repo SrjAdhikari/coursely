@@ -15,7 +15,7 @@ import {
 } from "../../src/services/auth.service";
 import User from "../../src/models/user.model";
 import Session from "../../src/models/session.model";
-import { hashSessionToken } from "../../src/utils/sessionToken";
+import { hashToken } from "../../src/utils/token";
 import { createTestUser, createTestSession } from "../helpers/factories";
 
 describe("auth.service", () => {
@@ -58,7 +58,7 @@ describe("auth.service", () => {
 
 			// Only the hash is persisted; the raw token is never stored.
 			const stored = await Session.findOne({
-				tokenHash: hashSessionToken(token),
+				tokenHash: hashToken(token),
 			});
 			expect(stored).not.toBeNull();
 			expect(stored?.tokenHash).not.toBe(token);
@@ -136,7 +136,7 @@ describe("loginOrCreateGoogleUser", () => {
 		expect(user?.provider).toBe("google");
 		expect(user?.avatarUrl).toBe("https://lh3.googleusercontent.com/a/pic");
 		expect(
-			await Session.findOne({ tokenHash: hashSessionToken(result.token) }),
+			await Session.findOne({ tokenHash: hashToken(result.token) }),
 		).not.toBeNull();
 	});
 

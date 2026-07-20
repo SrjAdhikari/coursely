@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import User from "../models/user.model";
 import Session from "../models/session.model";
 
-import { createSessionToken } from "../utils/sessionToken";
+import { createToken } from "../utils/token";
 import verifyGoogleIdToken from "../lib/googleAuth";
 import sanitizeInput from "../utils/sanitizeInput";
 import AppError from "../errors/AppError";
@@ -67,7 +67,7 @@ const loginUser = async (email: string, password: string): Promise<string> => {
 		);
 	}
 
-	const { token, tokenHash } = createSessionToken();
+	const { token, tokenHash } = createToken();
 	await Session.create({ userId: user._id, tokenHash });
 
 	return token;
@@ -119,7 +119,7 @@ const loginOrCreateGoogleUser = async (
 		});
 	}
 
-	const { token, tokenHash } = createSessionToken();
+	const { token, tokenHash } = createToken();
 	await Session.create({ userId: user._id, tokenHash });
 
 	return { token, isNewUser: !existingUser };

@@ -6,7 +6,7 @@ import Session from "../models/session.model";
 import { toPublicUser, type UserDocument } from "../models/user.model";
 
 import { SESSION_COOKIE_NAME, clearSessionCookie } from "../utils/cookies";
-import { hashSessionToken } from "../utils/sessionToken";
+import { hashToken } from "../utils/token";
 
 import AppError from "../errors/AppError";
 
@@ -24,7 +24,7 @@ type SessionUser = Pick<
 
 /** Load a session by its token hash, user populated (never the password). */
 const findSessionWithUser = (token: string) =>
-	Session.findOne({ tokenHash: hashSessionToken(token) })
+	Session.findOne({ tokenHash: hashToken(token) })
 		.populate<{
 			userId: SessionUser | null;
 		}>("userId", "name email role isActive avatarUrl")

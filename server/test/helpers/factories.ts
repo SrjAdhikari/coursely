@@ -7,7 +7,7 @@ import Lesson from "../../src/models/lesson.model";
 import Enrollment from "../../src/models/enrollment.model";
 import Progress from "../../src/models/progress.model";
 import Session from "../../src/models/session.model";
-import { createSessionToken } from "../../src/utils/sessionToken";
+import { createToken } from "../../src/utils/token";
 import type { Types } from "mongoose";
 
 interface UserOverrides {
@@ -41,7 +41,7 @@ const createTestSession = async (
 	userId: Types.ObjectId,
 	overrides: Record<string, unknown> = {},
 ) => {
-	const { token, tokenHash } = createSessionToken();
+	const { token, tokenHash } = createToken();
 	const session = await Session.create({ userId, tokenHash, ...overrides });
 	return { session, token };
 };
