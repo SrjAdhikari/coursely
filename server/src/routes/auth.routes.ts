@@ -13,6 +13,10 @@ import {
 	googleOAuthHandler,
 	logoutHandler,
 	getCurrentUserHandler,
+	verifyEmailHandler,
+	resendVerificationHandler,
+	forgotPasswordHandler,
+	resetPasswordHandler,
 } from "../controllers/auth.controller";
 
 import authenticate from "../middlewares/auth.middleware";
@@ -23,6 +27,10 @@ import {
 	registerSchema,
 	loginSchema,
 	googleOAuthSchema,
+	verifyEmailSchema,
+	resendVerificationSchema,
+	forgotPasswordSchema,
+	resetPasswordSchema,
 } from "../validators/auth.validator";
 
 const authRouter = Router();
@@ -66,5 +74,49 @@ authRouter.post("/logout", authenticate, logoutHandler);
  * @route GET /api/auth/me
  */
 authRouter.get("/me", authenticate, getCurrentUserHandler);
+
+/**
+ * Verify an account's email address from a token
+ * @route POST /api/auth/verify-email
+ */
+authRouter.post(
+	"/verify-email",
+	authLimiter,
+	validateBody(verifyEmailSchema),
+	verifyEmailHandler,
+);
+
+/**
+ * Re-send the account verification link
+ * @route POST /api/auth/resend-verification
+ */
+authRouter.post(
+	"/resend-verification",
+	authLimiter,
+	validateBody(resendVerificationSchema),
+	resendVerificationHandler,
+);
+
+/**
+ * Send a password reset link to the user's email
+ * @route POST /api/auth/forgot-password
+ */
+authRouter.post(
+	"/forgot-password",
+	authLimiter,
+	validateBody(forgotPasswordSchema),
+	forgotPasswordHandler,
+);
+
+/**
+ * Reset a user's password from a token
+ * @route POST /api/auth/reset-password
+ */
+authRouter.post(
+	"/reset-password",
+	authLimiter,
+	validateBody(resetPasswordSchema),
+	resetPasswordHandler,
+);
 
 export default authRouter;
