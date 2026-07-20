@@ -18,6 +18,7 @@ const validUser = () => ({
 	provider: "email",
 	role: "student",
 	isActive: true,
+	isVerified: false,
 	createdAt: new Date(),
 	updatedAt: new Date(),
 	__v: 0,
@@ -57,6 +58,14 @@ describe("users collection validator", () => {
 			db
 				.collection(collectionName)
 				.insertOne({ ...validUser(), email: "not-an-email" }),
+		).rejects.toMatchObject({ code: 121 });
+	});
+
+	it("rejects a non-boolean isVerified (code 121)", async () => {
+		await expect(
+			db
+				.collection(collectionName)
+				.insertOne({ ...validUser(), isVerified: "yes" }),
 		).rejects.toMatchObject({ code: 121 });
 	});
 

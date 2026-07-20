@@ -51,6 +51,10 @@ const usersSchema = {
 				bsonType: "bool",
 				description: "Whether the account is active",
 			},
+			isVerified: {
+				bsonType: "bool",
+				description: "Whether the account's email is verified",
+			},
 			createdAt: {
 				bsonType: "date",
 				description: "Creation timestamp",

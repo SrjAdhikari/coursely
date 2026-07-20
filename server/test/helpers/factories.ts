@@ -16,6 +16,7 @@ interface UserOverrides {
 	password?: string;
 	role?: UserRole;
 	isActive?: boolean;
+	isVerified?: boolean;
 }
 
 let counter = 0;
@@ -33,6 +34,7 @@ const createTestUser = async (overrides: UserOverrides = {}) => {
 		password: overrides.password ?? "Password123",
 		role: overrides.role ?? "student",
 		isActive: overrides.isActive ?? true,
+		isVerified: overrides.isVerified ?? true,
 	});
 };
 
