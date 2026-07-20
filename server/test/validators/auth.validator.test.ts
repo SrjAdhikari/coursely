@@ -1,7 +1,13 @@
 //* test/validators/auth.validator.test.ts
 
 import { describe, it, expect } from "vitest";
-import { registerSchema } from "../../src/validators/auth.validator";
+import {
+	registerSchema,
+	verifyEmailSchema,
+	resetPasswordSchema,
+	forgotPasswordSchema,
+	resendVerificationSchema,
+} from "../../src/validators/auth.validator";
 
 const validCredentials = {
 	email: "asha@example.com",
@@ -73,5 +79,47 @@ describe("auth validators — registerSchema name sanitization", () => {
 				name: "<script>x</script>",
 			}).success,
 		).toBe(false);
+	});
+});
+
+describe("auth validators — verification + reset schemas", () => {
+	it("verifyEmailSchema rejects an empty token and accepts a non-empty one", () => {
+		expect(verifyEmailSchema.safeParse({ token: "" }).success).toBe(false);
+		expect(verifyEmailSchema.safeParse({ token: "abc123" }).success).toBe(true);
+	});
+
+	it("resetPasswordSchema requires a token and a strong newPassword", () => {
+		expect(
+			resetPasswordSchema.safeParse({ token: "abc", newPassword: "weak" })
+				.success,
+		).toBe(false);
+		expect(
+			resetPasswordSchema.safeParse({ token: "abc", newPassword: "Password1!" })
+				.success,
+		).toBe(true);
+	});
+
+	// A weaker rule here would let users downgrade their password via reset.
+	it.each([
+		["too short", "Pass1!"],
+		["no uppercase", "password1!"],
+		["no lowercase", "PASSWORD1!"],
+		["no number", "Password!!"],
+		["no special character", "Password11"],
+	])("resetPasswordSchema enforces the register rule — %s", (_case, weak) => {
+		expect(registerSchema.safeParse({ ...validCredentials, name: "Asha Rai", password: weak }).success).toBe(false);
+		expect(resetPasswordSchema.safeParse({ token: "abc", newPassword: weak }).success).toBe(false);
+	});
+
+	it("forgotPasswordSchema and resendVerificationSchema validate the email", () => {
+		expect(forgotPasswordSchema.safeParse({ email: "nope" }).success).toBe(
+			false,
+		);
+		expect(
+			forgotPasswordSchema.safeParse({ email: "asha@example.com" }).success,
+		).toBe(true);
+		expect(
+			resendVerificationSchema.safeParse({ email: "asha@example.com" }).success,
+		).toBe(true);
 	});
 });
