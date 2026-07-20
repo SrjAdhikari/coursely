@@ -20,7 +20,7 @@ const TOKEN_TTL_MS: Record<TokenType, number> = {
 };
 
 /**
- * Issue a one time use token of `type` for `userId`, 
+ * Issue a one time use token of `type` for `userId`,
  * deleting any previous tokens of the same type.
  */
 const issueToken = async (
@@ -37,7 +37,7 @@ const issueToken = async (
 };
 
 /**
- * Consume a one time use token of `type`, delete it and 
+ * Consume a one time use token of `type`, delete it and
  * return the user ID. Throws 400 when missing/expired.
  */
 const consumeToken = async (
@@ -62,4 +62,22 @@ const consumeToken = async (
 	return stored.userId;
 };
 
-export { issueToken, consumeToken };
+/**
+ * True when a token of `type` was issued within the cooldown window.
+ * Callers no-op silently rather than erroring, so replies stay generic.
+ */
+const isTokenOnCooldown = async (
+	userId: Types.ObjectId,
+	type: TokenType,
+	cooldownMs: number,
+): Promise<boolean> => {
+	const existing = await Token.findOne({ userId, type });
+	if (!existing) return false;
+
+	const tokenCreatedAt = existing.createdAt.getTime();
+	const onCooldown = Date.now() - tokenCreatedAt < cooldownMs;
+
+	return onCooldown;
+};
+
+export { issueToken, consumeToken, isTokenOnCooldown };

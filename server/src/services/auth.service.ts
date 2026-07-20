@@ -10,9 +10,15 @@ import verifyGoogleIdToken from "../lib/googleAuth";
 import sanitizeInput from "../utils/sanitizeInput";
 import AppError from "../errors/AppError";
 
+import { issueToken, consumeToken, isTokenOnCooldown } from "./token.service";
+import { sendVerificationEmail } from "./email.service";
+import { ONE_MINUTE_MS } from "../utils/date";
+
+import envConfig from "../constants/env";
 import httpStatus from "../constants/httpStatus";
 import appErrorCode from "../constants/appErrorCode";
 
+const { APP_ORIGIN } = envConfig;
 const { UNAUTHORIZED, FORBIDDEN, CONFLICT } = httpStatus;
 const {
 	INVALID_CREDENTIALS,
@@ -27,23 +33,32 @@ const isEmailAlreadyTaken = (error: unknown): boolean =>
 	error.code === 11000 &&
 	error.keyPattern?.email !== undefined;
 
+/** Build the client-side link that carries a one-time verification token. */
+const buildVerifyLink = (rawToken: string): string =>
+	`${APP_ORIGIN}/verify-email?token=${rawToken}`;
+
 /**
- * Create a student account (no session — the client logs in next). The reply is
- * identical for a new vs. a taken email, so it can't be used to enumerate accounts.
+ * Create an unverified student account, then email a verification link. The reply
+ * is identical for a new vs. a taken email, so it can't be used to enumerate accounts.
  */
 const registerUser = async (
 	name: string,
 	email: string,
 	password: string,
 ): Promise<void> => {
+	let user;
+
 	try {
-		await User.create({ name, email, password });
+		user = await User.create({ name, email, password });
 	} catch (error) {
 		// Taken email → swallow to keep the reply generic. Any other error (incl. a
 		// duplicate on a different unique index) still throws to the error handler.
 		if (isEmailAlreadyTaken(error)) return;
 		throw error;
 	}
+
+	const rawToken = await issueToken(user._id, "email_verification");
+	await sendVerificationEmail(name, email, buildVerifyLink(rawToken));
 };
 
 /** Verify credentials and mint a fresh session token (only its hash is stored). */
@@ -132,4 +147,34 @@ const logoutUser = async (sessionId: string): Promise<void> => {
 	}
 };
 
-export { registerUser, loginUser, logoutUser, loginOrCreateGoogleUser };
+/** Verify an account from an email-verification token (single-use). */
+const verifyEmail = async (token: string): Promise<void> => {
+	const userId = await consumeToken(token, "email_verification");
+	await User.updateOne({ _id: userId }, { $set: { isVerified: true } });
+};
+
+/** Re-send an email-verification link if the user exists and is not verified. */
+const resendVerificationLink = async (email: string): Promise<void> => {
+	const user = await User.findOne({ email });
+	if (!user || user.provider !== "email" || user.isVerified) return;
+
+	// Don't send a new link if one is already on cooldown.
+	const onCooldown = await isTokenOnCooldown(
+		user._id,
+		"email_verification",
+		ONE_MINUTE_MS,
+	);
+	if (onCooldown) return;
+
+	const rawToken = await issueToken(user._id, "email_verification");
+	await sendVerificationEmail(user.name, email, buildVerifyLink(rawToken));
+};
+
+export {
+	registerUser,
+	loginUser,
+	logoutUser,
+	loginOrCreateGoogleUser,
+	verifyEmail,
+	resendVerificationLink,
+};
