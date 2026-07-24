@@ -44,7 +44,10 @@ const envConfig = Object.freeze({
 	STRIPE_SECRET_KEY: getEnv("STRIPE_SECRET_KEY"),
 	STRIPE_WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET"),
 	EMAIL_FROM: getEnv("EMAIL_FROM"),
-	RESEND_API_KEY: getEnv("RESEND_API_KEY"),
+	SMTP_HOST: getEnv("SMTP_HOST"),
+	SMTP_PORT: Number(getEnv("SMTP_PORT")),
+	SMTP_USER: getEnv("SMTP_USER"),
+	SMTP_PASS: getEnv("SMTP_PASS"),
 });
 
 export default envConfig;

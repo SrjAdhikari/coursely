@@ -24,9 +24,13 @@ export default defineConfig({
 			STRIPE_SECRET_KEY: "sk_test_dummy_key_for_unit_tests",
 			STRIPE_WEBHOOK_SECRET: "whsec_test_dummy_secret_for_signing",
 			EMAIL_FROM: "Test Sender <no-reply@test.invalid>",
-			// Blank forces the console email transport, so tests never reach
-			// Resend even when a real key sits in the developer's `.env`.
-			RESEND_API_KEY: "",
+
+			// Blank forces the console email transport, so tests never send real
+			// mail even when live SMTP credentials sit in the developer's `.env`.
+			SMTP_HOST: "",
+			SMTP_PORT: "",
+			SMTP_USER: "",
+			SMTP_PASS: "",
 		},
 		include: ["test/**/*.test.ts"],
 		globalSetup: ["./test/helpers/globalSetup.ts"],
