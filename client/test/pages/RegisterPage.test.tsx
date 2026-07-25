@@ -7,12 +7,12 @@ import { MemoryRouter } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const mockRegister = vi.fn();
-const mockLogin = vi.fn();
 const mockGoogleMutate = vi.fn();
+const mockResend = vi.fn();
 vi.mock("@/hooks/useAuth", () => ({
 	useRegister: () => ({ mutate: mockRegister, isPending: false }),
-	useLogin: () => ({ mutate: mockLogin, isPending: false }),
 	useGoogleSignIn: () => ({ mutate: mockGoogleMutate, isPending: false }),
+	useResendVerification: () => ({ mutate: mockResend, isPending: false }),
 }));
 
 vi.mock("@/components/auth/GoogleSignInButton", () => ({
@@ -92,49 +92,39 @@ describe("RegisterPage", () => {
 		);
 	});
 
-	it("performs a silent login with the same credentials after register succeeds", async () => {
+	it("shows the check-inbox notice with the email once register succeeds", async () => {
 		mockRegister.mockImplementation((_values, options) => options.onSuccess());
 		const user = userEvent.setup();
 		renderPage();
 		await fillValidForm(user);
 
-		await waitFor(() =>
-			expect(mockLogin).toHaveBeenCalledWith(
-				{ email: "asha@example.com", password: "Password1!" },
-				expect.any(Object),
-			),
-		);
-	});
-
-	it("surfaces a generic error when the silent login fails", async () => {
-		mockRegister.mockImplementation((_values, options) => options.onSuccess());
-		mockLogin.mockImplementation((_credentials, options) =>
-			options.onError({ message: "Invalid email or password" }),
-		);
-		const user = userEvent.setup();
-		renderPage();
-		await fillValidForm(user);
-
+		expect(await screen.findByText(/verification link/i)).toBeInTheDocument();
+		expect(screen.getByText("asha@example.com")).toBeInTheDocument();
+		// The signup form is gone — no auto-login.
 		expect(
-			await screen.findByText(/invalid email or password/i),
-		).toBeInTheDocument();
+			screen.queryByRole("button", { name: /create account/i }),
+		).not.toBeInTheDocument();
 	});
 
-	it("clears the form once register and the silent login both succeed", async () => {
+	it("resends the verification email from the check-inbox notice", async () => {
 		mockRegister.mockImplementation((_values, options) => options.onSuccess());
-		mockLogin.mockImplementation((_credentials, options) => options.onSuccess());
 		const user = userEvent.setup();
 		renderPage();
 		await fillValidForm(user);
 
-		await waitFor(() =>
-			expect(screen.getByLabelText(/name/i)).toHaveValue(""),
+		await user.click(
+			await screen.findByRole("button", { name: /resend verification email/i }),
+		);
+
+		expect(mockResend).toHaveBeenCalledWith(
+			{ email: "asha@example.com" },
+			expect.any(Object),
 		);
 	});
 
-	it("surfaces the error and skips the login when register itself fails", async () => {
+	it("surfaces the error when register itself fails", async () => {
 		mockRegister.mockImplementation((_values, options) =>
-			options.onError({ message: "Something went wrong" }),
+			options.onError({ message: "Something went wrong", code: "NETWORK_ERROR" }),
 		);
 		const user = userEvent.setup();
 		renderPage();
@@ -143,7 +133,6 @@ describe("RegisterPage", () => {
 		expect(
 			await screen.findByText(/something went wrong/i),
 		).toBeInTheDocument();
-		expect(mockLogin).not.toHaveBeenCalled();
 	});
 
 	it("signs up with Google using the returned credential", async () => {
