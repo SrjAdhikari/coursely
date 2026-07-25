@@ -63,7 +63,10 @@ const VerifyEmailPage = () => {
 	});
 
 	const onResend = (values: ForgotPasswordFormData) => {
-		resend(values, { onSuccess: () => setResent(true) });
+		resend(values, {
+			onSuccess: () => setResent(true),
+			onError: (error) => setErrorMessage(error.message),
+		});
 	};
 
 	return (

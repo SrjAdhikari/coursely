@@ -2,6 +2,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 
 const mockVerify = vi.fn();
@@ -60,5 +61,32 @@ describe("VerifyEmailPage", () => {
 		expect(
 			screen.getByRole("button", { name: /resend verification email/i }),
 		).toBeInTheDocument();
+	});
+
+	it("surfaces an error when the resend itself fails", async () => {
+		mockVerify.mockImplementation((_payload, options) =>
+			options.onError({
+				message: "This verification link is invalid or has expired.",
+				code: "INVALID_OR_EXPIRED_TOKEN",
+			}),
+		);
+		mockResend.mockImplementation((_payload, options) =>
+			options.onError({
+				message: "Too many requests. Please try again later.",
+				code: "RATE_LIMITED",
+			}),
+		);
+		const user = userEvent.setup();
+		renderPage();
+
+		await user.type(
+			await screen.findByLabelText(/email/i),
+			"asha@example.com",
+		);
+		await user.click(
+			screen.getByRole("button", { name: /resend verification email/i }),
+		);
+
+		expect(await screen.findByText(/too many requests/i)).toBeInTheDocument();
 	});
 });
