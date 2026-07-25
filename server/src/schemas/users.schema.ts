@@ -10,6 +10,7 @@ const usersSchema = {
 			"provider",
 			"role",
 			"isActive",
+			"isVerified",
 			"createdAt",
 			"updatedAt",
 		],

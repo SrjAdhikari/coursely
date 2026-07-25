@@ -69,6 +69,14 @@ describe("users collection validator", () => {
 		).rejects.toMatchObject({ code: 121 });
 	});
 
+	it("rejects a raw insert missing isVerified (code 121)", async () => {
+		const rawUser = validUser();
+		delete (rawUser as { isVerified?: boolean }).isVerified;
+		await expect(
+			db.collection(collectionName).insertOne(rawUser),
+		).rejects.toMatchObject({ code: 121 });
+	});
+
 	it("rejects a raw insert missing a Mongoose-defaulted field like provider (code 121)", async () => {
 		const rawUser = validUser();
 		delete (rawUser as { provider?: string }).provider;
