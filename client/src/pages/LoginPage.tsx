@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import AppLogo from "@/components/common/AppLogo";
 import FormField from "@/components/form/FormField";
 import AlertBanner from "@/components/ui/alert-banner";
+import EmailVerificationPrompt from "@/components/auth/EmailVerificationPrompt";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import AuthDivider from "@/components/auth/AuthDivider";
 
@@ -36,6 +37,7 @@ const LoginPage = () => {
 
 	const queryClient = useQueryClient();
 	const [authError, setAuthError] = useState<string | null>(null);
+	const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
 	// Preserve any post-auth redirect target when switching between the tabs.
 	const [searchParams] = useSearchParams();
@@ -55,17 +57,25 @@ const LoginPage = () => {
 
 	const onSubmit = (values: LoginFormData) => {
 		setAuthError(null);
+		setUnverifiedEmail(null);
 		mutate(values, {
 			onSuccess: () => {
 				reset();
 				queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
 			},
-			onError: (error) => setAuthError(error.message),
+			onError: (error) => {
+				// A correct password on an unverified account - offer a resend,
+				// not a generic error. Every other failure stays generic.
+				if (error.code === "EMAIL_NOT_VERIFIED")
+					setUnverifiedEmail(values.email);
+				else setAuthError(error.message);
+			},
 		});
 	};
 
 	const handleGoogleSuccess = (idToken: string) => {
 		setAuthError(null);
+		setUnverifiedEmail(null);
 		googleSignIn(
 			{ idToken },
 			{
@@ -108,6 +118,10 @@ const LoginPage = () => {
 				</AlertBanner>
 			)}
 
+			{unverifiedEmail && (
+				<EmailVerificationPrompt email={unverifiedEmail} className="mb-4" />
+			)}
+
 			<form
 				onSubmit={handleSubmit(onSubmit)}
 				noValidate
@@ -129,6 +143,14 @@ const LoginPage = () => {
 					type="password"
 					autoComplete="off"
 					placeholder="Enter your password"
+					labelExtra={
+						<Link
+							to={ROUTES.FORGOT_PASSWORD}
+							className="text-xs text-muted-foreground hover:text-primary hover:underline cursor-pointer"
+						>
+							Forgot password?
+						</Link>
+					}
 					error={errors.password?.message}
 					{...register("password")}
 				/>
@@ -136,7 +158,7 @@ const LoginPage = () => {
 				<Button
 					type="submit"
 					disabled={isSubmitting || !isValid}
-					className="w-full h-11 font-mono cursor-pointer disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
+					className="w-full h-11 cursor-pointer disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
 				>
 					<span className="text-base font-medium">
 						{isLoggingIn ? "Signing in..." : "Sign in"}
