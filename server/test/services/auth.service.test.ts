@@ -500,3 +500,36 @@ describe("loginUser on a Google-only account", () => {
 		});
 	});
 });
+
+describe("email send failures are non-fatal", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		// The service logs the swallowed send error — silence it to keep output clean.
+		vi.spyOn(console, "error").mockImplementation(() => {});
+	});
+
+	it("register still creates the account when the verification email fails to send", async () => {
+		sendVerificationEmailMock.mockRejectedValueOnce(new Error("SMTP down"));
+
+		await expect(
+			registerUser("Asha", "smtp-fail@example.com", "Password123"),
+		).resolves.toBeUndefined();
+
+		const stored = await User.findOne({ email: "smtp-fail@example.com" });
+		expect(stored).not.toBeNull();
+	});
+
+	it("resendVerificationLink does not throw when the send fails (reply stays generic)", async () => {
+		const user = await createTestUser({ isVerified: false });
+		sendVerificationEmailMock.mockRejectedValueOnce(new Error("SMTP down"));
+
+		await expect(resendVerificationLink(user.email)).resolves.toBeUndefined();
+	});
+
+	it("forgotPassword does not throw when the send fails (reply stays generic)", async () => {
+		await createTestUser({ email: "fp-fail@example.com" });
+		sendPasswordResetEmailMock.mockRejectedValueOnce(new Error("SMTP down"));
+
+		await expect(forgotPassword("fp-fail@example.com")).resolves.toBeUndefined();
+	});
+});

@@ -55,11 +55,15 @@ const registerUser = async (
 	}
 
 	const rawToken = await issueToken(user._id, "email_verification");
-	await sendVerificationEmail(
-		name,
-		email,
-		createAppLink("verify-email", rawToken),
-	);
+	try {
+		await sendVerificationEmail(
+			name,
+			email,
+			createAppLink("verify-email", rawToken),
+		);
+	} catch (error) {
+		console.error("Verification email failed to send after registration:", error);
+	}
 };
 
 /** Verify credentials and mint a fresh session token (only its hash is stored). */
@@ -177,11 +181,15 @@ const resendVerificationLink = async (email: string): Promise<void> => {
 	if (onCooldown) return;
 
 	const rawToken = await issueToken(user._id, "email_verification");
-	await sendVerificationEmail(
-		user.name,
-		email,
-		createAppLink("verify-email", rawToken),
-	);
+	try {
+		await sendVerificationEmail(
+			user.name,
+			email,
+			createAppLink("verify-email", rawToken),
+		);
+	} catch (error) {
+		console.error("Resend verification email failed:", error);
+	}
 };
 
 /** Send a password-reset link if the user exists and signed up with a password. */
@@ -198,11 +206,15 @@ const forgotPassword = async (email: string): Promise<void> => {
 	if (onCooldown) return;
 
 	const rawToken = await issueToken(user._id, "password_reset");
-	await sendPasswordResetEmail(
-		user.name,
-		email,
-		createAppLink("reset-password", rawToken),
-	);
+	try {
+		await sendPasswordResetEmail(
+			user.name,
+			email,
+			createAppLink("reset-password", rawToken),
+		);
+	} catch (error) {
+		console.error("Password reset email failed:", error);
+	}
 };
 
 /**
