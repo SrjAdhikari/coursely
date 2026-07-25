@@ -1,7 +1,12 @@
 //* test/schemas/auth.schema.test.ts
 
 import { describe, it, expect } from "vitest";
-import { loginSchema, registerSchema } from "@/schemas/auth.schema";
+import {
+	loginSchema,
+	registerSchema,
+	forgotPasswordSchema,
+	resetPasswordSchema,
+} from "@/schemas/auth.schema";
 
 describe("client auth schemas", () => {
 	describe("loginSchema", () => {
@@ -100,6 +105,49 @@ describe("client auth schemas", () => {
 					name,
 					email: "asha@example.com",
 					password: "Password1!",
+				}).success,
+			).toBe(true);
+		});
+	});
+
+	describe("forgotPasswordSchema", () => {
+		it("rejects an invalid email", () => {
+			expect(forgotPasswordSchema.safeParse({ email: "nope" }).success).toBe(
+				false,
+			);
+		});
+
+		it("accepts a valid email", () => {
+			expect(
+				forgotPasswordSchema.safeParse({ email: "asha@example.com" }).success,
+			).toBe(true);
+		});
+	});
+
+	describe("resetPasswordSchema", () => {
+		it("rejects when the confirmation does not match", () => {
+			expect(
+				resetPasswordSchema.safeParse({
+					newPassword: "Password1!",
+					confirmPassword: "Password2!",
+				}).success,
+			).toBe(false);
+		});
+
+		it("rejects a weak new password even when the confirmation matches", () => {
+			expect(
+				resetPasswordSchema.safeParse({
+					newPassword: "alllowercase",
+					confirmPassword: "alllowercase",
+				}).success,
+			).toBe(false);
+		});
+
+		it("accepts a strong password with a matching confirmation", () => {
+			expect(
+				resetPasswordSchema.safeParse({
+					newPassword: "Password1!",
+					confirmPassword: "Password1!",
 				}).success,
 			).toBe(true);
 		});
