@@ -1,6 +1,6 @@
 {
 	"name": "manakuru-server",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"private": true,
 	"description": "Manakuru LMS - Express 5 + TypeScript REST API",
 	"main": "server.ts",
