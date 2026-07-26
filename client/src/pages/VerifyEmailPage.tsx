@@ -36,16 +36,20 @@ const VerifyEmailPage = () => {
 	const [errorMessage, setErrorMessage] = useState(
 		"This verification link is invalid or has expired.",
 	);
-	const hasRequested = useRef(false);
+	const requestedToken = useRef<string | null>(null);
 
-	// Verify once on mount — the ref blocks StrictMode's double-run of the single-use
-	// token, and awaiting mutateAsync avoids the "verifying" hang mutate's callbacks caused.
+	// Verify on mount and when the token changes; the token ref blocks StrictMode's
+	// double-run and ignores stale completions, and mutateAsync avoids the "verifying" hang.
 	useEffect(() => {
-		if (!token || hasRequested.current) return;
-		hasRequested.current = true;
+		if (!token || requestedToken.current === token) return;
+		requestedToken.current = token;
+		setStatus("verifying");
 		verifyEmail({ token })
-			.then(() => setStatus("success"))
+			.then(() => {
+				if (requestedToken.current === token) setStatus("success");
+			})
 			.catch((error) => {
+				if (requestedToken.current !== token) return;
 				setErrorMessage(
 					error?.message ?? "This verification link is invalid or has expired.",
 				);

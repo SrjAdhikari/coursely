@@ -1,9 +1,9 @@
 //* test/pages/VerifyEmailPage.test.tsx
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Routes, Route, Link } from "react-router";
 
 const mockVerify = vi.fn();
 const mockResend = vi.fn();
@@ -133,5 +133,28 @@ describe("VerifyEmailPage", () => {
 		);
 
 		expect(await screen.findByText(/too many requests/i)).toBeInTheDocument();
+	});
+
+	it("re-verifies when the token in the URL changes while mounted", async () => {
+		mockVerify.mockResolvedValue(undefined);
+		const user = userEvent.setup();
+		render(
+			<MemoryRouter initialEntries={["/verify-email?token=token-a"]}>
+				<Routes>
+					<Route path="/verify-email" element={<VerifyEmailPage />} />
+				</Routes>
+				<Link to="/verify-email?token=token-b">switch-token</Link>
+			</MemoryRouter>,
+		);
+
+		expect(await screen.findByText(/email verified/i)).toBeInTheDocument();
+		expect(mockVerify).toHaveBeenCalledWith({ token: "token-a" });
+
+		await user.click(screen.getByRole("link", { name: "switch-token" }));
+
+		await waitFor(() =>
+			expect(mockVerify).toHaveBeenCalledWith({ token: "token-b" }),
+		);
+		expect(mockVerify).toHaveBeenCalledTimes(2);
 	});
 });
