@@ -15,6 +15,9 @@ import AuthLayout from "@/components/layout/AuthLayout";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
+import VerifyEmailPage from "@/pages/VerifyEmailPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import DashboardPage from "@/pages/DashboardPage";
 import CatalogPage from "@/pages/CatalogPage";
 import CourseDetailPage from "@/pages/CourseDetailPage";
@@ -57,6 +60,15 @@ const AppRoutes = () => {
 				<Route element={<AuthLayout />}>
 					<Route path={ROUTES.LOGIN} element={<LoginPage />} />
 					<Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+					<Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmailPage />} />
+					<Route
+						path={ROUTES.FORGOT_PASSWORD}
+						element={<ForgotPasswordPage />}
+					/>
+					<Route
+						path={ROUTES.RESET_PASSWORD}
+						element={<ResetPasswordPage />}
+					/>
 				</Route>
 			</Route>
 

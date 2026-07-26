@@ -28,3 +28,24 @@ export interface LoginPayload {
 export interface GoogleSignInPayload {
 	idToken: string;
 }
+
+/** Request body for `POST /api/auth/verify-email`. */
+export interface VerifyEmailPayload {
+	token: string;
+}
+
+/** Request body for `POST /api/auth/resend-verification`. */
+export interface ResendVerificationPayload {
+	email: string;
+}
+
+/** Request body for `POST /api/auth/forgot-password`. */
+export interface ForgotPasswordPayload {
+	email: string;
+}
+
+/** Request body for `POST /api/auth/reset-password`. */
+export interface ResetPasswordPayload {
+	token: string;
+	newPassword: string;
+}

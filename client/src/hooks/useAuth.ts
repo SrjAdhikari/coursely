@@ -7,6 +7,10 @@ import {
 	login,
 	logout,
 	signInWithGoogle,
+	verifyEmail,
+	resendVerification,
+	forgotPassword,
+	resetPassword,
 } from "@/api/auth.api";
 import { CURRENT_USER_KEY } from "@/lib/queryKeys";
 
@@ -45,4 +49,34 @@ const useGoogleSignIn = () => {
 	return useMutation({ mutationFn: signInWithGoogle });
 };
 
-export { useCurrentUser, useRegister, useLogin, useLogout, useGoogleSignIn };
+/** Mutation hook for confirming an email from a verification link. */
+const useVerifyEmail = () => {
+	return useMutation({ mutationFn: verifyEmail });
+};
+
+/** Mutation hook for requesting a fresh verification link. */
+const useResendVerification = () => {
+	return useMutation({ mutationFn: resendVerification });
+};
+
+/** Mutation hook for requesting a password-reset link. */
+const useForgotPassword = () => {
+	return useMutation({ mutationFn: forgotPassword });
+};
+
+/** Mutation hook for setting a new password from a reset link. */
+const useResetPassword = () => {
+	return useMutation({ mutationFn: resetPassword });
+};
+
+export {
+	useCurrentUser,
+	useRegister,
+	useLogin,
+	useLogout,
+	useGoogleSignIn,
+	useVerifyEmail,
+	useResendVerification,
+	useForgotPassword,
+	useResetPassword,
+};

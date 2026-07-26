@@ -8,9 +8,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const mockMutate = vi.fn();
 const mockGoogleMutate = vi.fn();
+const mockResend = vi.fn();
 vi.mock("@/hooks/useAuth", () => ({
 	useLogin: () => ({ mutate: mockMutate, isPending: false }),
 	useGoogleSignIn: () => ({ mutate: mockGoogleMutate, isPending: false }),
+	useResendVerification: () => ({ mutate: mockResend, isPending: false }),
 }));
 
 vi.mock("@/components/auth/GoogleSignInButton", () => ({
@@ -128,5 +130,41 @@ describe("LoginPage", () => {
 		expect(
 			await screen.findByText(/registered with a password/i),
 		).toBeInTheDocument();
+	});
+
+	it("renders a Forgot password link to the reset flow", () => {
+		renderPage();
+
+		expect(
+			screen.getByRole("link", { name: /forgot password/i }),
+		).toHaveAttribute("href", "/forgot-password");
+	});
+
+	it("offers a resend action when the account is unverified", async () => {
+		mockMutate.mockImplementation((_values, options) =>
+			options.onError({
+				message: "Please verify your email address",
+				code: "EMAIL_NOT_VERIFIED",
+			}),
+		);
+		const user = userEvent.setup();
+		renderPage();
+
+		await user.type(screen.getByLabelText(/email/i), "asha@example.com");
+		await user.type(screen.getByLabelText("Password"), "Password1!");
+		await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+		expect(
+			await screen.findByRole("button", { name: /resend verification email/i }),
+		).toBeInTheDocument();
+		expect(screen.getByText("asha@example.com")).toBeInTheDocument();
+
+		await user.click(
+			screen.getByRole("button", { name: /resend verification email/i }),
+		);
+		expect(mockResend).toHaveBeenCalledWith(
+			{ email: "asha@example.com" },
+			expect.any(Object),
+		);
 	});
 });

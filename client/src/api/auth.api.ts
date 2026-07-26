@@ -7,6 +7,10 @@ import type {
 	RegisterPayload,
 	LoginPayload,
 	GoogleSignInPayload,
+	VerifyEmailPayload,
+	ResendVerificationPayload,
+	ForgotPasswordPayload,
+	ResetPasswordPayload,
 } from "@/types/auth.types";
 
 /**
@@ -52,4 +56,50 @@ const signInWithGoogle = async (payload: GoogleSignInPayload) => {
 	return data;
 };
 
-export { getCurrentUser, register, login, logout, signInWithGoogle };
+/** Confirms an email address from a verification link's token. */
+const verifyEmail = async (payload: VerifyEmailPayload) => {
+	const { data } = await axiosClient.post<ApiSuccessResponse>(
+		"/auth/verify-email",
+		payload,
+	);
+	return data;
+};
+
+/** Requests a fresh verification link. */
+const resendVerification = async (payload: ResendVerificationPayload) => {
+	const { data } = await axiosClient.post<ApiSuccessResponse>(
+		"/auth/resend-verification",
+		payload,
+	);
+	return data;
+};
+
+/** Requests a password-reset link. */
+const forgotPassword = async (payload: ForgotPasswordPayload) => {
+	const { data } = await axiosClient.post<ApiSuccessResponse>(
+		"/auth/forgot-password",
+		payload,
+	);
+	return data;
+};
+
+/** Sets a new password from a reset link's token. */
+const resetPassword = async (payload: ResetPasswordPayload) => {
+	const { data } = await axiosClient.post<ApiSuccessResponse>(
+		"/auth/reset-password",
+		payload,
+	);
+	return data;
+};
+
+export {
+	getCurrentUser,
+	register,
+	login,
+	logout,
+	signInWithGoogle,
+	verifyEmail,
+	resendVerification,
+	forgotPassword,
+	resetPassword,
+};

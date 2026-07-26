@@ -5,6 +5,7 @@ import request from "supertest";
 
 import app from "../../src/app";
 import envConfig from "../../src/constants/env";
+import User from "../../src/models/user.model";
 import { createTestUser } from "../helpers/factories";
 
 const { APP_ORIGIN } = envConfig;
@@ -22,6 +23,12 @@ describe("auth routes", () => {
 		const register = await agent.post("/api/auth/register").send(VALID);
 		expect(register.status).toBe(201);
 		expect(register.headers["set-cookie"]).toBeUndefined();
+
+		// Simulate the user clicking the verification link before logging in.
+		await User.updateOne(
+			{ email: VALID.email },
+			{ $set: { isVerified: true } },
+		);
 
 		const login = await agent
 			.post("/api/auth/login")
@@ -80,6 +87,10 @@ describe("auth routes", () => {
 		await agent
 			.post("/api/auth/register")
 			.send({ ...VALID, email: "bye@example.com" });
+		await User.updateOne(
+			{ email: "bye@example.com" },
+			{ $set: { isVerified: true } },
+		);
 		await agent
 			.post("/api/auth/login")
 			.send({ email: "bye@example.com", password: VALID.password });

@@ -15,6 +15,15 @@ describe("User model", () => {
 		expect(user.isActive).toBe(true);
 	});
 
+	it("defaults isVerified to false", async () => {
+		const user = await User.create({
+			name: "Asha",
+			email: "verify-default@example.com",
+			password: "Password123",
+		});
+		expect(user.isVerified).toBe(false);
+	});
+
 	it("hashes the password on save (never stores plaintext)", async () => {
 		await User.create({
 			name: "Asha",

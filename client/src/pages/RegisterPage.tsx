@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import AppLogo from "@/components/common/AppLogo";
 import FormField from "@/components/form/FormField";
 import AlertBanner from "@/components/ui/alert-banner";
+import EmailVerificationPrompt from "@/components/auth/EmailVerificationPrompt";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import AuthDivider from "@/components/auth/AuthDivider";
 
@@ -17,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { CURRENT_USER_KEY } from "@/lib/queryKeys";
 
 import ROUTES from "@/routes/paths";
-import { useRegister, useLogin, useGoogleSignIn } from "@/hooks/useAuth";
+import { useRegister, useGoogleSignIn } from "@/hooks/useAuth";
 import { registerSchema, type RegisterFormData } from "@/schemas/auth.schema";
 
 const tabClass = (active: boolean) =>
@@ -30,12 +31,12 @@ const tabClass = (active: boolean) =>
 
 const RegisterPage = () => {
 	const { mutate: registerUser, isPending: isRegistering } = useRegister();
-	const { mutate: loginUser, isPending: isLoggingIn } = useLogin();
 	const { mutate: googleSignIn, isPending: isGooglePending } =
 		useGoogleSignIn();
 
 	const queryClient = useQueryClient();
 	const [authError, setAuthError] = useState<string | null>(null);
+	const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
 
 	// Preserve any post-auth redirect target when switching between the tabs.
 	const [searchParams] = useSearchParams();
@@ -53,23 +54,15 @@ const RegisterPage = () => {
 		resolver: zodResolver(registerSchema),
 	});
 
-	// Register never logs the user in (its response is identical for a new vs an
-	// existing email — no enumeration), so log in with the same credentials to
-	// keep signup a one-click, instant-login experience.
+	// Register creates an unverified account and emails a verification link — it
+	// never logs the user in. Show a check-inbox state instead of auto-login.
 	const onSubmit = (values: RegisterFormData) => {
 		setAuthError(null);
 		registerUser(values, {
-			onSuccess: () =>
-				loginUser(
-					{ email: values.email, password: values.password },
-					{
-						onSuccess: () => {
-							reset();
-							queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
-						},
-						onError: (error) => setAuthError(error.message),
-					},
-				),
+			onSuccess: () => {
+				setRegisteredEmail(values.email);
+				reset();
+			},
 			onError: (error) => setAuthError(error.message),
 		});
 	};
@@ -90,81 +83,103 @@ const RegisterPage = () => {
 		setAuthError("Google sign-in didn't complete. Please try again.");
 	};
 
-	const isSubmitting = isRegistering || isLoggingIn || isGooglePending;
+	const isSubmitting = isRegistering || isGooglePending;
 
 	return (
 		<div className="w-full max-w-100 rounded-xl border border-input bg-card p-8">
 			<AppLogo className="mb-6 justify-center" />
 
-			<div className="mb-8 flex gap-1 rounded-full border bg-background p-1">
-				<Link to={withRedirect(ROUTES.LOGIN)} className={tabClass(false)}>
-					Log in
-				</Link>
-				<Link to={withRedirect(ROUTES.REGISTER)} className={tabClass(true)}>
-					Sign up
-				</Link>
-			</div>
+			{registeredEmail ? (
+				<div className="space-y-6">
+					<div className="text-center">
+						<h1 className="text-xl">Check your inbox</h1>
+					</div>
 
-			<GoogleSignInButton
-				onSuccess={handleGoogleSuccess}
-				onError={handleGoogleError}
-				label="Sign up with Google"
-				disabled={isSubmitting}
-			/>
+					<EmailVerificationPrompt email={registeredEmail} />
 
-			<AuthDivider />
+					<Link
+						to={withRedirect(ROUTES.LOGIN)}
+						className="block text-center text-sm text-muted-foreground hover:text-foreground"
+					>
+						Back to log in
+					</Link>
+				</div>
+			) : (
+				<>
+					<div className="mb-8 flex gap-1 rounded-full border bg-background p-1">
+						<Link to={withRedirect(ROUTES.LOGIN)} className={tabClass(false)}>
+							Log in
+						</Link>
+						<Link
+							to={withRedirect(ROUTES.REGISTER)}
+							className={tabClass(true)}
+						>
+							Sign up
+						</Link>
+					</div>
 
-			{authError && (
-				<AlertBanner variant="error" className="mb-4">
-					{authError}
-				</AlertBanner>
+					<GoogleSignInButton
+						onSuccess={handleGoogleSuccess}
+						onError={handleGoogleError}
+						label="Sign up with Google"
+						disabled={isSubmitting}
+					/>
+
+					<AuthDivider />
+
+					{authError && (
+						<AlertBanner variant="error" className="mb-4">
+							{authError}
+						</AlertBanner>
+					)}
+
+					<form
+						onSubmit={handleSubmit(onSubmit)}
+						noValidate
+						className="space-y-6 mb-3"
+					>
+						<FormField
+							label="Full name"
+							id="name"
+							type="text"
+							autoComplete="off"
+							placeholder="Enter your full name"
+							error={errors.name?.message}
+							{...register("name")}
+						/>
+
+						<FormField
+							label="Email"
+							id="email"
+							type="email"
+							autoComplete="off"
+							placeholder="Enter your email address"
+							error={errors.email?.message}
+							{...register("email")}
+						/>
+
+						<FormField
+							label="Password"
+							id="password"
+							type="password"
+							autoComplete="off"
+							placeholder="Enter your password"
+							error={errors.password?.message}
+							{...register("password")}
+						/>
+
+						<Button
+							type="submit"
+							disabled={isSubmitting || !isValid}
+							className="w-full h-11 cursor-pointer disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
+						>
+							<span className="text-base font-medium">
+								{isRegistering ? "Creating account..." : "Create account"}
+							</span>
+						</Button>
+					</form>
+				</>
 			)}
-
-			<form
-				onSubmit={handleSubmit(onSubmit)}
-				noValidate
-				className="space-y-6 mb-3"
-			>
-				<FormField
-					label="Full name"
-					id="name"
-					type="text"
-					autoComplete="off"
-					placeholder="Enter your full name"
-					error={errors.name?.message}
-					{...register("name")}
-				/>
-
-				<FormField
-					label="Email"
-					id="email"
-					type="email"
-					autoComplete="off"
-					placeholder="Enter your email address"
-					error={errors.email?.message}
-					{...register("email")}
-				/>
-
-				<FormField
-					label="Password"
-					id="password"
-					type="password"
-					autoComplete="off"
-					placeholder="Enter your password"
-					error={errors.password?.message}
-					{...register("password")}
-				/>
-
-				<Button
-					type="submit"
-					disabled={isSubmitting || !isValid}
-					className="w-full h-11 font-mono cursor-pointer disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
-				>
-					<span className="text-base font-medium">
-						{isSubmitting ? "Creating account..." : "Create account"}
-					</span>
-				</Button>
-			</form>
 		</div>
 	);
 };

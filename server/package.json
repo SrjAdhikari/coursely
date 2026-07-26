@@ -1,6 +1,6 @@
 {
 	"name": "manakuru-server",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"private": true,
 	"description": "Manakuru LMS - Express 5 + TypeScript REST API",
 	"main": "server.ts",
@@ -43,6 +43,7 @@
 		"helmet": "^8.2.0",
 		"jsdom": "^29.1.1",
 		"mongoose": "^9.2.4",
+		"nodemailer": "^9.0.3",
 		"stripe": "^22.3.0",
 		"zod": "^4.4.3"
 	},
@@ -53,6 +54,7 @@
 		"@types/express": "^5.0.0",
 		"@types/jsdom": "^28.0.3",
 		"@types/node": "^24.0.0",
+		"@types/nodemailer": "^8.0.1",
 		"@types/supertest": "^6.0.3",
 		"eslint": "^10.5.0",
 		"globals": "^17.7.0",

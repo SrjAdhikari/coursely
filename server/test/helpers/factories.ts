@@ -7,7 +7,7 @@ import Lesson from "../../src/models/lesson.model";
 import Enrollment from "../../src/models/enrollment.model";
 import Progress from "../../src/models/progress.model";
 import Session from "../../src/models/session.model";
-import { createSessionToken } from "../../src/utils/sessionToken";
+import { createToken } from "../../src/utils/token";
 import type { Types } from "mongoose";
 
 interface UserOverrides {
@@ -16,6 +16,7 @@ interface UserOverrides {
 	password?: string;
 	role?: UserRole;
 	isActive?: boolean;
+	isVerified?: boolean;
 }
 
 let counter = 0;
@@ -33,6 +34,7 @@ const createTestUser = async (overrides: UserOverrides = {}) => {
 		password: overrides.password ?? "Password123",
 		role: overrides.role ?? "student",
 		isActive: overrides.isActive ?? true,
+		isVerified: overrides.isVerified ?? true,
 	});
 };
 
@@ -41,7 +43,7 @@ const createTestSession = async (
 	userId: Types.ObjectId,
 	overrides: Record<string, unknown> = {},
 ) => {
-	const { token, tokenHash } = createSessionToken();
+	const { token, tokenHash } = createToken();
 	const session = await Session.create({ userId, tokenHash, ...overrides });
 	return { session, token };
 };

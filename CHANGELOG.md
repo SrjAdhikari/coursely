@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-25
+
+### Added
+
+- Email verification for new sign-ups: a new account is emailed a verification link and must confirm it before signing in.
+- Self-service password reset: a "Forgot password?" link on the login page emails a secure link to set a new password.
+- A resend option for the verification email — on both the after-sign-up screen and the login page — so an expired or mislaid link is easy to recover from.
+
+### Changed
+
+- Signing up no longer logs you straight in; you're shown a "check your inbox" screen and asked to verify your email first. Signing in with Google is unaffected, as those accounts are already verified.
+
+### Security
+
+- Signing in now requires a verified email address.
+- Verification and password-reset links are single-use and expire on their own — 24 hours for verification, one hour for a reset — and are stored only as hashes.
+- Completing a password reset signs out every existing session for that account.
+- The sign-up, resend-verification and forgot-password screens all answer the same way whether or not an account exists, so accounts can't be discovered by probing — and a temporary email-delivery problem doesn't change that answer.
+
 ## [1.1.0] - 2026-07-19
 
 ### Added
@@ -81,6 +100,7 @@ with an admin console behind it for running the whole catalog.
 - The player keeps its keyboard shortcuts after the centre play button is clicked, and recovers from a failed video load instead of spinning forever.
 - Page headers no longer shift as the scrollbar appears or the account menu opens.
 
-[Unreleased]: https://github.com/SrjAdhikari/coursely/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/SrjAdhikari/coursely/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/SrjAdhikari/coursely/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/SrjAdhikari/coursely/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/SrjAdhikari/coursely/releases/tag/v1.0.0

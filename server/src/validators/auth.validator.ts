@@ -50,9 +50,42 @@ const googleOAuthSchema = z.object({
 	idToken: z.string().trim().nonempty("Google credential is required"),
 });
 
+const verifyEmailSchema = z.object({
+	token: z.string().trim().nonempty("Verification token is required"),
+});
+
+const resetPasswordSchema = z.object({
+	token: z.string().trim().nonempty("Reset token is required"),
+	newPassword: password,
+});
+
+const forgotPasswordSchema = z.object({ email });
+const resendVerificationSchema = z.object({ email });
+
 type RegisterInput = z.infer<typeof registerSchema>;
 type LoginInput = z.infer<typeof loginSchema>;
 type GoogleOAuthInput = z.infer<typeof googleOAuthSchema>;
+type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
 
-export { registerSchema, loginSchema, googleOAuthSchema };
-export type { RegisterInput, LoginInput, GoogleOAuthInput };
+export {
+	registerSchema,
+	loginSchema,
+	googleOAuthSchema,
+	verifyEmailSchema,
+	resetPasswordSchema,
+	forgotPasswordSchema,
+	resendVerificationSchema,
+};
+
+export type {
+	RegisterInput,
+	LoginInput,
+	GoogleOAuthInput,
+	VerifyEmailInput,
+	ResetPasswordInput,
+	ForgotPasswordInput,
+	ResendVerificationInput,
+};

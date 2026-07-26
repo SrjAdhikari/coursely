@@ -9,6 +9,9 @@ const ROUTES = {
 	// Public
 	LOGIN: "/login",
 	REGISTER: "/signup",
+	VERIFY_EMAIL: "/verify-email",
+	FORGOT_PASSWORD: "/forgot-password",
+	RESET_PASSWORD: "/reset-password",
 	CATALOG: "/courses",
 	COURSE_DETAIL: (slug: string) => `/courses/${slug}`,
 	COURSE_PREVIEW: (slug: string, lessonId: string) =>

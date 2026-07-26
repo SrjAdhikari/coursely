@@ -7,6 +7,10 @@ import {
 	loginUser,
 	logoutUser,
 	loginOrCreateGoogleUser,
+	verifyEmail,
+	resendVerificationLink,
+	forgotPassword,
+	resetPassword,
 } from "../services/auth.service";
 import { setSessionCookie, clearSessionCookie } from "../utils/cookies";
 
@@ -69,10 +73,57 @@ const getCurrentUserHandler: RequestHandler = (req, res) => {
 	});
 };
 
+const verifyEmailHandler: RequestHandler = async (req, res) => {
+	const { token } = req.body;
+	await verifyEmail(token);
+
+	res.status(OK).json({
+		success: true,
+		message: "Email verified. You can now log in.",
+	});
+};
+
+const resendVerificationHandler: RequestHandler = async (req, res) => {
+	const { email } = req.body;
+	await resendVerificationLink(email);
+
+	// Same reply whether or not the account exists (no enumeration).
+	res.status(OK).json({
+		success: true,
+		message: "If your account needs verifying, check your inbox for a new link.",
+	});
+};
+
+const forgotPasswordHandler: RequestHandler = async (req, res) => {
+	const { email } = req.body;
+	await forgotPassword(email);
+
+	// Same reply whether or not the account exists (no enumeration).
+	res.status(OK).json({
+		success: true,
+		message:
+			"If an account exists for that email, check your inbox for a reset link.",
+	});
+};
+
+const resetPasswordHandler: RequestHandler = async (req, res) => {
+	const { token, newPassword } = req.body;
+	await resetPassword(token, newPassword);
+
+	res.status(OK).json({
+		success: true,
+		message: "Password reset. Please log in.",
+	});
+};
+
 export {
 	registerHandler,
 	loginHandler,
 	googleOAuthHandler,
 	logoutHandler,
 	getCurrentUserHandler,
+	verifyEmailHandler,
+	resendVerificationHandler,
+	forgotPasswordHandler,
+	resetPasswordHandler,
 };

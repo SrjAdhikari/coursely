@@ -14,6 +14,7 @@ export interface UserDocument {
 	avatarUrl?: string;
 	role: UserRole;
 	isActive: boolean;
+	isVerified: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -74,6 +75,7 @@ const userSchema = new Schema<UserDocument, UserModel, UserMethods>(
 		avatarUrl: { type: String },
 		role: { type: String, enum: ["student", "admin"], default: "student" },
 		isActive: { type: Boolean, default: true },
+		isVerified: { type: Boolean, default: false },
 	},
 	{ strict: "throw", timestamps: true },
 );

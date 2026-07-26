@@ -10,6 +10,7 @@ const usersSchema = {
 			"provider",
 			"role",
 			"isActive",
+			"isVerified",
 			"createdAt",
 			"updatedAt",
 		],
@@ -50,6 +51,10 @@ const usersSchema = {
 			isActive: {
 				bsonType: "bool",
 				description: "Whether the account is active",
+			},
+			isVerified: {
+				bsonType: "bool",
+				description: "Whether the account's email is verified",
 			},
 			createdAt: {
 				bsonType: "date",
