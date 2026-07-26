@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useSearchParams } from "react-router";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import AppLogo from "@/components/common/AppLogo";
@@ -13,6 +14,7 @@ import Loader from "@/components/Loader";
 
 import ROUTES from "@/routes/paths";
 import { useVerifyEmail, useResendVerification } from "@/hooks/useAuth";
+import useCountdown from "@/hooks/useCountdown";
 import {
 	forgotPasswordSchema,
 	type ForgotPasswordFormData,
@@ -24,8 +26,9 @@ const VerifyEmailPage = () => {
 	const [searchParams] = useSearchParams();
 	const token = searchParams.get("token") ?? "";
 
-	const { mutate: verifyEmail } = useVerifyEmail();
+	const { mutateAsync: verifyEmail } = useVerifyEmail();
 	const { mutate: resend, isPending: isResending } = useResendVerification();
+	const { secondsLeft, start: startCooldown } = useCountdown();
 
 	const [status, setStatus] = useState<VerifyStatus>(
 		token ? "verifying" : "error",
@@ -33,24 +36,21 @@ const VerifyEmailPage = () => {
 	const [errorMessage, setErrorMessage] = useState(
 		"This verification link is invalid or has expired.",
 	);
-	const [resent, setResent] = useState(false);
 	const hasRequested = useRef(false);
 
-	// Verify the token only once. React runs effects twice in development, and
-	// the token is single-use, so the ref blocks the second run from wasting it.
+	// Verify once on mount — the ref blocks StrictMode's double-run of the single-use
+	// token, and awaiting mutateAsync avoids the "verifying" hang mutate's callbacks caused.
 	useEffect(() => {
 		if (!token || hasRequested.current) return;
 		hasRequested.current = true;
-		verifyEmail(
-			{ token },
-			{
-				onSuccess: () => setStatus("success"),
-				onError: (error) => {
-					setErrorMessage(error.message);
-					setStatus("error");
-				},
-			},
-		);
+		verifyEmail({ token })
+			.then(() => setStatus("success"))
+			.catch((error) => {
+				setErrorMessage(
+					error?.message ?? "This verification link is invalid or has expired.",
+				);
+				setStatus("error");
+			});
 	}, [token, verifyEmail]);
 
 	const {
@@ -64,10 +64,15 @@ const VerifyEmailPage = () => {
 
 	const onResend = (values: ForgotPasswordFormData) => {
 		resend(values, {
-			onSuccess: () => setResent(true),
+			onSuccess: () => {
+				toast.success("Verification email sent");
+				startCooldown(60);
+			},
 			onError: (error) => setErrorMessage(error.message),
 		});
 	};
+
+	const onCooldown = secondsLeft > 0;
 
 	return (
 		<div className="w-full max-w-100 rounded-xl border border-input bg-card p-8">
@@ -100,39 +105,34 @@ const VerifyEmailPage = () => {
 
 					<AlertBanner variant="error">{errorMessage}</AlertBanner>
 
-					{resent ? (
-						<p className="text-center text-sm text-muted-foreground">
-							If your account needs verifying, a new link is on its way.
-						</p>
-					) : (
-						<form
-							onSubmit={handleSubmit(onResend)}
-							noValidate
-							className="space-y-4"
+					<form
+						onSubmit={handleSubmit(onResend)}
+						noValidate
+						className="space-y-4"
+					>
+						<FormField
+							label="Email"
+							id="resend-email"
+							type="email"
+							autoComplete="off"
+							placeholder="Enter your email address"
+							error={errors.email?.message}
+							{...register("email")}
+						/>
+						<Button
+							type="submit"
+							disabled={isResending || !isValid || onCooldown}
+							className="w-full h-11 cursor-pointer disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
 						>
-							<FormField
-								label="Email"
-								id="resend-email"
-								type="email"
-								autoComplete="off"
-								placeholder="Enter your email address"
-								error={errors.email?.message}
-								{...register("email")}
-							/>
-
-							<Button
-								type="submit"
-								disabled={isResending || !isValid}
-								className="w-full h-11 cursor-pointer disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
-							>
-								{isResending ? "Sending..." : "Resend verification email"}
-							</Button>
-						</form>
-					)}
+							{onCooldown
+								? `Resend in ${secondsLeft}s`
+								: "Resend verification email"}
+						</Button>
+					</form>
 
 					<Link
 						to={ROUTES.LOGIN}
-						className="block text-center text-sm text-muted-foreground hover:text-primary hover:underline"
+						className="block text-center text-sm text-muted-foreground hover:text-primary"
 					>
 						Back to log in
 					</Link>
