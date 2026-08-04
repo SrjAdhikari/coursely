@@ -8,7 +8,7 @@ date: 2026-07-09
 
 ## Purpose & Vision
 
-Coursely is a course-selling platform in the style of Udemy: visitors discover courses
+Manakuru is a course-selling platform in the style of Udemy: visitors discover courses
 publicly, pay once per course, and gain lifetime access to that course's video lessons
 with progress tracking and resume playback.
 
