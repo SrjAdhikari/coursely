@@ -6,7 +6,7 @@
  *
  * "The Complete React Course"
  *   -> "the-complete-react-course"
- *   -> coursely.app/courses/the-complete-react-course
+ *   -> manakuru.app/courses/the-complete-react-course
  *
  * Lowercase, words joined by single hyphens, punctuation stripped. Accented
  * Latin letters are folded to ASCII (é → e). Falls back to "course" if nothing

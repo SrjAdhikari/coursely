@@ -1,6 +1,6 @@
-# Coursely
+# Manakuru
 
-Coursely is a full-stack, Udemy-style learning platform. Anyone can browse and search a public
+Manakuru is a full-stack, Udemy-style learning platform. Anyone can browse and search a public
 catalog, preview lessons before paying, buy a course through Stripe, and then learn in a custom
 video player that saves progress and resumes exactly where they left off. Admins manage the entire
 catalog from a dedicated dashboard: courses, sections, lessons, video uploads, students, and
@@ -9,7 +9,7 @@ enrollments.
 It is written in TypeScript end to end (a MERN stack) and deployed as two independent packages,
 with security and running cost treated as first-class design inputs rather than afterthoughts.
 
-> **Live demo:** https://coursely-a0v.pages.dev
+> **Live demo:** https://manakuru.pages.dev
 
 ---
 
@@ -91,7 +91,7 @@ with security and running cost treated as first-class design inputs rather than 
 
 ## Architecture
 
-Coursely is a monorepo of two independently deployable packages, `client/` and `server/`, that run
+Manakuru is a monorepo of two independently deployable packages, `client/` and `server/`, that run
 on separate origins. The single most important structural decision: **video never touches the
 application server**. The browser uploads and streams video straight to and from a private
 Cloudflare R2 bucket using per-request signed URLs, so the API stays small, cheap, and safe from
@@ -424,8 +424,8 @@ server/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/SrjAdhikari/coursely.git
-cd coursely
+git clone https://github.com/SrjAdhikari/Manakuru.git
+cd Manakuru
 ```
 
 ### 2. Configure environment variables
