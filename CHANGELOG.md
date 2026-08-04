@@ -100,7 +100,7 @@ with an admin console behind it for running the whole catalog.
 - The player keeps its keyboard shortcuts after the centre play button is clicked, and recovers from a failed video load instead of spinning forever.
 - Page headers no longer shift as the scrollbar appears or the account menu opens.
 
-[Unreleased]: https://github.com/SrjAdhikari/coursely/compare/v1.2.0...HEAD
-[1.2.0]: https://github.com/SrjAdhikari/coursely/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/SrjAdhikari/coursely/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/SrjAdhikari/coursely/releases/tag/v1.0.0
+[Unreleased]: https://github.com/SrjAdhikari/Manakuru/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/SrjAdhikari/Manakuru/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/SrjAdhikari/Manakuru/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/SrjAdhikari/Manakuru/releases/tag/v1.0.0
