@@ -389,7 +389,7 @@ const showcaseFeatures: ShowcaseFeature[] = [
 			"Track completed lessons per course",
 			"Everything you own in one library",
 		],
-		url: "manakuru.srjdev.com/dashboard",
+		url: "manakuru.pages.dev/dashboard",
 		Mock: DashboardMock,
 	},
 	{
@@ -404,7 +404,7 @@ const showcaseFeatures: ShowcaseFeature[] = [
 			"Curriculum and progress side by side",
 			"Picks up on the exact lesson you left",
 		],
-		url: "manakuru.srjdev.com/learn/react-from-scratch",
+		url: "manakuru.pages.dev/learn/react-from-scratch",
 		Mock: LearnMock,
 	},
 	{
@@ -419,7 +419,7 @@ const showcaseFeatures: ShowcaseFeature[] = [
 			"Filter by topic, not by hype",
 			"Prices shown up front",
 		],
-		url: "manakuru.srjdev.com/courses",
+		url: "manakuru.pages.dev/courses",
 		Mock: CatalogMock,
 	},
 ];

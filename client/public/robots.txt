@@ -1,4 +1,4 @@
-# https://manakuru.srjdev.com robots
+# https://manakuru.pages.dev robots
 User-agent: *
 Allow: /
 Disallow: /admin
@@ -7,4 +7,4 @@ Disallow: /my-courses
 Disallow: /learn
 Disallow: /checkout
 
-Sitemap: https://manakuru.srjdev.com/sitemap.xml
+Sitemap: https://manakuru.pages.dev/sitemap.xml
